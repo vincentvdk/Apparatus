@@ -1,5 +1,5 @@
 ---
-name: build-ublue-custom
+name: build-apparatus-core
 on:
   pull_request:
     branches:
