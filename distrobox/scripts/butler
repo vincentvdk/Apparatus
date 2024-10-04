@@ -1,0 +1,84 @@
+#!/usr/bin/env zsh
+#set -x
+
+logo='
+   _____                                          __                 
+  /  _  \  ______  ______ _____  _______ _____  _/  |_  __ __  ______
+ /  /_\  \ \____ \ \____ \\__  \ \_  __ \\__  \ \   __\|  |  \/  ___/
+/    |    \|  |_> >|  |_> >/ __ \_|  | \/ / __ \_|  |  |  |  /\___ \ 
+\____|__  /|   __/ |   __/(____  /|__|   (____  /|__|  |____//____  >
+        \/ |__|    |__|        \/             \/                  \/ 
+
+'
+
+# Check if asdf is added to $PATH.
+if [ $? -ne 0 ]
+  then
+    echo "asdf not found in PATH. Adding.."
+    export -p PATH="$PATH:/opt/asdf/bin"
+  else
+    echo "asdf installed.."
+fi
+
+echo -e "$logo"
+
+# Available options
+OPTIONS=(
+  "Init             - Initialize a new Apparatus box"
+  "Manage Tools     - Install and manage tools"
+)
+
+# -- Main func
+main() {
+  local OPT=$(gum choose "${OPTIONS[@]}" --height 15 --header "Option:")
+  local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+
+  case "${CHOICE}" in
+    init)
+      init
+      ;;
+    manage-tools)
+      get_binary
+      ;;
+  esac
+}
+
+# -- Run init script
+init() {
+echo '{{ Bold "# Manage binaries:" }}' | gum format -t template
+gum confirm  && /opt/bin/init.sh
+}
+
+# -- Manage tools
+get_binary () {
+echo '{{ Bold "# Manage tools:" }}' | gum format -t template
+  local OPT=$(gum choose "terraform" "terraform-ls" "kubectl" "gcloud_cli" "golang" "kubie" "pulumi") #TODO read this from a config file
+  local CHOICE=$(echo "$OPT")
+
+  ACTION=$(gum choose "latest" "enter version" "show available" "show current" "set version")
+   case $ACTION in
+    'show available')
+      source "tool_${OPT}.sh" available
+      ;;
+    'show current')
+      #ACTION_SHORT=$(echo $ACTION | awk '{print $2}')
+      source "tool_${OPT}.sh" current
+      ;;
+    'latest')
+      source "tool_${OPT}.sh" $ACTION
+      ;;
+    'enter version')
+      VERSION=$(gum input --placeholder="Enter version to install (ex 1.2.1)")
+      #ACTION_SHORT=$(echo $ACTION | awk '{print $2}')
+      source "tool_${OPT}.sh" install_version ${VERSION}
+      ;;
+    'set version')
+      source "tool_${OPT}.sh" setversion
+  esac
+}
+
+
+# Main
+main
+
+#ACTION=$(gum choose --cursor.foreground="#f14e32" "")

@@ -1,0 +1,51 @@
+FROM docker.io/fedora:latest
+LABEL com.github.containers.toolbox="true"
+
+ARG VERSION_GUM="0.14.5"
+ARG VERSION_NEOVIM="0.10.0"
+#ARG NODE_VERSION="20"
+ARG ASDF_VERSION="0.14.1"
+ARG CHEZMOI_VERSION="2.52.2"
+
+# -- Packages
+# fuse deps are needed to work with appimage
+RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk tmux gcc gcc-c++
+
+## -- Directories
+RUN mkdir -p /opt/asdf
+
+## -- ASDF for binaries
+RUN git clone https://github.com/asdf-vm/asdf.git /opt/asdf --branch v${ASDF_VERSION}
+
+## -- Charm
+RUN curl -OL https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_Linux_x86_64.tar.gz && \
+  tar -C /usr/local/bin --strip-components=1 -xzf gum_${VERSION_GUM}_Linux_x86_64.tar.gz gum_${VERSION_GUM}_Linux_x86_64/gum && \
+  rm gum_${VERSION_GUM}_Linux_x86_64.tar.gz
+
+## -- NodeJS, nvm, npm,.. (needed for LSP)
+#ENV NVM_DIR="/opt/nvm"
+
+#RUN git clone https://github.com/nvm-sh/nvm.git "$NVM_DIR" && \
+#  cd "$NVM_DIR" && \
+#  git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)` && . "$NVM_DIR/nvm.sh" && \
+#  nvm install ${NODE_VERSION} && \
+#  npm install -g typescript typescript-language-server
+
+## -- NeoVim
+RUN mkdir /opt/nvim && \
+    curl -OL https://github.com/neovim/neovim/releases/download/v${VERSION_NEOVIM}/nvim.appimage && \
+    mv nvim.appimage /opt/nvim && \
+    chmod +x /opt/nvim/nvim.appimage
+
+## -- Chezmoi
+RUN curl -OL https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz && \
+  tar -C /usr/local/bin -xzf "chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz"
+
+## -- Environment variables
+COPY distrobox/system/profile-custom.sh /etc/profile.d/99-custom.sh
+
+## -- Copy default configuration
+COPY distrobox/defaults/* /usr/share/apparatus/
+
+## -- Scripts
+COPY --chmod=0755 distrobox/scripts/ /opt/bin
