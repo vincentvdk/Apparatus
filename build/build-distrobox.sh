@@ -2,7 +2,7 @@
 #
 # Build new container image
 echo "Building new container image.."
-podman build --no-cache -t ghcr.io/vincentvdk/apparatus -f distrobox/Containerfile .
+podman build --no-cache -t ghcr.io/vincentvdk/apparatus-box:20241004 -f distrobox/Containerfile .
 
 #echo "### Stopping toolbox-1.."
 #distrobox stop toolbox-1

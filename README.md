@@ -48,6 +48,11 @@ In a new Distrobox run:
 $ chezmoi init --apply https://github.com/$GITHUB_USERNAME/dotfiles.git
 ```
 
+
+## Distrobox
+### Update a distrobox
+
+
 ## Shell  History
 
 

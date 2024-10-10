@@ -61,7 +61,6 @@ echo '{{ Bold "# Manage tools:" }}' | gum format -t template
       source "tool_${OPT}.sh" available
       ;;
     'show current')
-      #ACTION_SHORT=$(echo $ACTION | awk '{print $2}')
       source "tool_${OPT}.sh" current
       ;;
     'latest')
@@ -69,7 +68,6 @@ echo '{{ Bold "# Manage tools:" }}' | gum format -t template
       ;;
     'enter version')
       VERSION=$(gum input --placeholder="Enter version to install (ex 1.2.1)")
-      #ACTION_SHORT=$(echo $ACTION | awk '{print $2}')
       source "tool_${OPT}.sh" install_version ${VERSION}
       ;;
     'set version')
@@ -77,8 +75,5 @@ echo '{{ Bold "# Manage tools:" }}' | gum format -t template
   esac
 }
 
-
 # Main
 main
-
-#ACTION=$(gum choose --cursor.foreground="#f14e32" "")
