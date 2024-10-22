@@ -14,8 +14,8 @@ systemctl enable docker
 
 #### System Configuration
 # -- Fonts
-curl -OL --output-dir /tmp https://github.com/source-foundry/Hack/releases/download/v3.003/Hack-v3.003-ttf.zip
-unzip -d /tmp/hack-font /tmp/Hack-v3.003-ttf.zip
+curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip
+unzip -d /tmp/hack-font /tmp/Hack.zip
 cp -r /tmp/hack-font /usr/share/fonts/
 fc-cache -f -v
 
