@@ -15,9 +15,11 @@ systemctl enable docker
 #### System Configuration
 # -- Fonts
 curl -OL --output-dir /tmp https://github.com/source-foundry/Hack/releases/download/v3.003/Hack-v3.003-ttf.zip
-unzip -d /tmp /tmp/Hack-v3.003-ttf.zip
-cp /tmp/ttf/* /usr/share/fonts/
-ls -lah /tmp/ttf
+unzip -d /tmp/hack-font /tmp/Hack-v3.003-ttf.zip
+cp -r /tmp/hack-font /usr/share/fonts/
+fc-cache -f -v
+
+
 # -- Configure distrobox
 
 
