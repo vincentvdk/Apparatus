@@ -1,0 +1,13 @@
+FROM fedora as BUILDER
+RUN dnf install -y git cmake freetype-devel fontconfig-devel libxcb-devel libxkbcommon-devel g++
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y -v &&\
+  . "$HOME/.cargo/env" &&\
+  rustup override set stable &&\
+  rustup update stable &&\
+  git clone https://github.com/alacritty/alacritty.git && cd alacritty &&\
+  cargo build --release --no-default-features --features=wayland &&\
+  cp target/release/alacritty /usr/local/bin &&\
+  cp extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg &&\
+  desktop-file-install extra/linux/Alacritty.desktop &&\
+  update-desktop-database
+

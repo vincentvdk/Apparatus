@@ -26,6 +26,7 @@ echo -e "$logo"
 OPTIONS=(
   "Init             - Initialize a new Apparatus box"
   "Manage Tools     - Install and manage tools"
+  "Theme            - Select a theme"
 )
 
 # -- Main func
@@ -39,6 +40,9 @@ main() {
       ;;
     manage-tools)
       get_binary
+      ;;
+    theme)
+      set_theme
       ;;
   esac
 }
@@ -72,6 +76,22 @@ echo '{{ Bold "# Manage tools:" }}' | gum format -t template
       ;;
     'set version')
       source "tool_${OPT}.sh" setversion
+  esac
+}
+
+# -- Set theme
+set_theme() {
+  echo '{{ Bold "# Set theme:" }}' | gum format -t template
+  local OPT=$(gum choose "catpuccin-dark" "catpuccin-light") #TODO read this from a config file
+  local CHOICE=$(echo "$OPT")
+
+  case ${CHOICE} in
+    catpuccin-dark)
+      distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style dark
+      ;;
+    catpuccin-light)
+      distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style light
+      ;;
   esac
 }
 
