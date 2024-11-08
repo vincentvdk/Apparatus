@@ -4,8 +4,13 @@ set -ouex pipefail
 
 RELEASE="$(rpm -E %fedora)"
 
+## -- Alacritty
+sudo desktop-file-install /tmp/Alacritty.desktop
+sudo update-desktop-database
+
 ### Install packages
 rpm-ostree install distrobox docker libvirt-daemon-kvm qemu-kvm virt-manager
+#rpm-ostree uninstall firefox
 
 #### Enabling Systemd Unit File
 systemctl enable podman.socket
