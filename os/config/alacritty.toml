@@ -1,0 +1,24 @@
+general.import = [
+  # uncomment the flavour you want below:
+  #"~/.config/alacritty/catppuccin-latte.toml"
+  #"~/.config/alacritty/catppuccin-frappe.toml"
+  #"~/.config/alacritty/catppuccin-macchiato.toml"
+  "~/.config/alacritty/catppuccin-mocha.toml"
+]
+
+[window]
+decorations = "Full"
+
+[font]
+normal = {family = "Hack Nerd Font", style = "Mono"}
+bold = {family = "Hack Nerd Font"}
+italic = {family = "Hack Nerd Font"}
+size = 12
+offset = {x = 0, y = 0}
+
+[[hints.enabled]]
+command = "xdg-open"
+hyperlinks = true
+
+[scrolling]
+multiplier = 12
