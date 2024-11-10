@@ -15,6 +15,7 @@ echo -e "$logo"
 
 # Available options
 OPTIONS=(
+  "Init             -  Initialize a fresh install"
   "Theme            - Select a theme"
   #"Manage Tools     - Install and manage tools"
 )
@@ -28,7 +29,7 @@ main() {
     theme)
       set_theme
       ;;
-    manage-tools)
+    init)
       get_binary
       ;;
   esac
@@ -43,10 +44,12 @@ set_theme() {
 
   case ${CHOICE} in
     catpuccin-dark)
-      distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style dark
+      #distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style dark
+      ln -sf /usr/share/apparatus/alacritty/catppuccin-mocha.toml ~/.config/alacritty/theme.toml
       ;;
     catpuccin-light)
-      distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style light
+      ln -sf /usr/share/apparatus/alacritty/catppuccin-frappe.toml ~/.config/alacritty/theme.toml
+      #distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style light
       ;;
   esac
 }

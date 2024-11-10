@@ -9,7 +9,7 @@ sudo desktop-file-install /tmp/Alacritty.desktop
 sudo update-desktop-database
 
 ### Install packages
-rpm-ostree install distrobox docker libvirt-daemon-kvm qemu-kvm virt-manager
+rpm-ostree install distrobox docker libvirt-daemon-kvm qemu-kvm virt-manager tailscale
 #rpm-ostree uninstall firefox
 
 #### Enabling Systemd Unit File
