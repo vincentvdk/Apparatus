@@ -60,7 +60,9 @@ FROM ghcr.io/ublue-os/${SOURCE_IMAGE}${SOURCE_SUFFIX}:${SOURCE_TAG}
 ## the following RUN directive does all the things required to run "build.sh" as recommended.
 
 # Distrobox default config
+COPY os/butler.sh /usr/bin/butler
 COPY os/config/distrobox.conf /etc/distrobox/distrobox.conf
+COPY os/config/alacritty/* /usr/share/apparatus/alacritty/
 # Build script
 COPY os/build.sh /tmp/build.sh
 # Alacritty files
