@@ -2,14 +2,38 @@
 Apparatus is a project that helps you getting a complete new development
 environment running in minutes.
 
-## The basics
+## Intro
 - what is installed (asdf, butler, ..)
 - how it is configured (default zsh etc..)
 
 explain default configuration
 
-## TODO
-- set git editor to vim
+## Install
+## OS
+The Apparatus OS is based on [Fedora
+Silberblue](https://fedoraproject.org/atomic-desktops/silverblue/) but does NOT
+have it's own ISO where you can use to install. Instead we need to install
+Silverblue first and then __rebase__ to Apparatus.
+
+1. Install Fedora Silverblue using the ISO which you can find [here](https://fedoraproject.org/atomic-desktops/silverblue/download)
+2. Rebase to an unsigned image to get the proper signing keys and policies installed:
+```
+IMAGE_PATH=ghcr.io/vincentvdk/apparatus-os
+IMAGE_TAG=latest
+rpm-ostree rebase ostree-unverified-registry:$IMAGE_PATH:$IMAGE_TAG
+systemctl reboot
+````
+3. Rebase to a signed image to complete the installation:
+```
+IMAGE_PATH=ghcr.io/vincentvdk/apparatus-os
+IMAGE_TAG=latest
+rpm-ostree rebase ostree-image-signed:docker://$IMAGE_PATH:$IMAGE_TAG
+systemctl reboot
+```
+
+## Distrobox
+
+## Details
 
 
 ## Fonts
