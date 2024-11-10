@@ -10,6 +10,7 @@ sudo update-desktop-database
 
 ### Install packages
 rpm-ostree install distrobox docker libvirt-daemon-kvm qemu-kvm virt-manager tailscale
+rpm-ostree install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
 #rpm-ostree uninstall firefox
 
 #### Enabling Systemd Unit File
