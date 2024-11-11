@@ -15,9 +15,8 @@ echo -e "$logo"
 
 # Available options
 OPTIONS=(
-  "Init             -  Initialize a fresh install"
+  "Init             - Initialize a fresh install"
   "Theme            - Select a theme"
-  #"Manage Tools     - Install and manage tools"
 )
 
 # -- Main func
