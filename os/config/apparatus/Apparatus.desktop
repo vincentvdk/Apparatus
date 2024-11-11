@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Apparatus
+Comment=Configure the Apparatus OS
+Exec=alacrtitty -e "butler"
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Application;

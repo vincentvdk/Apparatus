@@ -69,6 +69,8 @@ COPY os/build.sh /tmp/build.sh
 COPY --from=BUILDER /tmp/alacritty/target/release/alacritty /usr/bin/alacritty
 COPY --from=BUILDER /tmp/alacritty/extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
 COPY --from=BUILDER /tmp/alacritty/extra/linux/Alacritty.desktop /tmp/Alacritty.desktop
+# Apparatus
+COPY os/config/apparatus/Apparatus.desktop /tmp/Apparatus.desktop
 
 RUN mkdir -p /var/lib/alternatives && \
     /tmp/build.sh && \
