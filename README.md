@@ -8,15 +8,17 @@ environment running in minutes.
 
 explain default configuration
 
-## Install
+## Installation
 ## OS
 The Apparatus OS is based on [Fedora
 Silberblue](https://fedoraproject.org/atomic-desktops/silverblue/) but does NOT
-have it's own ISO where you can use to install. Instead we need to install
+have it's own ISO which you can use to install. Instead you need to install
 Silverblue first and then __rebase__ to Apparatus.
 
-1. Install Fedora Silverblue using the ISO which you can find [here](https://fedoraproject.org/atomic-desktops/silverblue/download)
-2. Rebase to an unsigned image to get the proper signing keys and policies installed:
+1. Install Fedora Silverblue using the ISO which you can find
+   [here](https://fedoraproject.org/atomic-desktops/silverblue/download)
+2. Once booted into Fedore Silverblue open a terminal and rebase to an unsigned
+   image to get the proper signing keys and policies installed:
 ```
 IMAGE_PATH=ghcr.io/vincentvdk/apparatus-os
 IMAGE_TAG=latest

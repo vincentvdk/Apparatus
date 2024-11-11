@@ -44,12 +44,10 @@ set_theme() {
 
   case ${CHOICE} in
     catpuccin-dark)
-      #distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style dark
       ln -sf /usr/share/apparatus/alacritty/catppuccin-mocha.toml ~/.config/alacritty/theme.toml
       ;;
     catpuccin-light)
-      ln -sf /usr/share/apparatus/alacritty/catppuccin-frappe.toml ~/.config/alacritty/theme.toml
-      #distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style light
+      ln -sf /usr/share/apparatus/alacritty/catppuccin-latte.toml ~/.config/alacritty/theme.toml
       ;;
   esac
 }
