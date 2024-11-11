@@ -1,15 +1,16 @@
 # Apparatus
-Apparatus is a project that helps you getting a complete new development
-environment running in minutes.
+
+Stop wasting too much time configuring your development environments and let
+Apparatus handle that for you.
 
 ## Intro
-- what is installed (asdf, butler, ..)
-- how it is configured (default zsh etc..)
+Apparatus is a project that provides a Fedora Silveblue based operating system
+configured for Developers/DevOps/Cloud Engineers/SRE's..
 
-explain default configuration
+Create new isolated development environments using pre-configured Distroboxes.
+
 
 ## Installation
-## OS
 The Apparatus OS is based on [Fedora
 Silberblue](https://fedoraproject.org/atomic-desktops/silverblue/) but does NOT
 have it's own ISO which you can use to install. Instead you need to install
