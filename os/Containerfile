@@ -62,7 +62,7 @@ FROM ghcr.io/ublue-os/${SOURCE_IMAGE}${SOURCE_SUFFIX}:${SOURCE_TAG}
 # Distrobox default config
 COPY os/butler.sh /usr/bin/butler
 COPY os/config/distrobox.conf /etc/distrobox/distrobox.conf
-COPY os/config/alacritty/* /usr/share/apparatus/alacritty/
+COPY os/config/alacritty/* /usr/share/apparatus/alacritty/ #TODO make this folder a variable
 # Build script
 COPY os/build.sh /tmp/build.sh
 # Alacritty files

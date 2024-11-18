@@ -29,7 +29,7 @@ main() {
       set_theme
       ;;
     init)
-      get_binary
+      init
       ;;
   esac
 }
@@ -49,6 +49,12 @@ set_theme() {
       ln -sf /usr/share/apparatus/alacritty/catppuccin-latte.toml ~/.config/alacritty/theme.toml
       ;;
   esac
+}
+
+# -- Init new install
+init() {
+  mkdir -p ${HOME}/.config/alacritty
+  cp /usr/share/apparatus/alacritty/* ~/.config/alacritty/
 }
 
 # Main

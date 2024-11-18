@@ -78,8 +78,13 @@ fi
 #fi
 
 # SSH
-mkdir ${HOME}/.ssh
-chmod 0700 ${HOME}/.ssh
+if [[ ! -d "${HOME}/.ssh" ]]; then
+  echo "ssh config.."
+  mkdir ${HOME}/.ssh
+  chmod 0700 ${HOME}/.ssh
+else
+  echo '.ssh folder already exists. Skipping..'
+fi
 
 # Git
 # set editor
