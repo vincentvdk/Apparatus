@@ -91,6 +91,10 @@ init() {
   fi
   echo "100"
 
+  echo "# Create init-done file"
+  mkdir -p "$HOME"/.config/ublue/
+  touch "$HOME"/.config/apparatus/init-done
+
 
   ) |
     zenity --progress --title="uBlue Desktop Firstboot" --percentage=0 --auto-close --no-cancel --width=300
