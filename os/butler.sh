@@ -63,6 +63,16 @@ init() {
   mkdir -p ${HOME}/.config/alacritty
   cp /usr/share/apparatus/alacritty/* ~/.config/alacritty/
 
+  echo "# Enable Flathub Repository"
+  /usr/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  if [ "$?" != 0 ] ; then
+    zenity --error \
+          --text="Adding Flathub Repo Failed"
+    exit 1
+  fi
+  echo "5"
+
+
   # FLATPAK - Install Firefox
   echo "# Installing Firefox"
   /usr/bin/flatpak install --user --noninteractive flathub org.mozilla.firefox
