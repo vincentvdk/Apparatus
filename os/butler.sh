@@ -102,12 +102,12 @@ init() {
   echo "100"
 
   echo "# Create init-done file"
-  mkdir -p "$HOME"/.config/ublue/
+  mkdir -p "$HOME"/.config/apparatus
   touch "$HOME"/.config/apparatus/init-done
 
 
   ) |
-    zenity --progress --title="uBlue Desktop Firstboot" --percentage=0 --auto-close --no-cancel --width=300
+    zenity --progress --title="Apparatus Init.." --percentage=0 --auto-close --no-cancel --width=300
 }
 
 # Main
