@@ -55,7 +55,7 @@ set_theme() {
 init() {
   # Check if init already ran
   if test -e "$HOME"/.config/apparatus/init-done; then
-    echo '{{ Bold "Already initialized.."}}' | gun format -t template
+    echo '{{ Bold "System already initialized.."}}' | gum format -t template
     exit 0
   fi
   (
@@ -72,8 +72,6 @@ init() {
   fi
   echo "5"
 
-
-  # FLATPAK - Install Firefox
   echo "# Installing Firefox"
   /usr/bin/flatpak install --user --noninteractive flathub org.mozilla.firefox
   if [ "$?" != 0 ] ; then
