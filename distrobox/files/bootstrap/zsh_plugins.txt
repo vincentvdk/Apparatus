@@ -1,0 +1,6 @@
+zsh-users/zsh-syntax-highlighting
+zsh-users/zsh-autosuggestions
+zsh-users/zsh-completions
+unixorn/fzf-zsh-plugin
+romkatv/powerlevel10k
+zsh-users/zsh-completions
