@@ -4,9 +4,9 @@ set -ouex pipefail
 
 RELEASE="$(rpm -E %fedora)"
 
-## -- Alacritty
-sudo desktop-file-install /tmp/Alacritty.desktop
-sudo update-desktop-database
+### -- Alacritty
+#sudo desktop-file-install /tmp/Alacritty.desktop
+#sudo update-desktop-database
 
 ## -- Apparatus
 sudo desktop-file-install /tmp/Apparatus.desktop
