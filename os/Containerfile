@@ -52,7 +52,13 @@ COPY os/build.sh /tmp/build.sh
 #COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/extra/linux/Alacritty.desktop /tmp/Alacritty.desktop
 
 # Apparatus
-COPY os/config/apparatus/Apparatus.desktop /tmp/Apparatus.desktop
+#COPY os/config/apparatus/Apparatus.desktop /tmp/Apparatus.desktop
+
+RUN --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/cache/rpm-ostree \
+    --mount=type=bind,from=goal,source=/,target=/goal \
+    /ctx/build.sh
+
 
 RUN mkdir -p /var/lib/alternatives && \
     /tmp/build.sh && \
