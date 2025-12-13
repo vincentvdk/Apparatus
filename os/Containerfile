@@ -13,7 +13,7 @@ ARG BASE_IMAGE="ghcr.io/ublue-os/${SOURCE_IMAGE}"
 # == DELIVERY image (contains scripts and files)
 # Content copied into this image is later mounted and can be used to build the image
 FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION} as delivery
-COPY /build_files /build_files
+COPY /os/build_files /build_files
 
 # == IMAGE
 FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION}
