@@ -10,30 +10,14 @@ ARG SOURCE_SUFFIX="-main"
 ARG SOURCE_IMAGE="${BASE_IMAGE_NAME}${SOURCE_SUFFIX}"
 ARG BASE_IMAGE="ghcr.io/ublue-os/${SOURCE_IMAGE}"
 
-## SOURCE_TAG arg must be a version built for the specific image: eg, 39, 40, gts, latest
-ARG SOURCE_TAG="latest"
+# == DELIVERY image (contains scripts and files)
+# Content copied into this image is later mounted and can be used to build the image
+FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION} as delivery
+COPY /build_files /build_files
 
-## Build Alacritty
-#FROM fedora as BUILDER
-#WORKDIR /tmp
-#
-#RUN dnf install -y git cmake freetype-devel fontconfig-devel libxcb-devel libxkbcommon-devel g++
-#
-#RUN curl -sSf https://sh.rustup.rs | sh -s -- -y -v &&\
-#  . "$HOME/.cargo/env" &&\
-#  rustup override set stable &&\
-#  rustup update stable &&\
-#  curl -OL "https://github.com/alacritty/alacritty/archive/refs/tags/v${ALACRITTY_VERSION}.tar.gz" &&\
-#  ls -lah &&\
-#  tar zxvf "v${ALACRITTY_VERSION}.tar.gz && cd alacritty-${ALACRITTY_VERSION}" &&\
-#  cargo build --release --no-default-features --features=wayland
-
-
+# == IMAGE
 FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION}
 
-### 3. MODIFICATIONS
-## make modifications desired in your image and install packages by modifying the build.sh script
-## the following RUN directive does all the things required to run "build.sh" as recommended.
 
 # Distrobox default config
 #COPY os/butler.sh /usr/bin/butler
@@ -56,12 +40,12 @@ FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION}
 
 RUN --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/cache/rpm-ostree \
-    --mount=type=bind,from=goal,source=/,target=/goal \
-    /ctx/build_files/build.sh
+    --mount=type=bind,from=delivery,source=/,target=/delivery \
+    /delivery/build_files/build.sh
 
 
 RUN mkdir -p /var/lib/alternatives && \
-    /tmp/build.sh && \
+    #/tmp/build.sh && \
     ostree container commit
 
 ## NOTES:
