@@ -7,7 +7,7 @@
 ARG BASE_IMAGE_NAME="silverblue"
 ARG BASE_IMAGE_VERSION="43"
 ARG SOURCE_SUFFIX="-main"
-ARG SOURCE_IMAGE="${BASE_IMAGE_NAME}-${SOURCE_SUFFIX}"
+ARG SOURCE_IMAGE="${BASE_IMAGE_NAME}${SOURCE_SUFFIX}"
 ARG BASE_IMAGE="ghcr.io/ublue-os/${SOURCE_IMAGE}"
 
 ## SOURCE_TAG arg must be a version built for the specific image: eg, 39, 40, gts, latest
