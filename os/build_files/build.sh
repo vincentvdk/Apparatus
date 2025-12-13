@@ -9,6 +9,9 @@ RELEASE="$(rpm -E %fedora)"
 #sudo update-desktop-database
 
 ## -- Apparatus
+cp /goal/build_files/apparatus/butler.sh /usr/bin/butler
+cp /goal/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
+
 sudo desktop-file-install /tmp/Apparatus.desktop
 sudo update-desktop-database
 
