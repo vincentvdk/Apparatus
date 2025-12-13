@@ -36,15 +36,15 @@ FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION}
 ## the following RUN directive does all the things required to run "build.sh" as recommended.
 
 # Distrobox default config
-COPY os/butler.sh /usr/bin/butler
-COPY os/config/distrobox.conf /etc/distrobox/distrobox.conf
+#COPY os/butler.sh /usr/bin/butler
+#COPY os/config/distrobox.conf /etc/distrobox/distrobox.conf
 
 # TODO make the /usr/share/apparatus folder a variable
 # Alacritty
 #COPY os/config/alacritty/* /usr/share/apparatus/alacritty/
 
 # Build script
-COPY os/build.sh /tmp/build.sh
+#COPY os/build.sh /tmp/build.sh
 
 ## Alacritty files
 #COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/target/release/alacritty /usr/bin/alacritty
@@ -57,7 +57,7 @@ COPY os/build.sh /tmp/build.sh
 RUN --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/cache/rpm-ostree \
     --mount=type=bind,from=goal,source=/,target=/goal \
-    /ctx/build.sh
+    /ctx/build_files/build.sh
 
 
 RUN mkdir -p /var/lib/alternatives && \
