@@ -4,60 +4,32 @@
 # Build args can be provided on the commandline when building locally with:
 #   podman build -f Containerfile --build-arg FEDORA_VERSION=40 -t local-image
 
-# SOURCE_IMAGE arg can be anything from ublue upstream which matches your desired version:
-# See list here: https://github.com/orgs/ublue-os/packages?repo_name=main
-# - "silverblue"
-# - "kinoite"
-# - "sericea"
-# - "onyx"
-# - "lazurite"
-# - "vauxite"
-# - "base"
-#
-#  "aurora", "bazzite", "bluefin" or "ucore" may also be used but have different suffixes.
-ARG SOURCE_IMAGE="silverblue"
-
-## SOURCE_SUFFIX arg should include a hyphen and the appropriate suffix name
-# These examples all work for silverblue/kinoite/sericea/onyx/lazurite/vauxite/base
-# - "-main"
-# - "-nvidia"
-# - "-asus"
-# - "-asus-nvidia"
-# - "-surface"
-# - "-surface-nvidia"
-#
-# aurora, bazzite and bluefin each have unique suffixes. Please check the specific image.
-# ucore has the following possible suffixes
-# - stable
-# - stable-nvidia
-# - stable-zfs
-# - stable-nvidia-zfs
-# - (and the above with testing rather than stable)
+ARG BASE_IMAGE_NAME="silverblue"
+ARG BASE_IMAGE_VERSION="43"
 ARG SOURCE_SUFFIX="-main"
+ARG SOURCE_IMAGE="${BASE_IMAGE_NAME}-${SOURCE_SUFFIX}"
+ARG BASE_IMAGE="ghcr.io/ublue-os/${SOURCE_IMAGE}"
 
 ## SOURCE_TAG arg must be a version built for the specific image: eg, 39, 40, gts, latest
 ARG SOURCE_TAG="latest"
 
-ENV ALACRITTY_VERSION="0.14.0"
+## Build Alacritty
+#FROM fedora as BUILDER
+#WORKDIR /tmp
+#
+#RUN dnf install -y git cmake freetype-devel fontconfig-devel libxcb-devel libxkbcommon-devel g++
+#
+#RUN curl -sSf https://sh.rustup.rs | sh -s -- -y -v &&\
+#  . "$HOME/.cargo/env" &&\
+#  rustup override set stable &&\
+#  rustup update stable &&\
+#  curl -OL "https://github.com/alacritty/alacritty/archive/refs/tags/v${ALACRITTY_VERSION}.tar.gz" &&\
+#  ls -lah &&\
+#  tar zxvf "v${ALACRITTY_VERSION}.tar.gz && cd alacritty-${ALACRITTY_VERSION}" &&\
+#  cargo build --release --no-default-features --features=wayland
 
-# Build Alacritty
-FROM fedora as BUILDER
-WORKDIR /tmp
 
-RUN dnf install -y git cmake freetype-devel fontconfig-devel libxcb-devel libxkbcommon-devel g++
-
-RUN curl -sSf https://sh.rustup.rs | sh -s -- -y -v &&\
-  . "$HOME/.cargo/env" &&\
-  rustup override set stable &&\
-  rustup update stable &&\
-  curl -OL "https://github.com/alacritty/alacritty/archive/refs/tags/v${ALACRITTY_VERSION}.tar.gz" &&\
-  ls -lah &&\
-  tar zxvf "v${ALACRITTY_VERSION}.tar.gz && cd alacritty-${ALACRITTY_VERSION}" &&\
-  cargo build --release --no-default-features --features=wayland
-
-### 2. SOURCE IMAGE
-## this is a standard Containerfile FROM using the build ARGs above to select the right upstream image
-FROM ghcr.io/ublue-os/${SOURCE_IMAGE}${SOURCE_SUFFIX}:${SOURCE_TAG}
+FROM ${BASE_IMAGE}:${BASE_IMAGE_VERSION}
 
 ### 3. MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script
@@ -74,10 +46,10 @@ COPY os/config/alacritty/* /usr/share/apparatus/alacritty/
 # Build script
 COPY os/build.sh /tmp/build.sh
 
-# Alacritty files
-COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/target/release/alacritty /usr/bin/alacritty
-COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
-COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/extra/linux/Alacritty.desktop /tmp/Alacritty.desktop
+## Alacritty files
+#COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/target/release/alacritty /usr/bin/alacritty
+#COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
+#COPY --from=BUILDER /tmp/alacritty-${ALACRITTY_VERSION}/extra/linux/Alacritty.desktop /tmp/Alacritty.desktop
 
 # Apparatus
 COPY os/config/apparatus/Apparatus.desktop /tmp/Apparatus.desktop
@@ -85,6 +57,7 @@ COPY os/config/apparatus/Apparatus.desktop /tmp/Apparatus.desktop
 RUN mkdir -p /var/lib/alternatives && \
     /tmp/build.sh && \
     ostree container commit
+
 ## NOTES:
 # - /var/lib/alternatives is required to prevent failure with some RPM installs
 # - All RUN commands must end with ostree container commit
