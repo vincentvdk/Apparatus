@@ -70,12 +70,12 @@ else
 fi
 
 ## Zellij
-#if [ ! -f "${HOME}/.config/zellij/config.kdl" ]; then
-#  mkdir ~/.config/zellij
-#  zellij setup --dump-config > ~/.config/zellij/config.kdl
-#else
-#  echo 'Zellij already exists. Skipping..'
-#fi
+if [ ! -f "${HOME}/.config/zellij/config.kdl" ]; then
+  mkdir ~/.config/zellij
+  zellij setup --dump-config > ~/.config/zellij/config.kdl
+else
+  echo 'Zellij already exists. Skipping..'
+fi
 
 # SSH
 if [[ ! -d "${HOME}/.ssh" ]]; then
