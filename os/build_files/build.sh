@@ -4,9 +4,13 @@ set -ouex pipefail
 
 RELEASE="$(rpm -E %fedora)"
 
-### -- Alacritty
-#sudo desktop-file-install /tmp/Alacritty.desktop
-#sudo update-desktop-database
+## -- hyprland COPR from solopasha
+dnf5 -y copr enable solopasha/hyprland
+dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils
+
+## -- swayosd
+dnf5 -y copr enable markupstart/SwayOSD
+dnf5 -y install swayosdsudo update-desktop-database
 
 ## -- Apparatus
 cp /goal/build_files/apparatus/butler.sh /usr/bin/butler
