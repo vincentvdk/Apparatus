@@ -6,6 +6,7 @@ ARG VERSION_NEOVIM="0.10.0"
 #ARG NODE_VERSION="20"
 ARG ASDF_VERSION="0.14.1"
 ARG CHEZMOI_VERSION="2.52.2"
+ARG ZELLIJ_VERSION="0.42.0"
 
 # -- Packages
 # fuse deps are needed to work with appimage
@@ -49,3 +50,8 @@ COPY distrobox/defaults/* /usr/share/apparatus/
 
 ## -- Scripts
 COPY --chmod=0755 distrobox/scripts/ /opt/bin
+
+## -- Zellij
+RUN curl -OL https://github.com/zellij-org/zellij/releases/download/v${ZELLIJ_VERSION}/zellij-x86_64-unknown-linux-musl.tar.gz &&\
+  tar -C /usr/local/bin -xzf zellij-x86_64-unknown-linux-musl.tar.gz
+
