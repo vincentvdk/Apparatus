@@ -8,9 +8,9 @@ RELEASE="$(rpm -E %fedora)"
 dnf5 -y copr enable solopasha/hyprland
 dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils
 
-## -- swayosd
-dnf5 -y copr enable markupstart/SwayOSD
-dnf5 -y install swayosd
+### -- swayosd
+#dnf5 -y copr enable markupstart/SwayOSD
+#dnf5 -y install swayosd
 
 ## -- Apparatus
 cp /goal/build_files/apparatus/butler.sh /usr/bin/butler
