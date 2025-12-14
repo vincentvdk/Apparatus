@@ -16,8 +16,8 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 
-sudo desktop-file-install /tmp/Apparatus.desktop
-sudo update-desktop-database
+#sudo desktop-file-install /tmp/Apparatus.desktop
+#sudo update-desktop-database
 
 ## -- Install/remove packages
 rpm-ostree install distrobox docker libvirt-daemon-kvm qemu-kvm virt-manager tailscale
