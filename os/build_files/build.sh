@@ -10,7 +10,7 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 
 ## -- swayosd
 dnf5 -y copr enable markupstart/SwayOSD
-dnf5 -y install swayosdsudo update-desktop-database
+dnf5 -y install swayosd
 
 ## -- Apparatus
 cp /goal/build_files/apparatus/butler.sh /usr/bin/butler
