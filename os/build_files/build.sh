@@ -13,8 +13,8 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 #dnf5 -y install swayosd
 
 ## -- Apparatus
-cp /goal/build_files/apparatus/butler.sh /usr/bin/butler
-cp /goal/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
+cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
+cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 
 sudo desktop-file-install /tmp/Apparatus.desktop
 sudo update-desktop-database
