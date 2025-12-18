@@ -1,0 +1,2 @@
+# Add a default.jpg wallpaper to this directory
+# It will be copied to /usr/share/apparatus/wallpapers/ during build

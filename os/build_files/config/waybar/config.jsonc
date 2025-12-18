@@ -1,0 +1,142 @@
+// Apparatus Waybar Configuration
+// https://github.com/Alexays/Waybar/wiki/Configuration
+{
+    "layer": "top",
+    "position": "top",
+    "height": 32,
+    "spacing": 4,
+    "margin-top": 5,
+    "margin-left": 10,
+    "margin-right": 10,
+
+    // Module placement
+    "modules-left": [
+        "hyprland/workspaces",
+        "hyprland/submap"
+    ],
+    "modules-center": [
+        "hyprland/window"
+    ],
+    "modules-right": [
+        "tray",
+        "pulseaudio",
+        "network",
+        "cpu",
+        "memory",
+        "battery",
+        "clock"
+    ],
+
+    // Workspaces
+    "hyprland/workspaces": {
+        "disable-scroll": false,
+        "all-outputs": true,
+        "format": "{icon}",
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "urgent": "",
+            "default": ""
+        }
+    },
+
+    // Window title
+    "hyprland/window": {
+        "format": "{}",
+        "max-length": 50,
+        "separate-outputs": true
+    },
+
+    // Submap indicator
+    "hyprland/submap": {
+        "format": " {}",
+        "max-length": 8,
+        "tooltip": false
+    },
+
+    // System tray
+    "tray": {
+        "icon-size": 16,
+        "spacing": 10
+    },
+
+    // Clock
+    "clock": {
+        "timezone": "Europe/Brussels",
+        "format": " {:%H:%M}",
+        "format-alt": " {:%Y-%m-%d %H:%M}",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "year",
+            "mode-mon-col": 3,
+            "weeks-pos": "right",
+            "format": {
+                "months": "<span color='#cba6f7'><b>{}</b></span>",
+                "days": "<span color='#cdd6f4'><b>{}</b></span>",
+                "weeks": "<span color='#74c7ec'><b>W{}</b></span>",
+                "weekdays": "<span color='#f9e2af'><b>{}</b></span>",
+                "today": "<span color='#a6e3a1'><b><u>{}</u></b></span>"
+            }
+        }
+    },
+
+    // CPU
+    "cpu": {
+        "format": " {usage}%",
+        "tooltip": true,
+        "interval": 2
+    },
+
+    // Memory
+    "memory": {
+        "format": " {}%",
+        "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB"
+    },
+
+    // Battery
+    "battery": {
+        "states": {
+            "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-icons": ["", "", "", "", ""]
+    },
+
+    // Network
+    "network": {
+        "format-wifi": " {signalStrength}%",
+        "format-ethernet": " {ipaddr}",
+        "format-disconnected": "⚠ Disconnected",
+        "tooltip-format": "{ifname}: {ipaddr}/{cidr}\n{essid}",
+        "on-click": "nm-connection-editor"
+    },
+
+    // Audio
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-bluetooth": " {volume}%",
+        "format-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "on-click": "pavucontrol"
+    }
+}

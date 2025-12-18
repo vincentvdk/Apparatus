@@ -8,9 +8,12 @@ RELEASE="$(rpm -E %fedora)"
 dnf5 -y copr enable solopasha/hyprland
 dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils
 
-### -- swayosd
+## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
+
+## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
+dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit-gnome papirus-icon-theme wl-clipboard
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
@@ -38,6 +41,36 @@ fc-cache -f -v
 
 # distrobox
 
-# -- Bootstrap
+# -- Hyprland Configuration
+# Create apparatus config directories
+mkdir -p /usr/share/apparatus/hypr
+mkdir -p /usr/share/apparatus/waybar
+mkdir -p /usr/share/apparatus/mako
+mkdir -p /usr/share/apparatus/wallpapers
 
-# -- Desktop Environment
+# Copy default configs
+cp /delivery/build_files/config/hypr/* /usr/share/apparatus/hypr/
+cp /delivery/build_files/config/waybar/* /usr/share/apparatus/waybar/
+cp /delivery/build_files/config/mako/* /usr/share/apparatus/mako/
+
+# Copy wallpaper (if exists)
+if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
+    cp /delivery/build_files/wallpapers/default.jpg /usr/share/apparatus/wallpapers/
+fi
+
+# Create skeleton config directories for new users
+mkdir -p /etc/skel/.config/hypr
+mkdir -p /etc/skel/.config/waybar
+mkdir -p /etc/skel/.config/mako
+
+# Copy configs to skeleton (these will be copied to new user home directories)
+cp /usr/share/apparatus/hypr/hyprland.conf /etc/skel/.config/hypr/
+cp /usr/share/apparatus/hypr/hyprpaper.conf /etc/skel/.config/hypr/
+cp /usr/share/apparatus/hypr/hypridle.conf /etc/skel/.config/hypr/
+cp /usr/share/apparatus/hypr/hyprlock.conf /etc/skel/.config/hypr/
+cp /usr/share/apparatus/waybar/config.jsonc /etc/skel/.config/waybar/
+cp /usr/share/apparatus/waybar/style.css /etc/skel/.config/waybar/
+cp /usr/share/apparatus/mako/config /etc/skel/.config/mako/
+
+# Enable swayosd service (for on-screen display)
+systemctl enable swayosd-libinput-backend.service
