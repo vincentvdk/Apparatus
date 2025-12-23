@@ -58,19 +58,11 @@ if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
     cp /delivery/build_files/wallpapers/default.jpg /usr/share/apparatus/wallpapers/
 fi
 
-# Create skeleton config directories for new users
-mkdir -p /etc/skel/.config/hypr
-mkdir -p /etc/skel/.config/waybar
-mkdir -p /etc/skel/.config/mako
-
-# Copy configs to skeleton (these will be copied to new user home directories)
-cp /usr/share/apparatus/hypr/hyprland.conf /etc/skel/.config/hypr/
-cp /usr/share/apparatus/hypr/hyprpaper.conf /etc/skel/.config/hypr/
-cp /usr/share/apparatus/hypr/hypridle.conf /etc/skel/.config/hypr/
-cp /usr/share/apparatus/hypr/hyprlock.conf /etc/skel/.config/hypr/
-cp /usr/share/apparatus/waybar/config.jsonc /etc/skel/.config/waybar/
-cp /usr/share/apparatus/waybar/style.css /etc/skel/.config/waybar/
-cp /usr/share/apparatus/mako/config /etc/skel/.config/mako/
+# Copy skeleton configs (stub files that source system defaults)
+# Hypr configs use 'source' directive to inherit from /usr/share/apparatus/
+# Waybar/mako are copies since they don't support sourcing
+mkdir -p /etc/skel/.config
+cp -r /delivery/build_files/skel/.config/* /etc/skel/.config/
 
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
