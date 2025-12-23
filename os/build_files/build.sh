@@ -13,7 +13,7 @@ dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit-gnome papirus-icon-theme wl-clipboard
+dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
