@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Apparatus First Login
+Comment=Initial setup prompt for Apparatus OS
+Exec=/usr/libexec/apparatus/first-login.sh
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
