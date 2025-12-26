@@ -12,9 +12,6 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
-## -- greetd + regreet (display manager)
-dnf5 -y copr enable psoldunov/regreet
-dnf5 -y install greetd greetd-regreet
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard zenity
@@ -76,11 +73,3 @@ fi
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
 
-# -- greetd configuration (display manager)
-cp /delivery/build_files/config/greetd/config.toml /etc/greetd/config.toml
-cp /delivery/build_files/config/greetd/hyprland.conf /etc/greetd/hyprland.conf
-cp /delivery/build_files/config/greetd/regreet.toml /etc/greetd/regreet.toml
-
-# Disable GDM, enable greetd
-systemctl disable gdm || true
-systemctl enable greetd
