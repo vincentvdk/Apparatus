@@ -59,9 +59,14 @@ init() {
     exit 0
   fi
   (
-  # Alacritty config
-  mkdir -p ${HOME}/.config/alacritty
-  cp /usr/share/apparatus/alacritty/* ~/.config/alacritty/
+  echo "# Configuring Hyprland"
+  mkdir -p ${HOME}/.config/hypr
+  mkdir -p ${HOME}/.config/waybar
+  mkdir -p ${HOME}/.config/mako
+  cp /usr/share/apparatus/hypr/* ~/.config/hypr/
+  cp /usr/share/apparatus/waybar/* ~/.config/waybar/
+  cp /usr/share/apparatus/mako/* ~/.config/mako/
+  echo "2"
 
   echo "# Enable Flathub Repository"
   /usr/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
