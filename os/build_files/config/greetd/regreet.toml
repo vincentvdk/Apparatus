@@ -1,0 +1,17 @@
+# ReGreet configuration for Apparatus
+# https://github.com/rharish101/ReGreet
+
+[background]
+path = "/usr/share/apparatus/wallpapers/default.jpg"
+fit = "Cover"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "Adwaita"
+font_name = "Hack Nerd Font 12"
+icon_theme_name = "Papirus-Dark"
+theme_name = "Adwaita-dark"
+
+[commands]
+reboot = ["systemctl", "reboot"]
+poweroff = ["systemctl", "poweroff"]
