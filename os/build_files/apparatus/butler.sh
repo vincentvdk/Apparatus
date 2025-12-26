@@ -58,8 +58,8 @@ init() {
     echo '{{ Bold "System already initialized.."}}' | gum format -t template
     exit 0
   fi
-  (
-  echo "# Configuring Hyprland"
+
+  echo '{{ Bold "# Configuring Hyprland" }}' | gum format -t template
   mkdir -p ${HOME}/.config/hypr
   mkdir -p ${HOME}/.config/waybar
   mkdir -p ${HOME}/.config/mako
@@ -68,51 +68,25 @@ init() {
   cp /usr/share/apparatus/waybar/* ~/.config/waybar/
   cp /usr/share/apparatus/mako/* ~/.config/mako/
   cp /usr/share/apparatus/uwsm/* ~/.config/uwsm/
-  echo "2"
 
-  echo "# Enable Flathub Repository"
-  /usr/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  if [ "$?" != 0 ] ; then
-    zenity --error \
-          --text="Adding Flathub Repo Failed"
-    exit 1
-  fi
-  echo "5"
+  echo '{{ Bold "# Enable Flathub Repository" }}' | gum format -t template
+  /usr/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || exit 1
 
-  echo "# Installing Firefox"
-  /usr/bin/flatpak install --user --noninteractive flathub org.mozilla.firefox
-  if [ "$?" != 0 ] ; then
-        zenity --error \
-          --text="Installing Firefox Failed"
-        exit 1
-  fi
-  echo "10"
+  echo '{{ Bold "# Installing Firefox" }}' | gum format -t template
+  /usr/bin/flatpak install --user --noninteractive flathub org.mozilla.firefox || exit 1
 
-  echo "# Installing Signal"
-  /usr/bin/flatpak install --user --noninteractive flathub org.signal.Signal
-  if [ "$?" != 0 ] ; then
-        zenity --error \
-          --text="Installing Signal Failed"
-        exit 1
-  fi
-  echo "50"
+  echo '{{ Bold "# Installing Signal" }}' | gum format -t template
+  /usr/bin/flatpak install --user --noninteractive flathub org.signal.Signal || exit 1
 
-  echo "# Installing Joplin"
-  /usr/bin/flatpak install --user --noninteractive flathub net.cozic.joplin_desktop
-  if [ "$?" != 0 ] ; then
-        zenity --error \
-          --text="Installing Joplin Failed"
-        exit 1
-  fi
-  echo "100"
+  echo '{{ Bold "# Installing Joplin" }}' | gum format -t template
+  /usr/bin/flatpak install --user --noninteractive flathub net.cozic.joplin_desktop || exit 1
 
-  echo "# Create init-done file"
+  echo '{{ Bold "# Installing Rio Terminal" }}' | gum format -t template
+  /usr/bin/flatpak install --user --noninteractive flathub com.rioterm.Rio || exit 1
+
+  echo '{{ Bold "# Setup complete!" }}' | gum format -t template
   mkdir -p "$HOME"/.config/apparatus
   touch "$HOME"/.config/apparatus/init-done
-
-
-  ) |
-    zenity --progress --title="Apparatus Init.." --percentage=0 --auto-close --no-cancel --width=300
 }
 
 # Main - handle command line arguments or show menu
