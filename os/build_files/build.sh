@@ -13,11 +13,16 @@ dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
+dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard zenity
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
+
+# First-login setup script
+mkdir -p /usr/libexec/apparatus
+cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
+chmod +x /usr/libexec/apparatus/first-login.sh
 
 #sudo desktop-file-install /tmp/Apparatus.desktop
 #sudo update-desktop-database
@@ -42,12 +47,7 @@ fc-cache -f -v
 # distrobox
 
 # -- Hyprland Configuration
-# System-wide hypr configs (fallback when user has no config)
-# Hyprland checks: ~/.config/hypr/ -> /etc/hypr/
-mkdir -p /etc/hypr
-cp /delivery/build_files/config/hypr/* /etc/hypr/
-
-# Reference configs in /usr/share/apparatus/
+# Default configs in /usr/share/apparatus/ (copied to user home by butler init)
 mkdir -p /usr/share/apparatus/hypr
 mkdir -p /usr/share/apparatus/waybar
 mkdir -p /usr/share/apparatus/mako
@@ -61,12 +61,6 @@ cp /delivery/build_files/config/mako/* /usr/share/apparatus/mako/
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
     cp /delivery/build_files/wallpapers/default.jpg /usr/share/apparatus/wallpapers/
 fi
-
-# Skeleton configs for waybar/mako (no system fallback for these)
-mkdir -p /etc/skel/.config/waybar
-mkdir -p /etc/skel/.config/mako
-cp /delivery/build_files/skel/.config/waybar/* /etc/skel/.config/waybar/
-cp /delivery/build_files/skel/.config/mako/* /etc/skel/.config/mako/
 
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
