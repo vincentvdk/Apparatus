@@ -24,6 +24,10 @@ mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
 
+# XDG autostart for first-login prompt (runs on any graphical session)
+mkdir -p /etc/xdg/autostart
+cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
+
 #sudo desktop-file-install /tmp/Apparatus.desktop
 #sudo update-desktop-database
 
