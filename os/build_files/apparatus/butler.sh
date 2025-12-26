@@ -115,5 +115,15 @@ init() {
     zenity --progress --title="Apparatus Init.." --percentage=0 --auto-close --no-cancel --width=300
 }
 
-# Main
-main
+# Main - handle command line arguments or show menu
+case "${1:-}" in
+  init)
+    init
+    ;;
+  theme)
+    set_theme
+    ;;
+  *)
+    main
+    ;;
+esac
