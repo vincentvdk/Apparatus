@@ -14,7 +14,7 @@ dnf5 -y install swayosd
 
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard zenity
+dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
@@ -46,8 +46,11 @@ systemctl enable docker
 ## -- System Configuration
 # Fonts
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip
+curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip
 unzip -d /tmp/hack-font /tmp/Hack.zip
+unzip -d /tmp/jetbrains-font /tmp/JetBrainsMono.zip
 cp -r /tmp/hack-font /usr/share/fonts/
+cp -r /tmp/jetbrains-font /usr/share/fonts/
 fc-cache -f -v
 
 # distrobox
