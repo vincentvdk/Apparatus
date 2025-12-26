@@ -14,7 +14,7 @@ dnf5 -y install swayosd
 
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard zenity
+dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard zenity
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
