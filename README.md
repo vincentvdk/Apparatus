@@ -103,17 +103,39 @@ Apparatus uses **Hyprland** as its desktop environment with a Catppuccin Mocha c
 
 Volume, brightness, and media playback keys work out of the box with on-screen display feedback via swayosd.
 
-### Configuration Files
+### Configuration
 
-Default configs are installed to `~/.config/` on first login:
+**Hyprland** uses system fallback configs at `/etc/hypr/`:
+
+```
+/etc/hypr/
+├── hyprland.conf    # Main config (system default)
+├── hyprpaper.conf   # Wallpaper
+├── hypridle.conf    # Idle behavior
+└── hyprlock.conf    # Lock screen
+```
+
+To customize, create your own config in `~/.config/hypr/`:
+
+```bash
+# Option 1: Start fresh
+mkdir -p ~/.config/hypr
+cp /etc/hypr/hyprland.conf ~/.config/hypr/
+
+# Option 2: Source system defaults + add overrides
+cat > ~/.config/hypr/hyprland.conf << 'EOF'
+source = /etc/hypr/hyprland.conf
+
+# Your customizations below...
+$terminal = alacritty
+bind = $mainMod, B, exec, firefox
+EOF
+```
+
+**Waybar/Mako** configs are in `~/.config/`:
 
 ```
 ~/.config/
-├── hypr/
-│   ├── hyprland.conf    # Main config
-│   ├── hyprpaper.conf   # Wallpaper
-│   ├── hypridle.conf    # Idle behavior
-│   └── hyprlock.conf    # Lock screen
 ├── waybar/
 │   ├── config.jsonc     # Modules
 │   └── style.css        # Theme
@@ -121,7 +143,12 @@ Default configs are installed to `~/.config/` on first login:
     └── config           # Notifications
 ```
 
-System defaults are also available at `/usr/share/apparatus/` for reference.
+Reset to defaults:
+
+```bash
+cp /usr/share/apparatus/waybar/* ~/.config/waybar/
+cp /usr/share/apparatus/mako/* ~/.config/mako/
+```
 
 ## Distrobox
 
@@ -216,6 +243,12 @@ The following virtualization tools are included:
 ## Networking
 
 - **Tailscale** - Pre-installed for mesh VPN
+
+## Image Credits
+
+| Image | Photographer | Source |
+|-------|--------------|--------|
+| Default wallpaper | [Jr Korpa](https://unsplash.com/@jrkorpa) | [Unsplash](https://unsplash.com/photos/pink-and-black-wallpaper-9XngoIpxcEo) |
 
 ## Links
 

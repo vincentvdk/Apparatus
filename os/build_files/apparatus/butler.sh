@@ -63,9 +63,11 @@ init() {
   mkdir -p ${HOME}/.config/hypr
   mkdir -p ${HOME}/.config/waybar
   mkdir -p ${HOME}/.config/mako
+  mkdir -p ${HOME}/.config/uwsm
   cp /usr/share/apparatus/hypr/* ~/.config/hypr/
   cp /usr/share/apparatus/waybar/* ~/.config/waybar/
   cp /usr/share/apparatus/mako/* ~/.config/mako/
+  cp /usr/share/apparatus/uwsm/* ~/.config/uwsm/
   echo "2"
 
   echo "# Enable Flathub Repository"

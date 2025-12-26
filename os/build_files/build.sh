@@ -6,11 +6,15 @@ RELEASE="$(rpm -E %fedora)"
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils
+dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
+
+## -- greetd + regreet (display manager)
+dnf5 -y copr enable psoldunov/regreet
+dnf5 -y install greetd greetd-regreet
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install foot wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard zenity
@@ -24,9 +28,10 @@ mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
 
-# XDG autostart for first-login prompt (runs on any graphical session)
-mkdir -p /etc/xdg/autostart
-cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
+# Systemd user service for first-login prompt (runs on graphical session)
+mkdir -p /usr/lib/systemd/user
+cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
+systemctl --global enable apparatus-first-login.service
 
 #sudo desktop-file-install /tmp/Apparatus.desktop
 #sudo update-desktop-database
@@ -56,10 +61,12 @@ mkdir -p /usr/share/apparatus/hypr
 mkdir -p /usr/share/apparatus/waybar
 mkdir -p /usr/share/apparatus/mako
 mkdir -p /usr/share/apparatus/wallpapers
+mkdir -p /usr/share/apparatus/uwsm
 
 cp /delivery/build_files/config/hypr/* /usr/share/apparatus/hypr/
 cp /delivery/build_files/config/waybar/* /usr/share/apparatus/waybar/
 cp /delivery/build_files/config/mako/* /usr/share/apparatus/mako/
+cp /delivery/build_files/config/uwsm/* /usr/share/apparatus/uwsm/
 
 # Copy wallpaper
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
@@ -68,3 +75,12 @@ fi
 
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
+
+# -- greetd configuration (display manager)
+cp /delivery/build_files/config/greetd/config.toml /etc/greetd/config.toml
+cp /delivery/build_files/config/greetd/hyprland.conf /etc/greetd/hyprland.conf
+cp /delivery/build_files/config/greetd/regreet.toml /etc/greetd/regreet.toml
+
+# Disable GDM, enable greetd
+systemctl disable gdm || true
+systemctl enable greetd
