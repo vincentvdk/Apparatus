@@ -57,10 +57,10 @@ systemctl enable docker.service
 # Fonts
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip
-curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/NotoSansMono.zip
+curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip
 unzip -d /tmp/hack-font /tmp/Hack.zip
 unzip -d /tmp/jetbrains-font /tmp/JetBrainsMono.zip
-unzip -d /tmp/notosans-font /tmp/NotoSansMono.zip
+unzip -d /tmp/notosans-font /tmp/Noto.zip
 cp -r /tmp/hack-font /usr/share/fonts/
 cp -r /tmp/jetbrains-font /usr/share/fonts/
 cp -r /tmp/notosans-font /usr/share/fonts/
