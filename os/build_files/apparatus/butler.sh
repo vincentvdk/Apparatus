@@ -16,6 +16,7 @@ echo -e "$logo"
 # Available options
 OPTIONS=(
   "Init             - Initialize a fresh install"
+  "Distrobox        - Manage distroboxes"
   "Configure        - Configure Hyprland settings"
   "Theme            - Select a theme"
   "Help             - Show keyboard shortcuts"
@@ -33,6 +34,9 @@ main() {
     init)
       init
       ;;
+    distrobox)
+      distrobox_menu
+      ;;
     configure)
       configure
       ;;
@@ -42,6 +46,83 @@ main() {
   esac
 }
 
+
+# -- Distrobox menu
+distrobox_menu() {
+  DISTROBOX_OPTIONS=(
+    "Create           - Create a new distrobox"
+    "List             - List existing distroboxes"
+    "Back             - Return to main menu"
+  )
+
+  while true; do
+    local OPT=$(gum choose "${DISTROBOX_OPTIONS[@]}" --height 15 --header "Distrobox:")
+    local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+
+    case "${CHOICE}" in
+      create)
+        distrobox_create
+        ;;
+      list)
+        distrobox_list
+        ;;
+      back)
+        return
+        ;;
+    esac
+  done
+}
+
+# -- Create distrobox
+distrobox_create() {
+  local DISTROBOX_HOMES="$HOME/distrobox-homes"
+  local NAME=""
+  local USE_CUSTOM_HOME=""
+  local FOLDER_NAME=""
+  local HOME_ARG=""
+
+  echo '{{ Bold "# Create new Distrobox" }}' | gum format -t template
+
+  # Get name
+  NAME=$(gum input --placeholder "Enter distrobox name" --header "Name:")
+  if [ -z "$NAME" ]; then
+    echo '{{ Color "1" "Name cannot be empty" }}' | gum format -t template
+    sleep 2
+    return
+  fi
+
+  # Ask for custom home folder
+  USE_CUSTOM_HOME=$(gum choose "Default home (~)" "Custom home folder" --header "Home folder:")
+
+  if [ "$USE_CUSTOM_HOME" = "Custom home folder" ]; then
+    FOLDER_NAME=$(gum input --placeholder "$NAME" --value "$NAME" --header "Folder name (in ~/distrobox-homes/):")
+    if [ -n "$FOLDER_NAME" ]; then
+      mkdir -p "$DISTROBOX_HOMES/$FOLDER_NAME"
+      HOME_ARG="--home $DISTROBOX_HOMES/$FOLDER_NAME"
+    fi
+  fi
+
+  echo '{{ Bold "# Creating distrobox..." }}' | gum format -t template
+  distrobox create -i ghcr.io/vincentvdk/apparatus-box:latest -n "$NAME" $HOME_ARG
+
+  if [ $? -eq 0 ]; then
+    echo '{{ Bold "Distrobox created successfully!" }}' | gum format -t template
+    echo "Enter with: distrobox enter $NAME"
+  else
+    echo '{{ Color "1" "Failed to create distrobox" }}' | gum format -t template
+  fi
+  sleep 3
+}
+
+# -- List distroboxes
+distrobox_list() {
+  echo '{{ Bold "# Existing Distroboxes" }}' | gum format -t template
+  echo ""
+  distrobox list
+  echo ""
+  echo "Press any key to continue..."
+  read -n 1
+}
 
 # -- Configure Hyprland
 configure() {
@@ -89,7 +170,7 @@ configure_terminal() {
 
 # -- Show help
 show_help() {
-  gum format << 'EOF'
+  gum format << 'EOF' | gum pager
 # Apparatus Keyboard Shortcuts
 
 ## General
@@ -134,9 +215,8 @@ show_help() {
 | Play/Pause/Next/Prev | Media control |
 
 ---
-*Press q to exit*
+Press q to exit
 EOF
-  read -n 1
 }
 
 # -- Set theme
@@ -160,7 +240,8 @@ init() {
   # Check if init already ran
   if test -e "$HOME"/.config/apparatus/init-done; then
     echo '{{ Bold "System already initialized.."}}' | gum format -t template
-    exit 0
+    sleep 2
+    return
   fi
 
   echo '{{ Bold "# Configuring Hyprland" }}' | gum format -t template
@@ -197,6 +278,9 @@ init() {
 case "${1:-}" in
   init)
     init
+    ;;
+  distrobox)
+    distrobox_menu
     ;;
   configure)
     configure
