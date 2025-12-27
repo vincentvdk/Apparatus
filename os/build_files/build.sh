@@ -63,13 +63,19 @@ fc-cache -f -v
 mkdir -p /usr/share/apparatus/hypr
 mkdir -p /usr/share/apparatus/waybar
 mkdir -p /usr/share/apparatus/mako
+mkdir -p /usr/share/apparatus/kitty
+mkdir -p /usr/share/apparatus/rio
 mkdir -p /usr/share/apparatus/wallpapers
 mkdir -p /usr/share/apparatus/uwsm
+mkdir -p /usr/share/apparatus/themes
 
 cp /delivery/build_files/config/hypr/* /usr/share/apparatus/hypr/
 cp /delivery/build_files/config/waybar/* /usr/share/apparatus/waybar/
 cp /delivery/build_files/config/mako/* /usr/share/apparatus/mako/
+cp /delivery/build_files/config/kitty/* /usr/share/apparatus/kitty/
+cp /delivery/build_files/config/rio/* /usr/share/apparatus/rio/
 cp /delivery/build_files/config/uwsm/* /usr/share/apparatus/uwsm/
+cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
 
 # Copy wallpaper
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then

@@ -1,0 +1,41 @@
+# Apparatus Rio Terminal Configuration
+# https://rioterm.com/docs/config
+
+# Theme (managed by butler)
+theme = "catppuccin-mocha"
+
+# Font
+[fonts]
+family = "JetBrainsMono Nerd Font"
+size = 16
+
+[fonts.regular]
+family = "JetBrainsMono Nerd Font"
+style = "Regular"
+weight = 400
+
+[fonts.bold]
+family = "JetBrainsMono Nerd Font"
+style = "Bold"
+weight = 700
+
+# Window
+[window]
+decorations = "Enabled"
+opacity = 1.0
+blur = false
+
+# Padding
+[padding]
+x = 10
+y = 10
+
+# Cursor
+[cursor]
+shape = "beam"
+blinking = true
+
+# Scroll
+[scroll]
+multiplier = 3.0
+divider = 1.0
