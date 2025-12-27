@@ -49,6 +49,7 @@ jobs:
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             quay.io/centos-bootc/bootc-image-builder:latest \
             --type iso \
+            --rootfs btrfs \
             --local \
             ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:latest
 
