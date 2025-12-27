@@ -35,8 +35,7 @@
 }
 
 window#waybar {
-    background-color: alpha(@base, 0.9);
-    border-radius: 10px;
+    background-color: @base;
     color: @text;
     transition-property: background-color;
     transition-duration: 0.5s;
@@ -83,6 +82,7 @@ tooltip label {
 #cpu,
 #memory,
 #network,
+#bluetooth,
 #pulseaudio,
 #tray,
 #submap {
@@ -160,6 +160,17 @@ tooltip label {
 }
 
 #pulseaudio.muted {
+    background-color: @surface2;
+    color: @text;
+}
+
+#bluetooth {
+    background-color: @blue;
+    color: @base;
+}
+
+#bluetooth.disabled,
+#bluetooth.off {
     background-color: @surface2;
     color: @text;
 }

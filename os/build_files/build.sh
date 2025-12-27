@@ -16,6 +16,9 @@ dnf5 -y install swayosd
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
+## -- Bluetooth & Network
+dnf5 -y install blueman network-manager-applet
+
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
