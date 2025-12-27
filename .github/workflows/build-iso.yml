@@ -38,6 +38,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pull container image
+        run: |
+          sudo podman pull ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:latest
+
       - name: Build ISO with bootc-image-builder
         id: build_iso
         run: |
