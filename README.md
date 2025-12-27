@@ -48,7 +48,7 @@ Apparatus uses **Hyprland** as its desktop environment with a Catppuccin Mocha c
 |-----------|-------------|
 | Window Manager | Hyprland |
 | Status Bar | Waybar |
-| Terminal | foot |
+| Terminal | kitty, rio |
 | App Launcher | wofi |
 | File Manager | thunar |
 | Notifications | mako |
@@ -70,6 +70,7 @@ Apparatus uses **Hyprland** as its desktop environment with a Catppuccin Mocha c
 | `Super + Q` | Close window |
 | `Super + Shift + Q` | Exit Hyprland |
 | `Super + L` | Lock screen |
+| `Super + F1` | Show help/keybindings |
 
 #### Window Management
 
@@ -103,39 +104,57 @@ Apparatus uses **Hyprland** as its desktop environment with a Catppuccin Mocha c
 
 Volume, brightness, and media playback keys work out of the box with on-screen display feedback via swayosd.
 
-### Configuration
+## Butler
 
-**Hyprland** uses system fallback configs at `/etc/hypr/`:
-
-```
-/etc/hypr/
-├── hyprland.conf    # Main config (system default)
-├── hyprpaper.conf   # Wallpaper
-├── hypridle.conf    # Idle behavior
-└── hyprlock.conf    # Lock screen
-```
-
-To customize, create your own config in `~/.config/hypr/`:
+Butler is the Apparatus configuration utility. Run it from a terminal:
 
 ```bash
-# Option 1: Start fresh
-mkdir -p ~/.config/hypr
-cp /etc/hypr/hyprland.conf ~/.config/hypr/
-
-# Option 2: Source system defaults + add overrides
-cat > ~/.config/hypr/hyprland.conf << 'EOF'
-source = /etc/hypr/hyprland.conf
-
-# Your customizations below...
-$terminal = alacritty
-bind = $mainMod, B, exec, firefox
-EOF
+butler
 ```
 
-**Waybar/Mako** configs are in `~/.config/`:
+Or use command-line arguments:
+
+```bash
+butler init       # First-time setup
+butler configure  # Configure Hyprland settings
+butler theme      # Change color theme
+butler help       # Show keyboard shortcuts
+```
+
+### Features
+
+| Command | Description |
+|---------|-------------|
+| Init | First-time setup: copies configs, enables Flathub, installs default apps (Firefox, Signal, Joplin, Rio) |
+| Configure | Configure Hyprland settings (terminal, etc.) |
+| Theme | Switch between Catppuccin dark/light themes |
+| Help | Display keyboard shortcuts reference |
+
+### Terminal Selection
+
+Butler supports switching between terminals:
+
+- **kitty** - GPU-accelerated, feature-rich (default)
+- **rio** - Modern, minimal, Rust-based (installed via Flatpak)
+
+Change your default terminal:
+
+```bash
+butler configure
+# Select "Terminal" and choose kitty or rio
+```
+
+### Configuration
+
+On first login, `butler init` copies default configs to your home directory:
 
 ```
 ~/.config/
+├── hypr/
+│   ├── hyprland.conf    # Main config
+│   ├── hyprpaper.conf   # Wallpaper
+│   ├── hypridle.conf    # Idle behavior
+│   └── hyprlock.conf    # Lock screen
 ├── waybar/
 │   ├── config.jsonc     # Modules
 │   └── style.css        # Theme
@@ -143,11 +162,25 @@ EOF
     └── config           # Notifications
 ```
 
-Reset to defaults:
+Default configs are stored in `/usr/share/apparatus/` and can be used to reset:
 
 ```bash
+# Reset all configs
+cp /usr/share/apparatus/hypr/* ~/.config/hypr/
 cp /usr/share/apparatus/waybar/* ~/.config/waybar/
 cp /usr/share/apparatus/mako/* ~/.config/mako/
+```
+
+To customize, edit your configs directly or source defaults with overrides:
+
+```bash
+cat > ~/.config/hypr/hyprland.conf << 'EOF'
+source = /usr/share/apparatus/hypr/hyprland.conf
+
+# Your customizations below...
+$terminal = alacritty
+bind = $mainMod, B, exec, firefox
+EOF
 ```
 
 ## Distrobox
@@ -229,7 +262,10 @@ github.com/jesseduffield/lazygit
 
 ## Fonts
 
-[Hack Nerd Font](https://github.com/ryanoasis/nerd-fonts) is pre-installed for terminal and UI use.
+The following [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) are pre-installed:
+
+- Hack Nerd Font
+- JetBrains Mono Nerd Font
 
 ## Virtualization
 
