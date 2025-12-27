@@ -35,6 +35,7 @@ dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/g
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
+mkdir -p /etc/distrobox
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 
 # First-login setup script
