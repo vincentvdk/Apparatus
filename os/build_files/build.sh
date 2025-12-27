@@ -4,6 +4,9 @@ set -ouex pipefail
 
 RELEASE="$(rpm -E %fedora)"
 
+## -- Install dnf5 plugins (needed for COPR support)
+dnf5 -y install dnf5-plugins
+
 ## -- Display Manager & Wayland base
 dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
 
