@@ -4,6 +4,9 @@ set -ouex pipefail
 
 RELEASE="$(rpm -E %fedora)"
 
+## -- Display Manager & Wayland base
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils polkit-gnome
+
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
 dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm
@@ -12,12 +15,20 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
-
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
 ## -- Bluetooth & Network
-dnf5 -y install blueman network-manager-applet
+dnf5 -y install blueman network-manager-applet NetworkManager-wifi
+
+## -- Audio
+dnf5 -y install pipewire pipewire-pulseaudio wireplumber
+
+## -- Development & System tools
+dnf5 -y install distrobox podman docker libvirt-daemon-kvm qemu-kvm virt-manager git curl unzip
+
+## -- Gum (for butler TUI)
+dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
@@ -33,27 +44,22 @@ mkdir -p /usr/lib/systemd/user
 cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
 systemctl --global enable apparatus-first-login.service
 
-#sudo desktop-file-install /tmp/Apparatus.desktop
-#sudo update-desktop-database
-
-## -- Install/remove packages
-rpm-ostree install distrobox docker libvirt-daemon-kvm qemu-kvm virt-manager tailscale
-rpm-ostree install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
-rpm-ostree override remove firefox-langpacks
-rpm-ostree override remove firefox
-
-## -- Enabling Systemd Unit File
+## -- Enabling Systemd services
+systemctl enable gdm.service
 systemctl enable podman.socket
-systemctl enable docker
+systemctl enable docker.service
 
 ## -- System Configuration
 # Fonts
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip
+curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/NotoSansMono.zip
 unzip -d /tmp/hack-font /tmp/Hack.zip
 unzip -d /tmp/jetbrains-font /tmp/JetBrainsMono.zip
+unzip -d /tmp/notosans-font /tmp/NotoSansMono.zip
 cp -r /tmp/hack-font /usr/share/fonts/
 cp -r /tmp/jetbrains-font /usr/share/fonts/
+cp -r /tmp/notosans-font /usr/share/fonts/
 fc-cache -f -v
 
 # distrobox

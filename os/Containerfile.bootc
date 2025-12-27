@@ -1,0 +1,26 @@
+# Apparatus OS - Bootc Edition
+# A Hyprland-based Fedora Atomic desktop for developers
+#
+# Build: podman build -f os/Containerfile.bootc -t apparatus-os .
+
+ARG FEDORA_VERSION="43"
+
+# == Delivery stage for build files
+FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION} AS delivery
+COPY os/build_files /build_files
+
+# == Main image
+FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION}
+
+# Prepare filesystem for bootc
+RUN rm -rf /opt && ln -s /var/opt /opt && \
+    mkdir -p /var/roothome
+
+# Run build script
+RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
+    /delivery/build_files/build.sh
+
+# Clean up and validate
+RUN dnf5 clean all && \
+    rm -rf /var/cache/dnf && \
+    bootc container lint
