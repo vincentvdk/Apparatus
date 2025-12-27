@@ -5,11 +5,11 @@ set -ouex pipefail
 RELEASE="$(rpm -E %fedora)"
 
 ## -- Display Manager & Wayland base
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils polkit-gnome
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm
+dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
