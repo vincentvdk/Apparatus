@@ -221,18 +221,62 @@ EOF
 
 # -- Set theme
 set_theme() {
-  echo '{{ Bold "# Set theme:" }}' | gum format -t template
-  local OPT=$(gum choose "catpuccin-dark" "catpuccin-light") #TODO read this from a config file
-  local CHOICE=$(echo "$OPT")
+  local THEMES_DIR="/usr/share/apparatus/themes"
+  local THEME=""
 
-  case ${CHOICE} in
-    catpuccin-dark)
-      ln -sf /usr/share/apparatus/alacritty/catppuccin-mocha.toml ~/.config/alacritty/theme.toml
+  echo '{{ Bold "# Set theme:" }}' | gum format -t template
+  local CHOICE=$(gum choose "Catppuccin Mocha (dark)" "Catppuccin Latte (light)")
+
+  case "$CHOICE" in
+    "Catppuccin Mocha (dark)")
+      THEME="catppuccin-mocha"
       ;;
-    catpuccin-light)
-      ln -sf /usr/share/apparatus/alacritty/catppuccin-latte.toml ~/.config/alacritty/theme.toml
+    "Catppuccin Latte (light)")
+      THEME="catppuccin-latte"
+      ;;
+    *)
+      return
       ;;
   esac
+
+  echo '{{ Bold "# Applying theme: " }}'"$THEME" | gum format -t template
+
+  # Apply kitty theme
+  if [ -d "$HOME/.config/kitty" ]; then
+    ln -sf "$THEMES_DIR/$THEME/kitty.conf" "$HOME/.config/kitty/theme.conf"
+  fi
+
+  # Apply waybar theme
+  if [ -d "$HOME/.config/waybar" ]; then
+    ln -sf "$THEMES_DIR/$THEME/waybar.css" "$HOME/.config/waybar/theme.css"
+  fi
+
+  # Apply mako theme
+  if [ -d "$HOME/.config/mako" ]; then
+    ln -sf "$THEMES_DIR/$THEME/mako.conf" "$HOME/.config/mako/config"
+  fi
+
+  # Apply hyprland theme
+  if [ -d "$HOME/.config/hypr" ]; then
+    ln -sf "$THEMES_DIR/$THEME/hyprland.conf" "$HOME/.config/hypr/theme.conf"
+  fi
+
+  # Apply rio theme (update theme name in config.toml)
+  if [ -f "$HOME/.config/rio/config.toml" ]; then
+    sed -i "s/^theme = .*/theme = \"$THEME\"/" "$HOME/.config/rio/config.toml"
+  fi
+
+  # Save current theme
+  mkdir -p "$HOME/.config/apparatus"
+  echo "$THEME" > "$HOME/.config/apparatus/current-theme"
+
+  # Reload services
+  hyprctl reload
+  pkill -SIGUSR1 kitty || true
+  makoctl reload || true
+
+  echo '{{ Bold "Theme applied!" }}' | gum format -t template
+  sleep 2
 }
 
 # -- Init new install
@@ -248,11 +292,33 @@ init() {
   mkdir -p ${HOME}/.config/hypr
   mkdir -p ${HOME}/.config/waybar
   mkdir -p ${HOME}/.config/mako
+  mkdir -p ${HOME}/.config/kitty
+  mkdir -p ${HOME}/.config/rio/themes
   mkdir -p ${HOME}/.config/uwsm
+  mkdir -p ${HOME}/.config/apparatus
+
+  # Copy configs
   cp /usr/share/apparatus/hypr/* ~/.config/hypr/
   cp /usr/share/apparatus/waybar/* ~/.config/waybar/
-  cp /usr/share/apparatus/mako/* ~/.config/mako/
+  cp /usr/share/apparatus/kitty/* ~/.config/kitty/
+  cp /usr/share/apparatus/rio/config.toml ~/.config/rio/
   cp /usr/share/apparatus/uwsm/* ~/.config/uwsm/
+
+  # Symlink rio themes from central themes folder
+  ln -sf /usr/share/apparatus/themes/catppuccin-mocha/rio.toml ~/.config/rio/themes/catppuccin-mocha.toml
+  ln -sf /usr/share/apparatus/themes/catppuccin-latte/rio.toml ~/.config/rio/themes/catppuccin-latte.toml
+
+  # Symlink rio config for flatpak (rio looks in ~/.var/app/com.rioterm.Rio/config/rio/)
+  mkdir -p ${HOME}/.var/app/com.rioterm.Rio/config
+  ln -sfn ${HOME}/.config/rio ${HOME}/.var/app/com.rioterm.Rio/config/rio
+
+  echo '{{ Bold "# Applying theme" }}' | gum format -t template
+  local CURRENT_THEME="catppuccin-mocha"
+  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/kitty.conf ~/.config/kitty/theme.conf
+  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/waybar.css ~/.config/waybar/theme.css
+  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/mako.conf ~/.config/mako/config
+  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/hyprland.conf ~/.config/hypr/theme.conf
+  echo "$CURRENT_THEME" > ~/.config/apparatus/current-theme
 
   echo '{{ Bold "# Enable Flathub Repository" }}' | gum format -t template
   /usr/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || exit 1
