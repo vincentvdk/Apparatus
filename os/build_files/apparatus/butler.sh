@@ -16,7 +16,9 @@ echo -e "$logo"
 # Available options
 OPTIONS=(
   "Init             - Initialize a fresh install"
+  "Configure        - Configure Hyprland settings"
   "Theme            - Select a theme"
+  "Help             - Show keyboard shortcuts"
 )
 
 # -- Main func
@@ -31,9 +33,111 @@ main() {
     init)
       init
       ;;
+    configure)
+      configure
+      ;;
+    help)
+      show_help
+      ;;
   esac
 }
 
+
+# -- Configure Hyprland
+configure() {
+  CONFIG_OPTIONS=(
+    "Terminal         - Set default terminal"
+    "Back             - Return to main menu"
+  )
+
+  while true; do
+    local OPT=$(gum choose "${CONFIG_OPTIONS[@]}" --height 15 --header "Configure:")
+    local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+
+    case "${CHOICE}" in
+      terminal)
+        configure_terminal
+        ;;
+      back)
+        return
+        ;;
+    esac
+  done
+}
+
+# -- Configure terminal
+configure_terminal() {
+  echo '{{ Bold "# Select default terminal:" }}' | gum format -t template
+
+  local CHOICE=$(gum choose "kitty" "rio")
+
+  local TERM_CMD
+  case "$CHOICE" in
+    rio)
+      TERM_CMD="flatpak run com.rioterm.Rio"
+      ;;
+    *)
+      TERM_CMD="$CHOICE"
+      ;;
+  esac
+
+  local HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
+  sed -i "s|^\\\$terminal = .*|\$terminal = $TERM_CMD|" "$HYPR_CONF"
+  hyprctl reload
+  echo '{{ Bold "Terminal set to: " }}'"$TERM_CMD" | gum format -t template
+}
+
+# -- Show help
+show_help() {
+  gum format << 'EOF'
+# Apparatus Keyboard Shortcuts
+
+## General
+| Key | Action |
+|-----|--------|
+| Super + Return | Open terminal (kitty) |
+| Super + D | Application launcher (wofi) |
+| Super + E | File manager (thunar) |
+| Super + Q | Close window |
+| Super + Shift + Q | Exit Hyprland |
+| Super + V | Toggle floating |
+| Super + F | Fullscreen |
+| Super + L | Lock screen |
+| Super + F1 | Show this help |
+
+## Window Navigation
+| Key | Action |
+|-----|--------|
+| Super + ←/→/↑/↓ | Move focus |
+| Super + H/J/K/L | Move focus (vim keys) |
+
+## Workspaces
+| Key | Action |
+|-----|--------|
+| Super + 1-9,0 | Switch to workspace |
+| Super + Shift + 1-9,0 | Move window to workspace |
+| Super + Mouse Scroll | Cycle workspaces |
+| Super + S | Toggle scratchpad |
+
+## Screenshots
+| Key | Action |
+|-----|--------|
+| Print | Screenshot (full) |
+| Shift + Print | Screenshot (window) |
+| Super + Shift + S | Screenshot (region) |
+
+## Media
+| Key | Action |
+|-----|--------|
+| Volume Keys | Adjust volume |
+| Brightness Keys | Adjust brightness |
+| Play/Pause/Next/Prev | Media control |
+
+---
+*Press q to exit*
+EOF
+  read -n 1
+}
 
 # -- Set theme
 set_theme() {
@@ -94,8 +198,14 @@ case "${1:-}" in
   init)
     init
     ;;
+  configure)
+    configure
+    ;;
   theme)
     set_theme
+    ;;
+  help)
+    show_help
     ;;
   *)
     main
