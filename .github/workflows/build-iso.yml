@@ -31,22 +31,16 @@ jobs:
         with:
           string: ${{ env.IMAGE_REGISTRY }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Pull container image
         run: |
-          podman pull ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:latest
+          sudo podman login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
+          sudo podman pull ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Build ISO with bootc-image-builder
         id: build_iso
         run: |
           mkdir -p output
-          podman run \
+          sudo podman run \
             --rm \
             --privileged \
             --pull=newer \
