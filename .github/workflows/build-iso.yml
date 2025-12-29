@@ -22,19 +22,23 @@ jobs:
       packages: read
 
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@v10
-        with:
-          root-reserve-mb: 4096
-          swap-size-mb: 1024
-          remove-dotnet: true
-          remove-android: true
-          remove-haskell: true
-          remove-codeql: true
-          remove-docker-images: true
-
-      - name: Show available space
-        run: df -h
+      - name: Free up disk space
+        run: |
+          df -h
+          # Remove large unused tools (~28GB total)
+          sudo rm -rf /usr/local/aws-sam-cli || :
+          sudo rm -rf /usr/local/julia* || :
+          sudo rm -rf /usr/local/bin/kubectl /usr/local/bin/terraform /usr/local/bin/helm /usr/local/bin/pulumi* || :
+          sudo rm -rf /usr/local/share/chromium /usr/local/share/powershell || :
+          sudo rm -rf /usr/local/lib/android /usr/local/lib/heroku /usr/local/lib/node_modules || :
+          sudo rm -rf /opt/az /opt/microsoft /opt/google /opt/pipx || :
+          sudo rm -rf /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/node || :
+          sudo rm -rf /usr/share/dotnet /usr/share/swift || :
+          sudo rm -rf /opt/ghc || :
+          sudo apt-get purge -y firefox google-chrome-stable microsoft-edge-stable || :
+          sudo apt-get autoremove -y || :
+          sudo docker system prune -af || :
+          df -h
 
       - name: Checkout repository
         uses: actions/checkout@v4
