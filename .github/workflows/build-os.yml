@@ -4,13 +4,17 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'os/**'
+      - '.github/workflows/build-os.yml'
   schedule:
     - cron: '05 10 * * *'  # 10:05am UTC everyday
   push:
     branches:
       - main
-    paths-ignore:
-      - '**/README.md'
+    paths:
+      - 'os/**'
+      - '.github/workflows/build-os.yml'
   workflow_dispatch:
 
 env:

@@ -4,13 +4,17 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'distrobox/**'
+      - '.github/workflows/build-box.yml'
   schedule:
     - cron: '05 10 * * *'  # 10:05am UTC everyday
   push:
     branches:
       - main
-    paths-ignore:
-      - '**/README.md'
+    paths:
+      - 'distrobox/**'
+      - '.github/workflows/build-box.yml'
   workflow_dispatch:
 
 env:
