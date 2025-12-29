@@ -93,6 +93,10 @@ if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
     cp /delivery/build_files/wallpapers/default.jpg /usr/share/apparatus/wallpapers/
 fi
 
+# -- Hardware Support (Framework laptops)
+mkdir -p /etc/modprobe.d
+cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
+
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
 
