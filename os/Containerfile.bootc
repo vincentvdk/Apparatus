@@ -16,8 +16,9 @@ FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION}
 RUN rm -rf /opt && ln -s /var/opt /opt && \
     mkdir -p /var/roothome
 
-# Run build script
+# Run build script (with dnf cache for faster rebuilds)
 RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
+    --mount=type=cache,target=/var/cache/dnf \
     /delivery/build_files/build.sh
 
 # Clean up and validate
