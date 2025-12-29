@@ -28,7 +28,9 @@ dnf5 -y install blueman network-manager-applet NetworkManager-wifi
 dnf5 -y install pipewire pipewire-pulseaudio wireplumber
 
 ## -- Development & System tools
-dnf5 -y install distrobox podman docker libvirt-daemon-kvm qemu-kvm virt-manager git curl unzip
+# Note: Virtualization (libvirt/qemu/virt-manager) and docker removed to reduce image size
+# Install these in a distrobox if needed
+dnf5 -y install distrobox podman git curl unzip
 
 ## -- Gum (for butler TUI)
 dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
@@ -51,7 +53,6 @@ systemctl --global enable apparatus-first-login.service
 ## -- Enabling Systemd services
 systemctl enable gdm.service
 systemctl enable podman.socket
-systemctl enable docker.service
 
 ## -- System Configuration
 # Fonts (download in parallel)
