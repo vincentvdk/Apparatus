@@ -20,8 +20,8 @@ RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
     mkdir -p /var/roothome && \
     # Run build script
     /delivery/build_files/build.sh && \
-    # Final cleanup
+    # Final cleanup (dnf cache is mounted, not in final image)
     dnf5 clean all && \
-    rm -rf /var/cache/dnf /var/log/* /tmp/* /var/tmp/* && \
+    rm -rf /var/log/* /tmp/* /var/tmp/* && \
     # Validate
     bootc container lint
