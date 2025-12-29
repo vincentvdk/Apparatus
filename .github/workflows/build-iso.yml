@@ -23,23 +23,19 @@ jobs:
 
     steps:
       - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e
+        uses: ublue-os/remove-unwanted-software@v9
         with:
           remove-codeql: true
           remove-android: true
           remove-dotnet: true
           remove-haskell: true
+          remove-docker-images: true
+          remove-large-packages: true
+          remove-cached-tools: true
+          remove-swapfile: true
 
-      - name: Additional disk cleanup
-        run: |
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/local/graalvm
-          sudo rm -rf /usr/local/.ghcup
-          sudo docker system prune -af
-          df -h
+      - name: Show available space
+        run: df -h
 
       - name: Checkout repository
         uses: actions/checkout@v4
