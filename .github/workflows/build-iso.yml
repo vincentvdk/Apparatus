@@ -10,11 +10,14 @@ on:
 env:
   IMAGE_NAME: "apparatus-os"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+  # TODO: Look into using the official bootc-image-builder once Fedora 43 is supported
+  # Official image: quay.io/centos-bootc/bootc-image-builder:latest
+  BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608"
 
 jobs:
   build_iso:
     name: Build ISO
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
@@ -22,40 +25,37 @@ jobs:
       packages: read
 
     steps:
+      - name: Prepare environment
+        run: |
+          USER_UID=$(id -u)
+          USER_GID=$(id -g)
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
+          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
+
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e
+        with:
+          remove-codeql: true
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Lowercase Registry
-        id: registry_case
-        uses: ASzc/change-string-case-action@v6
+      - name: Build ISO
+        id: build
+        uses: osbuild/bootc-image-builder-action@main
         with:
-          string: ${{ env.IMAGE_REGISTRY }}
-
-      - name: Pull container image
-        run: |
-          sudo podman login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
-          sudo podman pull ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:latest
-
-      - name: Build ISO with bootc-image-builder
-        id: build_iso
-        run: |
-          mkdir -p output
-          sudo podman run \
-            --rm \
-            --privileged \
-            --pull=newer \
-            --security-opt label=type:unconfined_t \
-            -v $(pwd)/output:/output \
-            -v /var/lib/containers/storage:/var/lib/containers/storage \
-            quay.io/centos-bootc/bootc-image-builder:latest \
-            --type iso \
-            --rootfs btrfs \
-            --local \
-            ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:latest
+          builder-image: ${{ env.BIB_IMAGE }}
+          config-file: ./os/iso-config.toml
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
+          types: anaconda-iso
+          additional-args: --use-librepo=True
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         with:
           name: apparatus-os-iso
-          path: output/*.iso
+          path: ${{ steps.build.outputs.output-directory }}
           retention-days: 7
