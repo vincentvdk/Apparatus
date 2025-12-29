@@ -12,16 +12,16 @@ COPY os/build_files /build_files
 # == Main image
 FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION}
 
-# Prepare filesystem for bootc
-RUN rm -rf /opt && ln -s /var/opt /opt && \
-    mkdir -p /var/roothome
-
-# Run build script (with dnf cache for faster rebuilds)
+# Single layer: prepare, build, and cleanup
 RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
     --mount=type=cache,target=/var/cache/dnf \
-    /delivery/build_files/build.sh
-
-# Clean up and validate
-RUN dnf5 clean all && \
-    rm -rf /var/cache/dnf && \
+    # Prepare filesystem for bootc
+    rm -rf /opt && ln -s /var/opt /opt && \
+    mkdir -p /var/roothome && \
+    # Run build script
+    /delivery/build_files/build.sh && \
+    # Final cleanup
+    dnf5 clean all && \
+    rm -rf /var/cache/dnf /var/log/* /tmp/* /var/tmp/* && \
+    # Validate
     bootc container lint

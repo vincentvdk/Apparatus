@@ -67,6 +67,9 @@ cp -r /tmp/jetbrains-font /usr/share/fonts/
 cp -r /tmp/notosans-font /usr/share/fonts/
 fc-cache -f -v
 
+# Cleanup temp files
+rm -rf /tmp/*.zip /tmp/hack-font /tmp/jetbrains-font /tmp/notosans-font
+
 # distrobox
 
 # -- Hyprland Configuration
@@ -99,4 +102,10 @@ cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
+
+## -- Final cleanup to reduce image size
+rm -rf /tmp/* /var/tmp/*
+rm -rf /var/log/*
+rm -rf /var/cache/fontconfig/*
+rm -rf /root/.cache/*
 
