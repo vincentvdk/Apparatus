@@ -1,0 +1,5 @@
+[customizations.installer.kickstart]
+contents = ""
+
+[customizations]
+grub2.vendor = "fedora"

@@ -47,7 +47,7 @@ jobs:
             --security-opt label=type:unconfined_t \
             -v $(pwd)/output:/output \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
-            registry.fedoraproject.org/fedora-bootc-image-builder:latest \
+            quay.io/centos-bootc/bootc-image-builder:latest \
             --type iso \
             --rootfs btrfs \
             --local \
