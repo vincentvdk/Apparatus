@@ -23,16 +23,15 @@ jobs:
 
     steps:
       - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@v9
+        uses: easimon/maximize-build-space@v10
         with:
-          remove-codeql: true
-          remove-android: true
+          root-reserve-mb: 4096
+          swap-size-mb: 1024
           remove-dotnet: true
+          remove-android: true
           remove-haskell: true
+          remove-codeql: true
           remove-docker-images: true
-          remove-large-packages: true
-          remove-cached-tools: true
-          remove-swapfile: true
 
       - name: Show available space
         run: df -h
