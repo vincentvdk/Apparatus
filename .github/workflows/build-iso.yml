@@ -18,7 +18,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
-      contents: write
+      contents: read
       packages: read
 
     steps:
@@ -51,23 +51,10 @@ jobs:
           builder-distro: fedora
           livesys: false
 
-      - name: Generate release tag
-        id: tag
-        run: echo "tag=iso-$(date +%Y%m%d)" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: Apparatus OS ISO (${{ steps.tag.outputs.tag }})
-          body: |
-            Apparatus OS installation ISO
-
-            Built from container image: `${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest`
-
-            ## Installation
-            1. Download the ISO file below
-            2. Write to USB with `dd` or Balena Etcher
-            3. Boot and follow the Anaconda installer
-          files: ${{ steps.build.outputs.iso-dest }}
-          fail_on_unmatched_files: true
+          name: apparatus-os-iso
+          path: ${{ steps.build.outputs.iso-dest }}
+          retention-days: 30
+          compression-level: 0
