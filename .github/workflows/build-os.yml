@@ -111,7 +111,7 @@ jobs:
           tags: |
             ${{ steps.generate-tags.outputs.alias_tags }}
           extra-args: |
-            --squash-all
+            --squash
           labels: ${{ steps.meta.outputs.labels }}
           oci: false
 
