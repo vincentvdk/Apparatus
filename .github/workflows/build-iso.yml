@@ -52,6 +52,13 @@ jobs:
           livesys: false
           hook-post-rootfs: ${{ github.workspace }}/os/iso_files/configure_live_session.sh
 
+      - name: Rename ISO volume label
+        run: |
+          sudo apt-get install -y xorriso
+          ISO_PATH="${{ steps.build.outputs.iso-dest }}"
+          xorriso -indev "$ISO_PATH" -outdev apparatus-os.iso -volid "APPARATUS_OS" -boot_image any replay
+          mv apparatus-os.iso "$ISO_PATH"
+
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         with:
