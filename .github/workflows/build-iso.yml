@@ -49,7 +49,6 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           builder-distro: fedora
-          livesys: false
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

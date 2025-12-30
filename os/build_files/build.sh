@@ -8,7 +8,8 @@ RELEASE="$(rpm -E %fedora)"
 dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
+# gnome-session included for livesys compatibility (ISO live session setup)
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils gnome-session
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
@@ -49,6 +50,13 @@ chmod +x /usr/libexec/apparatus/first-login.sh
 mkdir -p /usr/lib/systemd/user
 cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
 systemctl --global enable apparatus-first-login.service
+
+## -- Default live user (for ISO boot)
+# Create apparatus user with password 'apparatus'
+useradd -m -G wheel -s /bin/bash apparatus
+echo 'apparatus:apparatus' | chpasswd
+# Allow wheel group to use sudo without password
+echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel-nopasswd
 
 ## -- Enabling Systemd services
 systemctl enable gdm.service
