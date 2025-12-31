@@ -3,8 +3,8 @@
 # Uses GNOME for the live/installer session (Hyprland is on the installed system)
 set -eux
 
-# Install Anaconda installer and GNOME terminal (brings GNOME dependencies)
-dnf install -y anaconda-live libblockdev-btrfs gnome-terminal
+# Install Anaconda installer and GNOME essentials for live session
+dnf install -y anaconda-live libblockdev-btrfs gnome-terminal nautilus
 
 # Create liveuser with no password
 useradd -m -G wheel -s /bin/bash liveuser || true
