@@ -18,7 +18,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
-      contents: write
+      contents: read
       packages: read
 
     steps:
@@ -53,16 +53,10 @@ jobs:
           hook-post-rootfs: ${{ github.workspace }}/os/iso_files/configure_live_session.sh
           kargs: "systemd.show_status=1"
 
-      - name: Create/Update Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Delete existing dev release if it exists
-          gh release delete dev --yes || true
-
-          # Create new dev release and upload ISO
-          gh release create dev \
-            --title "Development Build" \
-            --notes "Latest ISO build - $(date -u +%Y-%m-%d)" \
-            --prerelease \
-            "${{ steps.build.outputs.iso-dest }}"
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apparatus-os-iso
+          path: ${{ steps.build.outputs.iso-dest }}
+          retention-days: 7
+          compression-level: 0
