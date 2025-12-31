@@ -51,6 +51,7 @@ jobs:
           builder-distro: fedora
           livesys: false
           hook-post-rootfs: ${{ github.workspace }}/os/iso_files/configure_live_session.sh
+          kargs: "systemd.show_status=1"
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

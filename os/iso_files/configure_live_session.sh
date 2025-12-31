@@ -13,13 +13,11 @@ passwd -d liveuser
 echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel-nopasswd
 chmod 440 /etc/sudoers.d/wheel-nopasswd
 
-# Configure GDM auto-login for liveuser with Hyprland session
+# Configure GDM (auto-login disabled for debugging)
 mkdir -p /etc/gdm
 cat > /etc/gdm/custom.conf << 'EOF'
 [daemon]
-AutomaticLoginEnable=True
-AutomaticLogin=liveuser
-DefaultSession=hyprland.desktop
+AutomaticLoginEnable=False
 
 [security]
 
@@ -101,11 +99,6 @@ systemctl mask bootloader-update.service || true
 systemctl mask bootc-fetch-apply-updates.timer || true
 systemctl mask bootc-fetch-apply-updates.service || true
 systemctl mask ostree-remount.service || true
-
-# Remove quiet/rhgb from kernel params so boot messages are visible
-sed -i 's/ quiet//g; s/ rhgb//g' /etc/default/grub 2>/dev/null || true
-sed -i 's/ quiet//g; s/ rhgb//g' /boot/grub2/grub.cfg 2>/dev/null || true
-sed -i 's/ quiet//g; s/ rhgb//g' /boot/loader/entries/*.conf 2>/dev/null || true
 
 echo "Live session configured with Hyprland and Anaconda installer"
 echo "Launch installer with: Super+I, wofi search 'Install', or run 'install-apparatus'"
