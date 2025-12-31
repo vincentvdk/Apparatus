@@ -52,6 +52,12 @@ cp -r /usr/share/apparatus/waybar/* /home/liveuser/.config/waybar/
 cp -r /usr/share/apparatus/mako/* /home/liveuser/.config/mako/
 cp -r /usr/share/apparatus/kitty/* /home/liveuser/.config/kitty/
 
+# Apply default theme (catppuccin-mocha) - configs expect theme.conf files
+cp /usr/share/apparatus/themes/catppuccin-mocha/hyprland.conf /home/liveuser/.config/hypr/theme.conf
+cp /usr/share/apparatus/themes/catppuccin-mocha/kitty.conf /home/liveuser/.config/kitty/theme.conf
+cp /usr/share/apparatus/themes/catppuccin-mocha/waybar.css /home/liveuser/.config/waybar/theme.css
+cp /usr/share/apparatus/themes/catppuccin-mocha/mako.conf /home/liveuser/.config/mako/theme.conf
+
 # Install Anaconda launcher to applications (for wofi launcher)
 cat > /usr/share/applications/install-apparatus.desktop << 'EOF'
 [Desktop Entry]
@@ -82,6 +88,9 @@ EOF
 
 # Set ownership
 chown -R liveuser:liveuser /home/liveuser/.config
+
+# Mask services that shouldn't run in live session
+systemctl mask bootloader-update.service || true
 
 echo "Live session configured with Hyprland and Anaconda installer"
 echo "Launch installer with: Super+I, wofi search 'Install', or run 'install-apparatus'"
