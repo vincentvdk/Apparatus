@@ -53,10 +53,15 @@ jobs:
           hook-post-rootfs: ${{ github.workspace }}/os/iso_files/configure_live_session.sh
           kargs: "systemd.show_status=1"
 
-      - name: Upload ISO artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: apparatus-os-iso
-          path: ${{ steps.build.outputs.iso-dest }}
-          retention-days: 7
-          compression-level: 0
+      - name: Upload ISO to Hetzner S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
+        run: |
+          pip install awscli
+
+          aws s3 cp "${{ steps.build.outputs.iso-dest }}" \
+            s3://${{ secrets.HETZNER_S3_BUCKET }}/apparatus-os-latest.iso \
+            --endpoint-url "https://${{ secrets.HETZNER_S3_ENDPOINT }}"
+
+          echo "ISO uploaded successfully"
