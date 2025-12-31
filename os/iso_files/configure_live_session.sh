@@ -4,7 +4,7 @@
 set -eux
 
 # Install Anaconda installer and GNOME essentials for live session
-dnf install -y anaconda-live libblockdev-btrfs gnome-terminal nautilus
+dnf install -y anaconda-live libblockdev-btrfs gnome-terminal nautilus dbus-x11 qt5-qtwayland qt6-qtwayland
 
 # Create liveuser with no password
 useradd -m -G wheel -s /bin/bash liveuser || true
@@ -51,8 +51,10 @@ sudo liveinst
 EOF
 chmod +x /usr/bin/install-apparatus
 
-# Set ownership
+# Set ownership and permissions for liveuser home
 chown -R liveuser:liveuser /home/liveuser
+chmod 755 /home/liveuser
+restorecon -R /home/liveuser || true
 
 # Mask bootc services that shouldn't run in live session
 systemctl mask bootloader-update.service || true
