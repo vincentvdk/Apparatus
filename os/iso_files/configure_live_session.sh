@@ -1,10 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Configure live session for Apparatus OS ISO
-# Uses GNOME for the live/installer session (Hyprland is on the installed system)
-set -eux
+# Based on Bluefin's approach - uses GNOME for the installer session
+set -eoux pipefail
 
-# Install Anaconda installer and GNOME essentials for live session
-dnf install -y anaconda-live libblockdev-btrfs gnome-terminal nautilus dbus-x11 qt5-qtwayland qt6-qtwayland
+# Install Anaconda and GNOME essentials for live session
+dnf install -y \
+    anaconda-live \
+    libblockdev-btrfs \
+    libblockdev-lvm \
+    libblockdev-dm \
+    gnome-terminal \
+    nautilus
 
 # Create liveuser with no password
 useradd -m -G wheel -s /bin/bash liveuser || true
@@ -14,7 +20,25 @@ passwd -d liveuser
 echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel-nopasswd
 chmod 440 /etc/sudoers.d/wheel-nopasswd
 
-# Configure GDM auto-login for liveuser (GNOME session)
+# Configure GNOME for live session
+tee /usr/share/glib-2.0/schemas/zz1-apparatus-live.gschema.override <<'EOF'
+[org.gnome.shell]
+welcome-dialog-last-shown-version='4294967295'
+favorite-apps = ['anaconda.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.Nautilus.desktop']
+
+[org.gnome.settings-daemon.plugins.power]
+sleep-inactive-ac-type='nothing'
+sleep-inactive-battery-type='nothing'
+sleep-inactive-ac-timeout=0
+sleep-inactive-battery-timeout=0
+
+[org.gnome.desktop.session]
+idle-delay=uint32 0
+EOF
+
+glib-compile-schemas /usr/share/glib-2.0/schemas
+
+# Configure GDM auto-login for liveuser
 mkdir -p /etc/gdm
 cat > /etc/gdm/custom.conf << 'EOF'
 [daemon]
@@ -30,35 +54,43 @@ AutomaticLogin=liveuser
 [debug]
 EOF
 
-# Install Anaconda launcher to applications
-cat > /usr/share/applications/install-apparatus.desktop << 'EOF'
-[Desktop Entry]
-Name=Install Apparatus OS
-Comment=Install the operating system to disk
-Exec=sudo liveinst
-Icon=anaconda
-Terminal=false
-Type=Application
-Categories=System;
-Keywords=install;installer;anaconda;
+# Disable services that shouldn't run in live session
+systemctl disable bootloader-update.service || true
+systemctl disable rpm-ostreed-automatic.timer || true
+systemctl disable bootc-fetch-apply-updates.timer || true
+systemctl mask bootloader-update.service || true
+systemctl mask bootc-fetch-apply-updates.service || true
+
+# Anaconda Profile for Apparatus
+tee /etc/anaconda/profile.d/apparatus.conf <<'EOF'
+[Profile]
+profile_id = apparatus
+
+[Profile Detection]
+os_id = apparatus
+
+[Network]
+default_on_boot = FIRST_WIRED_WITH_LINK
+
+[Bootloader]
+efi_dir = fedora
+menu_auto_hide = True
+
+[Storage]
+default_scheme = BTRFS
+btrfs_compression = zstd:1
+
+[User Interface]
+hidden_spokes =
+    NetworkSpoke
 EOF
 
-# Create simple installer command
-cat > /usr/bin/install-apparatus << 'EOF'
-#!/bin/bash
-echo "Starting Apparatus OS Installer..."
-sudo liveinst
-EOF
-chmod +x /usr/bin/install-apparatus
+# Set branding
+sed -i 's/ANACONDA_PRODUCTVERSION=.*/ANACONDA_PRODUCTVERSION=""/' /usr/{,s}bin/liveinst || true
 
-# Set ownership and permissions for liveuser home
+# Set ownership and permissions
 chown -R liveuser:liveuser /home/liveuser
 chmod 755 /home/liveuser
 restorecon -R /home/liveuser || true
-
-# Mask bootc services that shouldn't run in live session
-systemctl mask bootloader-update.service || true
-systemctl mask bootc-fetch-apply-updates.timer || true
-systemctl mask bootc-fetch-apply-updates.service || true
 
 echo "Live session configured with GNOME and Anaconda installer"
