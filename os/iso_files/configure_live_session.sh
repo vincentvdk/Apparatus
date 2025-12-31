@@ -31,15 +31,22 @@ DefaultSession=hyprland.desktop
 EOF
 
 # Use AccountsService to force Hyprland session for liveuser
-# This is more reliable than just GDM config when GNOME deps are installed
+# Use 'hyprland' not 'hyprland-uwsm' - direct launch is more reliable with GDM
 mkdir -p /var/lib/AccountsService/users
 cat > /var/lib/AccountsService/users/liveuser << 'EOF'
 [User]
 Session=hyprland
-XSession=hyprland
+XSession=
 Icon=/usr/share/icons/hicolor/96x96/apps/anaconda.png
 SystemAccount=false
 EOF
+
+# Ensure hyprland.desktop exists and is the default (not uwsm version)
+# GDM has known issues with Hyprland - ensure we're using the simple session
+if [ -f /usr/share/wayland-sessions/hyprland-uwsm.desktop ]; then
+    # Rename uwsm version so GDM picks the regular hyprland.desktop
+    mv /usr/share/wayland-sessions/hyprland-uwsm.desktop /usr/share/wayland-sessions/hyprland-uwsm.desktop.bak || true
+fi
 
 # Copy Apparatus Hyprland configs to liveuser
 mkdir -p /home/liveuser/.config/hypr
@@ -89,8 +96,16 @@ EOF
 # Set ownership
 chown -R liveuser:liveuser /home/liveuser/.config
 
-# Mask services that shouldn't run in live session
+# Mask bootc/ostree services that shouldn't run in live session
 systemctl mask bootloader-update.service || true
+systemctl mask bootc-fetch-apply-updates.timer || true
+systemctl mask bootc-fetch-apply-updates.service || true
+systemctl mask ostree-remount.service || true
+
+# Remove quiet/rhgb from kernel params so boot messages are visible
+sed -i 's/ quiet//g; s/ rhgb//g' /etc/default/grub 2>/dev/null || true
+sed -i 's/ quiet//g; s/ rhgb//g' /boot/grub2/grub.cfg 2>/dev/null || true
+sed -i 's/ quiet//g; s/ rhgb//g' /boot/loader/entries/*.conf 2>/dev/null || true
 
 echo "Live session configured with Hyprland and Anaconda installer"
 echo "Launch installer with: Super+I, wofi search 'Install', or run 'install-apparatus'"
