@@ -4,14 +4,22 @@
 set -eoux pipefail
 
 # Install Anaconda and GNOME essentials for live session
-dnf install -y \
-    anaconda-live \
-    libblockdev-btrfs \
-    libblockdev-lvm \
-    libblockdev-dm \
-    gnome-terminal \
-    nautilus \
+PACKAGES=(
+    anaconda-live
+    libblockdev-btrfs
+    libblockdev-lvm
+    libblockdev-dm
+    gnome-terminal
+    nautilus
     rsync
+)
+
+# Add anaconda-webui for Fedora 42+ (better installer UI)
+if [[ "$(rpm -E %fedora)" -ge 42 ]]; then
+    PACKAGES+=(anaconda-webui)
+fi
+
+dnf install -y "${PACKAGES[@]}"
 
 # Create liveuser with no password
 useradd -m -G wheel -s /bin/bash liveuser || true
@@ -63,12 +71,13 @@ systemctl mask bootloader-update.service || true
 systemctl mask bootc-fetch-apply-updates.service || true
 
 # Anaconda Profile for Apparatus
+mkdir -p /etc/anaconda/profile.d
 tee /etc/anaconda/profile.d/apparatus.conf <<'EOF'
 [Profile]
 profile_id = apparatus
 
 [Profile Detection]
-os_id = apparatus
+os_id = fedora
 
 [Network]
 default_on_boot = FIRST_WIRED_WITH_LINK
@@ -80,10 +89,21 @@ menu_auto_hide = True
 [Storage]
 default_scheme = BTRFS
 btrfs_compression = zstd:1
+default_partitioning =
+    /     (min 1 GiB, max 70 GiB)
+    /home (min 500 MiB, free 50 GiB)
+    /var  (btrfs)
 
 [User Interface]
 hidden_spokes =
     NetworkSpoke
+    PasswordSpoke
+    UserSpoke
+hidden_webui_pages =
+    anaconda-screen-accounts
+
+[Localization]
+use_geolocation = False
 EOF
 
 # Set branding
@@ -94,16 +114,17 @@ IMAGE_REF="ghcr.io/vincentvdk/apparatus-os"
 IMAGE_TAG="latest"
 
 # Configure kickstart for bootc installation
+# Use registry transport - containers-storage may not preserve bootc metadata
+mkdir -p /usr/share/anaconda/post-scripts
 tee /usr/share/anaconda/interactive-defaults.ks <<EOF
-ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage --no-signature-verification
-%include /usr/share/anaconda/post-scripts/switch-to-registry.ks
+ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=registry --no-signature-verification
+%include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
 EOF
 
-# Post-install: switch to registry image for future updates
-mkdir -p /usr/share/anaconda/post-scripts
-tee /usr/share/anaconda/post-scripts/switch-to-registry.ks <<EOF
+# Disable Fedora Flatpak repo (we manage our own)
+tee /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks <<'EOF'
 %post --erroronfail
-bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
+systemctl disable flatpak-add-fedora-repos.service || true
 %end
 EOF
 
