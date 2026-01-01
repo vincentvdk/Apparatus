@@ -89,6 +89,24 @@ EOF
 # Set branding
 sed -i 's/ANACONDA_PRODUCTVERSION=.*/ANACONDA_PRODUCTVERSION=""/' /usr/{,s}bin/liveinst || true
 
+# Get image reference from the live system
+IMAGE_REF="ghcr.io/vincentvdk/apparatus-os"
+IMAGE_TAG="latest"
+
+# Configure kickstart for bootc installation
+tee /usr/share/anaconda/interactive-defaults.ks <<EOF
+ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage --no-signature-verification
+%include /usr/share/anaconda/post-scripts/switch-to-registry.ks
+EOF
+
+# Post-install: switch to registry image for future updates
+mkdir -p /usr/share/anaconda/post-scripts
+tee /usr/share/anaconda/post-scripts/switch-to-registry.ks <<EOF
+%post --erroronfail
+bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
+%end
+EOF
+
 # Set ownership and permissions
 chown -R liveuser:liveuser /home/liveuser
 chmod 755 /home/liveuser
