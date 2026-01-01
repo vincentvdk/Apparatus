@@ -10,7 +10,8 @@ dnf install -y \
     libblockdev-lvm \
     libblockdev-dm \
     gnome-terminal \
-    nautilus
+    nautilus \
+    rsync
 
 # Create liveuser with no password
 useradd -m -G wheel -s /bin/bash liveuser || true
