@@ -48,6 +48,7 @@ jobs:
         uses: ublue-os/titanoboa@main
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          container-image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           builder-distro: fedora
           livesys: false
           hook-post-rootfs: ${{ github.workspace }}/os/iso_files/configure_live_session.sh
