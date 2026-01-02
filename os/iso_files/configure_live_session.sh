@@ -96,7 +96,6 @@ default_partitioning =
 
 [User Interface]
 hidden_spokes =
-    NetworkSpoke
     PasswordSpoke
     UserSpoke
 hidden_webui_pages =
@@ -114,11 +113,19 @@ IMAGE_REF="ghcr.io/vincentvdk/apparatus-os"
 IMAGE_TAG="latest"
 
 # Configure kickstart for bootc installation
-# Use registry transport - containers-storage may not preserve bootc metadata
+# Using the bootc command which is more integrated than ostreecontainer
 mkdir -p /usr/share/anaconda/post-scripts
 tee /usr/share/anaconda/interactive-defaults.ks <<EOF
-ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=registry --no-signature-verification
+bootc --source-imgref=containers-storage:$IMAGE_REF:$IMAGE_TAG
+%include /usr/share/anaconda/post-scripts/switch-to-registry.ks
 %include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
+EOF
+
+# Post-install: switch to registry for future updates
+tee /usr/share/anaconda/post-scripts/switch-to-registry.ks <<EOF
+%post --erroronfail
+bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
+%end
 EOF
 
 # Disable Fedora Flatpak repo (we manage our own)
