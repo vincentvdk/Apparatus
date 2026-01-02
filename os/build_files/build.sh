@@ -65,9 +65,10 @@ systemctl --global enable apparatus-first-login.service
 systemctl enable gdm.service
 systemctl enable podman.socket
 
-## -- Remove hyprland.desktop so titanoboa finds GNOME for live session
-# UWSM handles Hyprland session management, doesn't need the .desktop file
+## -- Remove hyprland desktop files so titanoboa finds GNOME for live session
+# UWSM handles Hyprland session management via first-login setup
 rm -f /usr/share/wayland-sessions/hyprland.desktop
+rm -f /usr/share/wayland-sessions/hyprland-uwsm.desktop
 
 ## -- System Configuration
 # Fonts (download in parallel)
