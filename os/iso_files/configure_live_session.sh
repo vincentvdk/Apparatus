@@ -113,19 +113,11 @@ IMAGE_REF="ghcr.io/vincentvdk/apparatus-os"
 IMAGE_TAG="latest"
 
 # Configure kickstart for bootc installation
-# Using the bootc command which is more integrated than ostreecontainer
+# Using registry transport (requires internet) - containers-storage has known issues
 mkdir -p /usr/share/anaconda/post-scripts
 tee /usr/share/anaconda/interactive-defaults.ks <<EOF
-bootc --source-imgref=containers-storage:$IMAGE_REF:$IMAGE_TAG
-%include /usr/share/anaconda/post-scripts/switch-to-registry.ks
+bootc --source-imgref=registry:$IMAGE_REF:$IMAGE_TAG
 %include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
-EOF
-
-# Post-install: switch to registry for future updates
-tee /usr/share/anaconda/post-scripts/switch-to-registry.ks <<EOF
-%post --erroronfail
-bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
-%end
 EOF
 
 # Disable Fedora Flatpak repo (we manage our own)
