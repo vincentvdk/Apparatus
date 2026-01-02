@@ -54,6 +54,7 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           builder-distro: fedora
+          hook-post-rootfs: ./os/iso_files/hook-post-rootfs.sh
 
       - name: Upload to S3
         if: inputs.upload-to-s3 == true || github.event_name == 'workflow_run'
