@@ -65,10 +65,9 @@ systemctl --global enable apparatus-first-login.service
 systemctl enable gdm.service
 systemctl enable podman.socket
 
-## -- Ensure GNOME is found first by titanoboa for live session
-# Copy gnome desktop file with name that sorts before 'h' (hyprland)
-# find -type f only finds regular files, not symlinks
-cp /usr/share/wayland-sessions/gnome-wayland.desktop /usr/share/wayland-sessions/aaa-gnome.desktop
+## -- Remove hyprland.desktop so titanoboa finds GNOME for live session
+# UWSM handles Hyprland session management, doesn't need the .desktop file
+rm -f /usr/share/wayland-sessions/hyprland.desktop
 
 ## -- System Configuration
 # Fonts (download in parallel)
