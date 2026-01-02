@@ -133,8 +133,17 @@ jobs:
           df -h /
 
           # Prepare temp storage on /mnt (has ~70GB available)
-          sudo mkdir -p /mnt/tmp /mnt/containers
-          sudo chmod 1777 /mnt/tmp /mnt/containers
+          sudo mkdir -p /mnt/tmp /mnt/var_tmp /mnt/containers
+          sudo chmod 1777 /mnt/tmp /mnt/var_tmp /mnt/containers
+
+          # Redirect /var/tmp to /mnt (skopeo/podman uses /var/tmp for blob storage)
+          sudo rm -rf /var/tmp
+          sudo ln -s /mnt/var_tmp /var/tmp
+
+          # Also redirect /tmp to /mnt
+          sudo rm -rf /tmp
+          sudo ln -s /mnt/tmp /tmp
+
           echo "TMPDIR=/mnt/tmp" >> $GITHUB_ENV
 
           # Configure podman to use /mnt for storage
@@ -147,6 +156,9 @@ jobs:
           [storage.options.overlay]
           mount_program = "/usr/bin/fuse-overlayfs"
           EOF
+
+          echo "=== Final disk space ==="
+          df -h
 
       - name: Checkout repository
         uses: actions/checkout@v6
