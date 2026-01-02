@@ -145,10 +145,13 @@ jobs:
           sudo ln -s /mnt/tmp /tmp
 
           echo "TMPDIR=/mnt/tmp" >> $GITHUB_ENV
+          echo "TITANOBOA_WORKDIR=/mnt/titanoboa" >> $GITHUB_ENV
+          sudo mkdir -p /mnt/titanoboa
+          sudo chmod 1777 /mnt/titanoboa
 
-          # Configure podman to use /mnt for storage
-          sudo mkdir -p /etc/containers
-          cat <<EOF | sudo tee /etc/containers/storage.conf
+          # Configure podman/skopeo to use /mnt for storage (fix heredoc indentation)
+          sudo mkdir -p /etc/containers /mnt/containers/storage /mnt/containers/run
+          sudo tee /etc/containers/storage.conf > /dev/null <<'EOF'
           [storage]
           driver = "overlay"
           runroot = "/mnt/containers/run"
@@ -156,6 +159,16 @@ jobs:
           [storage.options.overlay]
           mount_program = "/usr/bin/fuse-overlayfs"
           EOF
+          sudo sed -i 's/^          //' /etc/containers/storage.conf
+          echo "Storage config:"
+          cat /etc/containers/storage.conf
+
+          # Also configure for root user
+          sudo mkdir -p /root/.config/containers
+          sudo cp /etc/containers/storage.conf /root/.config/containers/storage.conf
+
+          # Set container storage env vars
+          echo "CONTAINERS_STORAGE_CONF=/etc/containers/storage.conf" >> $GITHUB_ENV
 
           echo "=== Final disk space ==="
           df -h
