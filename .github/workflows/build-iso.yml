@@ -17,7 +17,6 @@ env:
   IMAGE_NAME: "apparatus-os"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
-  BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -34,15 +33,6 @@ jobs:
       packages: read
 
     steps:
-      - name: Prepare environment
-        run: |
-          USER_UID=$(id -u)
-          USER_GID=$(id -g)
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
-          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
-          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
-
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e
         with:
@@ -60,14 +50,10 @@ jobs:
 
       - name: Build ISO
         id: build
-        uses: osbuild/bootc-image-builder-action@main
+        uses: ublue-os/titanoboa@main
         with:
-          builder-image: ${{ env.BIB_IMAGE }}
-          config-file: ./disk_config/iso.toml
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
-          types: anaconda-iso
-          additional-args: --use-librepo=True --rootfs ext4
+          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          builder-distro: fedora
 
       - name: Upload to S3
         if: inputs.upload-to-s3 == true || github.event_name == 'workflow_run'
@@ -78,7 +64,7 @@ jobs:
           pip install awscli
 
           # Find the ISO file
-          ISO_FILE=$(find ${{ steps.build.outputs.output-directory }} -name "*.iso" | head -1)
+          ISO_FILE=$(find ${{ steps.build.outputs.output-path }} -name "*.iso" | head -1)
 
           aws s3 cp "$ISO_FILE" \
             s3://${{ secrets.HETZNER_S3_BUCKET }}/apparatus-os-latest.iso \
@@ -91,6 +77,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apparatus-os-iso
-          path: ${{ steps.build.outputs.output-directory }}
+          path: ${{ steps.build.outputs.output-path }}
           retention-days: 7
           compression-level: 0
