@@ -35,22 +35,48 @@ jobs:
 
     steps:
       - name: Free disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
-
-      - name: Show disk space and prepare temp
         run: |
+          set -eux
           df -h
+          # ~1GB
+          sudo rm -rf /usr/local/aws-sam-cli /usr/local/julia* || :
+          # ~1GB
+          sudo rm -rf \
+            /usr/local/bin/aliyun \
+            /usr/local/bin/azcopy \
+            /usr/local/bin/bicep \
+            /usr/local/bin/cmake-gui \
+            /usr/local/bin/cpack \
+            /usr/local/bin/helm \
+            /usr/local/bin/hub \
+            /usr/local/bin/kubectl \
+            /usr/local/bin/minikube \
+            /usr/local/bin/node \
+            /usr/local/bin/packer \
+            /usr/local/bin/pulumi* \
+            /usr/local/bin/sam \
+            /usr/local/bin/stack \
+            /usr/local/bin/terraform \
+            /usr/local/bin/oc || :
+          # 506MB + 1.3GB
+          sudo rm -rf /usr/local/share/chromium /usr/local/share/powershell || :
+          # 15GB + 341MB + 1.2GB
+          sudo rm -rf /usr/local/lib/android /usr/local/lib/heroku /usr/local/lib/node_modules || :
+          # 679MB + 197MB
+          sudo rm -rf /opt/az /opt/microsoft/powershell || :
+          # 5.3GB + 1.4GB + 489MB + 376MB
+          sudo rm -rf /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/node || :
+          # Remove .NET, Haskell, Swift
+          sudo rm -rf /usr/share/dotnet /usr/share/swift /usr/local/.ghcup || :
+          # Remove browsers
+          sudo apt purge -y firefox google-chrome-stable microsoft-edge-stable || :
+          sudo apt autoremove -y
+          sudo apt clean
+          # Prepare temp storage on /mnt
           sudo mkdir -p /mnt/tmp
           sudo chmod 1777 /mnt/tmp
           echo "TMPDIR=/mnt/tmp" >> $GITHUB_ENV
+          df -h
 
       - name: Checkout repository
         uses: actions/checkout@v6
