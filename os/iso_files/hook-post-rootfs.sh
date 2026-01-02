@@ -1,11 +1,13 @@
 #!/bin/bash
 # Hook script for titanoboa - runs in container rootfs before squashing
-# Remove Hyprland session so GNOME is detected for live session
+# Create sway.desktop so titanoboa uses sway livesys scripts (Hyprland is Sway-based)
 
 set -x
 
-# Remove hyprland.desktop so titanoboa finds gnome.desktop for livesys
+# Remove hyprland.desktop and create sway.desktop symlink
+# titanoboa supports sway* but not hyprland*
 rm -f /usr/share/wayland-sessions/hyprland.desktop
+ln -sf gnome-wayland.desktop /usr/share/wayland-sessions/sway.desktop
 
-# Verify GNOME session exists
+# Show what's available
 ls -la /usr/share/wayland-sessions/
