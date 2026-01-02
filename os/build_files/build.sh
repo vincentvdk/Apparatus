@@ -66,9 +66,9 @@ systemctl enable gdm.service
 systemctl enable podman.socket
 
 ## -- Ensure GNOME is found first by titanoboa for live session
-# Create symlink with name that sorts before 'h' (hyprland)
-# GDM will show both sessions, titanoboa will find gnome first
-ln -sf gnome-wayland.desktop /usr/share/wayland-sessions/aaa-gnome.desktop
+# Copy gnome desktop file with name that sorts before 'h' (hyprland)
+# find -type f only finds regular files, not symlinks
+cp /usr/share/wayland-sessions/gnome-wayland.desktop /usr/share/wayland-sessions/aaa-gnome.desktop
 
 ## -- System Configuration
 # Fonts (download in parallel)
