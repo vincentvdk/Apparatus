@@ -17,6 +17,7 @@ env:
   IMAGE_NAME: "apparatus-os"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
+  TMPDIR: /mnt
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -44,8 +45,12 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - name: Show disk space
-        run: df -h
+      - name: Show disk space and prepare temp
+        run: |
+          df -h
+          sudo mkdir -p /mnt/tmp
+          sudo chmod 1777 /mnt/tmp
+          echo "TMPDIR=/mnt/tmp" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v6
