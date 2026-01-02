@@ -8,8 +8,7 @@ RELEASE="$(rpm -E %fedora)"
 dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
-# gnome-shell included for titanoboa live session support (installed system uses Hyprland)
-dnf5 -y install gdm gnome-shell xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
