@@ -37,10 +37,72 @@ jobs:
       - name: Free disk space
         run: |
           set -eux
-          df -h
-          # ~1GB
-          sudo rm -rf /usr/local/aws-sam-cli /usr/local/julia* || :
-          # ~1GB
+          echo "=== Initial disk space ==="
+          df -h /
+
+          # Remove Docker images (~3-4GB)
+          sudo docker image prune -a -f || :
+          sudo docker system prune -a -f || :
+
+          # Android SDK (~15GB)
+          sudo rm -rf /usr/local/lib/android || :
+
+          # .NET (~2GB)
+          sudo rm -rf /usr/share/dotnet || :
+
+          # Haskell/GHC (~5GB)
+          sudo rm -rf /usr/local/.ghcup /opt/ghc || :
+
+          # Swift (~2GB)
+          sudo rm -rf /usr/share/swift || :
+
+          # CodeQL (~5GB)
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || :
+
+          # Go (~1.5GB)
+          sudo rm -rf /opt/hostedtoolcache/go || :
+
+          # Python/PyPy (~500MB)
+          sudo rm -rf /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/Python || :
+
+          # Node.js (~400MB)
+          sudo rm -rf /opt/hostedtoolcache/node || :
+
+          # Ruby (~600MB)
+          sudo rm -rf /opt/hostedtoolcache/Ruby || :
+
+          # Azure CLI (~700MB)
+          sudo rm -rf /opt/az /usr/share/az_* || :
+
+          # PowerShell (~300MB)
+          sudo rm -rf /opt/microsoft /usr/local/share/powershell || :
+
+          # AWS tools (~1GB)
+          sudo rm -rf /usr/local/aws-sam-cli /usr/local/aws-cli || :
+
+          # Julia (~500MB)
+          sudo rm -rf /usr/local/julia* || :
+
+          # Miniconda (~500MB)
+          sudo rm -rf /usr/share/miniconda || :
+
+          # Google Cloud SDK (~1GB)
+          sudo rm -rf /usr/lib/google-cloud-sdk || :
+
+          # Heroku (~350MB)
+          sudo rm -rf /usr/local/lib/heroku || :
+
+          # Chromium/browsers (~1.5GB)
+          sudo rm -rf /usr/local/share/chromium || :
+          sudo apt purge -y firefox google-chrome-stable microsoft-edge-stable || :
+
+          # vcpkg (~200MB)
+          sudo rm -rf /usr/local/share/vcpkg || :
+
+          # Gradle (~200MB)
+          sudo rm -rf /usr/share/gradle-* || :
+
+          # Various CLI tools
           sudo rm -rf \
             /usr/local/bin/aliyun \
             /usr/local/bin/azcopy \
@@ -51,32 +113,40 @@ jobs:
             /usr/local/bin/hub \
             /usr/local/bin/kubectl \
             /usr/local/bin/minikube \
-            /usr/local/bin/node \
             /usr/local/bin/packer \
             /usr/local/bin/pulumi* \
             /usr/local/bin/sam \
             /usr/local/bin/stack \
             /usr/local/bin/terraform \
-            /usr/local/bin/oc || :
-          # 506MB + 1.3GB
-          sudo rm -rf /usr/local/share/chromium /usr/local/share/powershell || :
-          # 15GB + 341MB + 1.2GB
-          sudo rm -rf /usr/local/lib/android /usr/local/lib/heroku /usr/local/lib/node_modules || :
-          # 679MB + 197MB
-          sudo rm -rf /opt/az /opt/microsoft/powershell || :
-          # 5.3GB + 1.4GB + 489MB + 376MB
-          sudo rm -rf /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/node || :
-          # Remove .NET, Haskell, Swift
-          sudo rm -rf /usr/share/dotnet /usr/share/swift /usr/local/.ghcup || :
-          # Remove browsers
-          sudo apt purge -y firefox google-chrome-stable microsoft-edge-stable || :
+            /usr/local/bin/oc \
+            /usr/local/lib/node_modules || :
+
+          # Clean apt cache
           sudo apt autoremove -y
           sudo apt clean
-          # Prepare temp storage on /mnt
-          sudo mkdir -p /mnt/tmp
-          sudo chmod 1777 /mnt/tmp
+
+          # Remove swap file to reclaim ~4GB
+          sudo swapoff -a || :
+          sudo rm -f /swapfile /mnt/swapfile || :
+
+          echo "=== Disk space after cleanup ==="
+          df -h /
+
+          # Prepare temp storage on /mnt (has ~70GB available)
+          sudo mkdir -p /mnt/tmp /mnt/containers
+          sudo chmod 1777 /mnt/tmp /mnt/containers
           echo "TMPDIR=/mnt/tmp" >> $GITHUB_ENV
-          df -h
+
+          # Configure podman to use /mnt for storage
+          sudo mkdir -p /etc/containers
+          cat <<EOF | sudo tee /etc/containers/storage.conf
+          [storage]
+          driver = "overlay"
+          runroot = "/mnt/containers/run"
+          graphroot = "/mnt/containers/storage"
+          [storage.options.overlay]
+          mount_program = "/usr/bin/fuse-overlayfs"
+          EOF
 
       - name: Checkout repository
         uses: actions/checkout@v6
