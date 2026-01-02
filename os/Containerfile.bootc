@@ -1,23 +1,24 @@
-# Apparatus OS - Bootc Edition
-# A Hyprland-based Fedora Atomic desktop for developers
+# Apparatus OS - Hyprland-based Fedora Atomic desktop
+# Built on ublue-os/base-main for proper ostree/bootc compatibility
 #
 # Build: podman build -f os/Containerfile.bootc -t apparatus-os .
 
 ARG FEDORA_VERSION="43"
+ARG BASE_IMAGE="ghcr.io/ublue-os/base-main"
 
 # == Delivery stage for build files
-FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION} AS delivery
+FROM ${BASE_IMAGE}:${FEDORA_VERSION} AS delivery
 COPY os/build_files /build_files
 
 # == Main image
-FROM quay.io/fedora/fedora-bootc:${FEDORA_VERSION}
+FROM ${BASE_IMAGE}:${FEDORA_VERSION}
 
 # Single layer: prepare, build, and cleanup
 RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
     --mount=type=cache,target=/var/cache/dnf \
-    # Prepare filesystem for bootc
-    rm -rf /opt && ln -s /var/opt /opt && \
-    mkdir -p /var/roothome && \
+    # Ensure /opt is writable (symlink to /var/opt)
+    rm -rf /opt && ln -sf /var/opt /opt && \
+    mkdir -p /var/opt && \
     # Run build script
     /delivery/build_files/build.sh && \
     # Final cleanup (dnf cache is mounted, not in final image)
