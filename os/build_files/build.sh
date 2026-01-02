@@ -40,6 +40,16 @@ cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
 mkdir -p /etc/distrobox
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 
+# Image info for ISO installer (like Bluefin)
+mkdir -p /usr/share/apparatus
+cat > /usr/share/apparatus/image-info.json <<EOF
+{
+  "image-name": "apparatus-os",
+  "image-tag": "latest",
+  "image-ref": "ghcr.io/vincentvdk/apparatus-os"
+}
+EOF
+
 # First-login setup script
 mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/

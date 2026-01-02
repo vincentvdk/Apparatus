@@ -3,6 +3,11 @@
 # Based on Bluefin's approach - uses GNOME for the installer session
 set -eoux pipefail
 
+# Read image info (embedded in container during build)
+IMAGE_INFO="$(cat /usr/share/apparatus/image-info.json)"
+IMAGE_TAG="$(jq -c -r '."image-tag"' <<<"$IMAGE_INFO")"
+IMAGE_REF="$(jq -c -r '."image-ref"' <<<"$IMAGE_INFO")"
+
 # Install Anaconda and GNOME essentials for live session
 PACKAGES=(
     anaconda-live
@@ -12,6 +17,7 @@ PACKAGES=(
     gnome-terminal
     nautilus
     rsync
+    jq
 )
 
 # Add anaconda-webui for Fedora 42+ (better installer UI)
@@ -108,19 +114,22 @@ EOF
 # Set branding
 sed -i 's/ANACONDA_PRODUCTVERSION=.*/ANACONDA_PRODUCTVERSION=""/' /usr/{,s}bin/liveinst || true
 
-# Get image reference from the live system
-IMAGE_REF="ghcr.io/vincentvdk/apparatus-os"
-IMAGE_TAG="latest"
-
-# Configure kickstart for bootc installation
-# Using registry transport (requires internet) - containers-storage has known issues
+# Configure kickstart for bootc installation (same as Bluefin)
 mkdir -p /usr/share/anaconda/post-scripts
 tee /usr/share/anaconda/interactive-defaults.ks <<EOF
-bootc --source-imgref=registry:$IMAGE_REF:$IMAGE_TAG
+ostreecontainer --url=$IMAGE_REF:$IMAGE_TAG --transport=containers-storage --no-signature-verification
+%include /usr/share/anaconda/post-scripts/switch-to-registry.ks
 %include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
 EOF
 
-# Disable Fedora Flatpak repo (we manage our own)
+# Post-install: switch to registry for future updates (like Bluefin)
+tee /usr/share/anaconda/post-scripts/switch-to-registry.ks <<EOF
+%post --erroronfail
+bootc switch --mutate-in-place --transport registry $IMAGE_REF:$IMAGE_TAG
+%end
+EOF
+
+# Disable Fedora Flatpak repo
 tee /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks <<'EOF'
 %post --erroronfail
 systemctl disable flatpak-add-fedora-repos.service || true
