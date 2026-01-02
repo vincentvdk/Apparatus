@@ -65,10 +65,10 @@ systemctl --global enable apparatus-first-login.service
 systemctl enable gdm.service
 systemctl enable podman.socket
 
-## -- Move hyprland.desktop so titanoboa finds gnome for live session
-# GDM also searches /usr/local/share/wayland-sessions
-mkdir -p /usr/local/share/wayland-sessions
-mv /usr/share/wayland-sessions/hyprland.desktop /usr/local/share/wayland-sessions/
+## -- Ensure GNOME is found first by titanoboa for live session
+# Create symlink with name that sorts before 'h' (hyprland)
+# GDM will show both sessions, titanoboa will find gnome first
+ln -sf gnome-wayland.desktop /usr/share/wayland-sessions/aaa-gnome.desktop
 
 ## -- System Configuration
 # Fonts (download in parallel)
