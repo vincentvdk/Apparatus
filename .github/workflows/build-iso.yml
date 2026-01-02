@@ -17,7 +17,6 @@ env:
   IMAGE_NAME: "apparatus-os"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
-  BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -55,7 +54,6 @@ jobs:
         id: build
         uses: osbuild/bootc-image-builder-action@main
         with:
-          builder-image: ${{ env.BIB_IMAGE }}
           config-file: ./disk_config/iso.toml
           image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
