@@ -112,18 +112,20 @@ jobs:
       - name: Rechunk Image
         id: rechunk
         if: github.event_name != 'pull_request'
-        uses: hhd-dev/rechunk@v1.2.4
+        uses: ublue-os/rechunk@v1.0.0
         with:
-          ref: localhost/${{ env.MY_IMAGE_NAME }}:latest
-          prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest
+          rechunk: 'ghcr.io/ublue-os/rechunk:v1.0.0'
+          ref: "localhost/${{ env.MY_IMAGE_NAME }}:latest"
+          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest"
           skip_compression: true
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Load Rechunked Image
         if: github.event_name != 'pull_request'
         run: |
-          podman image load -i ${{ steps.rechunk.outputs.output }}
-          podman image tag ${{ steps.rechunk.outputs.ref }} ${{ env.MY_IMAGE_NAME }}:latest
+          IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
+          sudo rm -rf ${{ steps.rechunk.outputs.output }}
+          podman tag $IMAGE ${{ env.MY_IMAGE_NAME }}:latest
 
       # Workaround bug where capital letters in your GitHub username make it impossible to push to GHCR.
       # https://github.com/macbre/push-to-ghcr/issues/12
