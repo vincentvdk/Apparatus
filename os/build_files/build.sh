@@ -30,7 +30,7 @@ dnf5 -y install pipewire pipewire-pulseaudio wireplumber
 ## -- Development & System tools
 # Note: Virtualization (libvirt/qemu/virt-manager) and docker removed to reduce image size
 # Install these in a distrobox if needed
-dnf5 -y install distrobox podman git curl unzip
+dnf5 -y install distrobox podman git curl unzip flatpak
 
 ## -- Gum (for butler TUI)
 dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
@@ -60,14 +60,19 @@ mkdir -p /usr/lib/systemd/user
 cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
 systemctl --global enable apparatus-first-login.service
 
+## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
+cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
+
+## -- UWSM environment config
+mkdir -p /etc/uwsm
+cp /delivery/build_files/config/uwsm/env /etc/uwsm/env
+
 ## -- Enabling Systemd services
 systemctl enable gdm.service
 systemctl enable podman.socket
 
-## -- Remove hyprland desktop files so titanoboa finds GNOME for live session
-# UWSM handles Hyprland session management via first-login setup
-rm -f /usr/share/wayland-sessions/hyprland.desktop
-rm -f /usr/share/wayland-sessions/hyprland-uwsm.desktop
+## -- Mask services that don't work on immutable ostree systems
+systemctl mask systemd-remount-fs.service
 
 ## -- System Configuration
 # Fonts (download in parallel)
@@ -106,6 +111,9 @@ cp /delivery/build_files/config/kitty/* /usr/share/apparatus/kitty/
 cp /delivery/build_files/config/rio/* /usr/share/apparatus/rio/
 cp /delivery/build_files/config/uwsm/* /usr/share/apparatus/uwsm/
 cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
+
+# Ensure apparatus files are world-readable
+chmod -R a+rX /usr/share/apparatus
 
 # Copy wallpaper
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
