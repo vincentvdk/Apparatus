@@ -121,12 +121,33 @@ systemctl enable swayosd-libinput-backend.service
 
 ## -- Workaround for bootc-image-builder vendor detection issue
 # See: https://github.com/osbuild/image-builder-cli/issues/421
-# Create EFI vendor directories so osbuild can detect the vendor for ISO builds
+# Create EFI vendor directories and populate with shim/grub files
 mkdir -p /boot/efi/EFI/fedora
 mkdir -p /boot/efi/EFI/BOOT
 
-# Reinstall shim and grub to populate EFI directories properly
-dnf5 -y reinstall shim-x64 grub2-efi-x64 grub2-common || true
+# Copy shim and grub files to EFI directories
+if [ -f /boot/efi/EFI/fedora/shimx64.efi ]; then
+    echo "Shim already exists in EFI/fedora"
+elif [ -f /usr/share/shim/*/shimx64.efi ]; then
+    cp /usr/share/shim/*/shimx64.efi /boot/efi/EFI/fedora/
+    cp /usr/share/shim/*/shimx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+fi
+
+# Copy grub to EFI directory if not present
+if [ -f /usr/lib/grub/x86_64-efi/grub.efi ]; then
+    cp /usr/lib/grub/x86_64-efi/grub.efi /boot/efi/EFI/fedora/grubx64.efi 2>/dev/null || true
+fi
+
+# Reinstall shim and grub to ensure proper setup
+dnf5 -y reinstall shim-x64 grub2-efi-x64 grub2-common 2>/dev/null || true
+
+# Also ensure bootupd updates directory has vendor info
+mkdir -p /usr/lib/bootupd/updates/EFI/fedora
+mkdir -p /usr/lib/bootupd/updates/EFI/BOOT
+if [ -f /usr/share/shim/*/shimx64.efi ]; then
+    cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/fedora/ 2>/dev/null || true
+    cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/BOOT/BOOTX64.EFI 2>/dev/null || true
+fi
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
