@@ -1,10 +1,10 @@
 # Apparatus OS - Hyprland-based Fedora Atomic desktop
-# Built on ublue-os/base-main for proper ostree/bootc compatibility
+# Built on official Fedora bootc image for proper bootc-image-builder compatibility
 #
 # Build: podman build -f os/Containerfile.bootc -t apparatus-os .
 
 ARG FEDORA_VERSION="43"
-ARG BASE_IMAGE="ghcr.io/ublue-os/base-main"
+ARG BASE_IMAGE="quay.io/fedora/fedora-bootc"
 
 # == Delivery stage for build files
 FROM ${BASE_IMAGE}:${FEDORA_VERSION} AS delivery
