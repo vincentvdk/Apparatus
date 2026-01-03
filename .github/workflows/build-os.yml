@@ -112,7 +112,7 @@ jobs:
       - name: Rechunk Image
         id: rechunk
         if: github.event_name != 'pull_request'
-        uses: hhd-dev/rechunk@v1
+        uses: hhd-dev/rechunk@v1.2.4
         with:
           ref: localhost/${{ env.MY_IMAGE_NAME }}:latest
           prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest
