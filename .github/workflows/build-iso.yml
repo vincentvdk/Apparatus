@@ -173,6 +173,13 @@ jobs:
           echo "=== Final disk space ==="
           df -h
 
+          # Pre-create symlink for titanoboa work directory
+          # The action runs from /home/runner/work/_actions/ublue-os/titanoboa/main
+          # and uses a 'work' subdirectory. Symlink it to /mnt for more space.
+          sudo mkdir -p /home/runner/work/_actions/ublue-os/titanoboa/main
+          sudo ln -sf /mnt/titanoboa /home/runner/work/_actions/ublue-os/titanoboa/main/work
+          ls -la /home/runner/work/_actions/ublue-os/titanoboa/main/
+
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -189,6 +196,9 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           builder-distro: fedora
+          # Skip container embedding to avoid disk space issues during ISO build
+          # The installer will pull the image during installation instead
+          container-image: ""
         env:
           # Force titanoboa to use /mnt for work directory (more space)
           TITANOBOA_WORKDIR: /mnt/titanoboa
