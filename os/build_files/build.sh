@@ -119,6 +119,15 @@ cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
 
+## -- Workaround for bootc-image-builder vendor detection issue
+# See: https://github.com/osbuild/image-builder-cli/issues/421
+# Create EFI vendor directories so osbuild can detect the vendor for ISO builds
+mkdir -p /boot/efi/EFI/fedora
+mkdir -p /boot/efi/EFI/BOOT
+
+# Reinstall shim and grub to populate EFI directories properly
+dnf5 -y reinstall shim-x64 grub2-efi-x64 grub2-common || true
+
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
 rm -rf /var/log/*
