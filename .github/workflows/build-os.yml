@@ -112,9 +112,9 @@ jobs:
       - name: Rechunk Image
         id: rechunk
         if: github.event_name != 'pull_request'
-        uses: ublue-os/rechunk@v1.0.0
+        uses: ublue-os/legacy-rechunk@a925083d9af7cb04b3e2a6e8c01bfa495f38b710
         with:
-          rechunk: 'ghcr.io/ublue-os/rechunk:v1.0.0'
+          rechunk: 'ghcr.io/ublue-os/legacy-rechunk:v1.0.0-x86_64'
           ref: "localhost/${{ env.MY_IMAGE_NAME }}:latest"
           prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest"
           skip_compression: true
