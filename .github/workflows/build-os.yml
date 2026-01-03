@@ -108,30 +108,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           oci: false
 
-      # Rechunk the image to fix ostree layer annotations for bootc-image-builder
-      - name: Rechunk Image
-        id: rechunk
-        if: github.event_name != 'pull_request'
-        uses: ublue-os/legacy-rechunk@a925083d9af7cb04b3e2a6e8c01bfa495f38b710
-        with:
-          rechunk: 'ghcr.io/ublue-os/legacy-rechunk:v1.0.0-x86_64'
-          ref: "containers-storage:localhost/${{ env.MY_IMAGE_NAME }}:latest"
-          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest"
-          skip_compression: true
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Load Rechunked Image
-        if: github.event_name != 'pull_request'
-        run: |
-          # Load the rechunked OCI archive
-          podman image load -i ${{ steps.rechunk.outputs.output }}
-          # Tag with all build tags
-          for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
-            podman tag ${{ steps.rechunk.outputs.ref }} ${{ env.MY_IMAGE_NAME }}:$tag
-          done
-          # Cleanup the archive
-          sudo rm -rf ${{ steps.rechunk.outputs.output }}
-
       # Workaround bug where capital letters in your GitHub username make it impossible to push to GHCR.
       # https://github.com/macbre/push-to-ghcr/issues/12
       - name: Lowercase Registry
