@@ -1,3 +1,4 @@
 cosign.key
 .titanoboa/
 *.iso
+iso-output/
