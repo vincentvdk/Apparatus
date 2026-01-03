@@ -17,7 +17,7 @@ env:
   IMAGE_NAME: "apparatus-os"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
-  TMPDIR: /mnt
+  BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -34,154 +34,22 @@ jobs:
       packages: read
 
     steps:
-      - name: Free disk space
+      - name: Prepare environment
         run: |
-          set -eux
-          echo "=== Initial disk space ==="
-          df -h /
+          USER_UID=$(id -u)
+          USER_GID=$(id -g)
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
+          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
 
-          # Remove Docker images (~3-4GB)
-          sudo docker image prune -a -f || :
-          sudo docker system prune -a -f || :
-
-          # Android SDK (~15GB)
-          sudo rm -rf /usr/local/lib/android || :
-
-          # .NET (~2GB)
-          sudo rm -rf /usr/share/dotnet || :
-
-          # Haskell/GHC (~5GB)
-          sudo rm -rf /usr/local/.ghcup /opt/ghc || :
-
-          # Swift (~2GB)
-          sudo rm -rf /usr/share/swift || :
-
-          # CodeQL (~5GB)
-          sudo rm -rf /opt/hostedtoolcache/CodeQL || :
-
-          # Go (~1.5GB)
-          sudo rm -rf /opt/hostedtoolcache/go || :
-
-          # Python/PyPy (~500MB)
-          sudo rm -rf /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/Python || :
-
-          # Node.js (~400MB)
-          sudo rm -rf /opt/hostedtoolcache/node || :
-
-          # Ruby (~600MB)
-          sudo rm -rf /opt/hostedtoolcache/Ruby || :
-
-          # Azure CLI (~700MB)
-          sudo rm -rf /opt/az /usr/share/az_* || :
-
-          # PowerShell (~300MB)
-          sudo rm -rf /opt/microsoft /usr/local/share/powershell || :
-
-          # AWS tools (~1GB)
-          sudo rm -rf /usr/local/aws-sam-cli /usr/local/aws-cli || :
-
-          # Julia (~500MB)
-          sudo rm -rf /usr/local/julia* || :
-
-          # Miniconda (~500MB)
-          sudo rm -rf /usr/share/miniconda || :
-
-          # Google Cloud SDK (~1GB)
-          sudo rm -rf /usr/lib/google-cloud-sdk || :
-
-          # Heroku (~350MB)
-          sudo rm -rf /usr/local/lib/heroku || :
-
-          # Chromium/browsers (~1.5GB)
-          sudo rm -rf /usr/local/share/chromium || :
-          sudo apt purge -y firefox google-chrome-stable microsoft-edge-stable || :
-
-          # vcpkg (~200MB)
-          sudo rm -rf /usr/local/share/vcpkg || :
-
-          # Gradle (~200MB)
-          sudo rm -rf /usr/share/gradle-* || :
-
-          # Various CLI tools
-          sudo rm -rf \
-            /usr/local/bin/aliyun \
-            /usr/local/bin/azcopy \
-            /usr/local/bin/bicep \
-            /usr/local/bin/cmake-gui \
-            /usr/local/bin/cpack \
-            /usr/local/bin/helm \
-            /usr/local/bin/hub \
-            /usr/local/bin/kubectl \
-            /usr/local/bin/minikube \
-            /usr/local/bin/packer \
-            /usr/local/bin/pulumi* \
-            /usr/local/bin/sam \
-            /usr/local/bin/stack \
-            /usr/local/bin/terraform \
-            /usr/local/bin/oc \
-            /usr/local/lib/node_modules || :
-
-          # Clean apt cache
-          sudo apt autoremove -y
-          sudo apt clean
-
-          # Remove swap file to reclaim ~4GB
-          sudo swapoff -a || :
-          sudo rm -f /swapfile /mnt/swapfile || :
-
-          echo "=== Disk space after cleanup ==="
-          df -h /
-
-          # Prepare temp storage on /mnt (has ~70GB available)
-          sudo mkdir -p /mnt/tmp /mnt/var_tmp /mnt/containers
-          sudo chmod 1777 /mnt/tmp /mnt/var_tmp /mnt/containers
-
-          # Redirect /var/tmp to /mnt (skopeo/podman uses /var/tmp for blob storage)
-          sudo rm -rf /var/tmp
-          sudo ln -s /mnt/var_tmp /var/tmp
-
-          # Also redirect /tmp to /mnt
-          sudo rm -rf /tmp
-          sudo ln -s /mnt/tmp /tmp
-
-          echo "TMPDIR=/mnt/tmp" >> $GITHUB_ENV
-          echo "TITANOBOA_WORKDIR=/mnt/titanoboa" >> $GITHUB_ENV
-          sudo mkdir -p /mnt/titanoboa
-          sudo chmod 1777 /mnt/titanoboa
-
-          # Configure podman/skopeo to use /mnt for storage (fix heredoc indentation)
-          sudo mkdir -p /etc/containers /mnt/containers/storage /mnt/containers/run
-          sudo tee /etc/containers/storage.conf > /dev/null <<'EOF'
-          [storage]
-          driver = "overlay"
-          runroot = "/mnt/containers/run"
-          graphroot = "/mnt/containers/storage"
-          [storage.options.overlay]
-          mount_program = "/usr/bin/fuse-overlayfs"
-          EOF
-          sudo sed -i 's/^          //' /etc/containers/storage.conf
-          echo "Storage config:"
-          cat /etc/containers/storage.conf
-
-          # Also configure for root user
-          sudo mkdir -p /root/.config/containers
-          sudo cp /etc/containers/storage.conf /root/.config/containers/storage.conf
-
-          # Set container storage env vars
-          echo "CONTAINERS_STORAGE_CONF=/etc/containers/storage.conf" >> $GITHUB_ENV
-
-          echo "=== Final disk space ==="
-          df -h
-
-          # Pre-create symlink for titanoboa work directory
-          # The action runs from /home/runner/work/_actions/ublue-os/titanoboa/main
-          # and uses a 'work' subdirectory. Symlink it to /mnt for more space.
-          sudo mkdir -p /home/runner/work/_actions/ublue-os/titanoboa/main
-          sudo ln -sf /mnt/titanoboa /home/runner/work/_actions/ublue-os/titanoboa/main/work
-          ls -la /home/runner/work/_actions/ublue-os/titanoboa/main/
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-codeql: true
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -192,16 +60,14 @@ jobs:
 
       - name: Build ISO
         id: build
-        uses: ublue-os/titanoboa@main
+        uses: osbuild/bootc-image-builder-action@main
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          builder-distro: fedora
-          # Skip container embedding to avoid disk space issues during ISO build
-          # The installer will pull the image during installation instead
-          container-image: ""
-        env:
-          # Force titanoboa to use /mnt for work directory (more space)
-          TITANOBOA_WORKDIR: /mnt/titanoboa
+          builder-image: ${{ env.BIB_IMAGE }}
+          config-file: ./disk_config/iso.toml
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
+          types: anaconda-iso
+          additional-args: --use-librepo=True
 
       - name: Upload to S3
         if: inputs.upload-to-s3 == true || github.event_name == 'workflow_run'
@@ -212,7 +78,7 @@ jobs:
           pip install awscli
 
           # Find the ISO file
-          ISO_FILE=$(find ${{ steps.build.outputs.output-path }} -name "*.iso" | head -1)
+          ISO_FILE=$(find ${{ steps.build.outputs.output-directory }} -name "*.iso" | head -1)
 
           aws s3 cp "$ISO_FILE" \
             s3://${{ secrets.HETZNER_S3_BUCKET }}/apparatus-os-latest.iso \
@@ -225,6 +91,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apparatus-os-iso
-          path: ${{ steps.build.outputs.output-path }}
+          path: ${{ steps.build.outputs.output-directory }}
           retention-days: 7
           compression-level: 0

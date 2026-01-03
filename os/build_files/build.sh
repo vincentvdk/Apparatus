@@ -32,19 +32,6 @@ dnf5 -y install pipewire pipewire-pulseaudio wireplumber
 # Install these in a distrobox if needed
 dnf5 -y install distrobox podman git curl unzip
 
-# Create podman wrapper for ISO build that uses /app for temp storage
-# This avoids space issues when titanoboa embeds containers
-cat > /usr/local/bin/podman <<'WRAPPER'
-#!/bin/bash
-# Wrapper to use /app for temp storage during ISO build (titanoboa)
-if [ -d "/app" ]; then
-    export TMPDIR=/app/tmp
-    mkdir -p /app/tmp 2>/dev/null || true
-fi
-exec /usr/bin/podman "$@"
-WRAPPER
-chmod +x /usr/local/bin/podman
-
 ## -- Gum (for butler TUI)
 dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
 
