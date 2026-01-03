@@ -189,6 +189,9 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
           builder-distro: fedora
+        env:
+          # Force titanoboa to use /mnt for work directory (more space)
+          TITANOBOA_WORKDIR: /mnt/titanoboa
 
       - name: Upload to S3
         if: inputs.upload-to-s3 == true || github.event_name == 'workflow_run'
