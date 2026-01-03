@@ -1,5 +1,5 @@
 # Apparatus OS ISO configuration for bootc-image-builder
-# Uses GNOME installer, installs Hyprland system
+# This creates an Anaconda installer ISO that pulls the container image during installation
 
 [customizations.installer.kickstart]
 contents = """
@@ -11,10 +11,10 @@ bootc switch --mutate-in-place --transport registry ghcr.io/vincentvdk/apparatus
 [customizations.installer.modules]
 enable = [
   "org.fedoraproject.Anaconda.Modules.Storage",
-  "org.fedoraproject.Anaconda.Modules.Network",
   "org.fedoraproject.Anaconda.Modules.Runtime"
 ]
 disable = [
+  "org.fedoraproject.Anaconda.Modules.Network",
   "org.fedoraproject.Anaconda.Modules.Security",
   "org.fedoraproject.Anaconda.Modules.Services",
   "org.fedoraproject.Anaconda.Modules.Users",
