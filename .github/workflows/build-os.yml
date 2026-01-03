@@ -118,36 +118,24 @@ jobs:
           labels: |
             ${{ steps.meta.outputs.labels }}
 
-      # Tag the rechunked image
-      - name: Tag Rechunked Image
-        if: github.event_name != 'pull_request'
-        run: |
-          for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
-            sudo podman tag ${{ steps.rechunk.outputs.ref }} ${{ env.MY_IMAGE_NAME }}:$tag
-          done
-
       # Workaround bug where capital letters in your GitHub username make it impossible to push to GHCR.
-      # https://github.com/macbre/push-to-ghcr/issues/12
       - name: Lowercase Registry
         id: registry_case
         uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ env.IMAGE_REGISTRY }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push Image to GHCR
         if: github.event_name != 'pull_request'
         run: |
           for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
             sudo skopeo copy \
-              --dest-creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
-              containers-storage:${{ env.MY_IMAGE_NAME }}:$tag \
+              ${{ steps.rechunk.outputs.ref }} \
               docker://${{ steps.registry_case.outputs.lowercase }}/${{ env.MY_IMAGE_NAME }}:$tag
           done
 
