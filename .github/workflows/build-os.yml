@@ -95,18 +95,36 @@ jobs:
             org.opencontainers.image.title=${{ env.MY_IMAGE_NAME }}
             containers.bootc=1
 
-      # Build image using Buildah action
+      # Build image using sudo buildah (required for rechunk)
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@v2
+        run: |
+          sudo buildah build \
+            -f ./os/Containerfile.bootc \
+            --tag raw-img \
+            .
+          echo "image=${{ env.MY_IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
+      # Rechunk the image to fix ostree layer annotations
+      - name: Rechunk Image
+        id: rechunk
+        if: github.event_name != 'pull_request'
+        uses: ublue-os/legacy-rechunk@a925083d9af7cb04b3e2a6e8c01bfa495f38b710
         with:
-          containerfiles: |
-            ./os/Containerfile.bootc
-          image: ${{ env.MY_IMAGE_NAME }}
-          tags: |
-            ${{ steps.generate-tags.outputs.alias_tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          oci: false
+          rechunk: 'ghcr.io/ublue-os/legacy-rechunk:v1.0.0-x86_64'
+          ref: "raw-img"
+          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest"
+          skip_compression: true
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+
+      # Tag the rechunked image
+      - name: Tag Rechunked Image
+        if: github.event_name != 'pull_request'
+        run: |
+          for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
+            sudo podman tag ${{ steps.rechunk.outputs.ref }} ${{ env.MY_IMAGE_NAME }}:$tag
+          done
 
       # Workaround bug where capital letters in your GitHub username make it impossible to push to GHCR.
       # https://github.com/macbre/push-to-ghcr/issues/12
@@ -124,34 +142,21 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Image to GHCR
-        uses: redhat-actions/push-to-registry@v2
-        id: push
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
-        with:
-          image: ${{ steps.build_image.outputs.image }}
-          tags: ${{ steps.build_image.outputs.tags }}
-          registry: ${{ steps.registry_case.outputs.lowercase }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
-          extra-args: |
-            --disable-content-trust
-
-      # This section is optional and only needs to be enabled in you plan on distributing
-      # your project to others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
-
-      # Sign container
-      - uses: sigstore/cosign-installer@v4.0.0
-        if: github.event_name != 'pull_request'
-
-      - name: Sign container image
         if: github.event_name != 'pull_request'
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY ${{ steps.registry_case.outputs.lowercase }}/${{ steps.build_image.outputs.image }}@${TAGS}
-        env:
-          TAGS: ${{ steps.push.outputs.digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
+            sudo skopeo copy \
+              --dest-creds "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+              containers-storage:${{ env.MY_IMAGE_NAME }}:$tag \
+              docker://${{ steps.registry_case.outputs.lowercase }}/${{ env.MY_IMAGE_NAME }}:$tag
+          done
+
+      # TODO: Re-enable signing after rechunk is working
+      # - uses: sigstore/cosign-installer@v4.0.0
+      #   if: github.event_name != 'pull_request'
+      # - name: Sign container image
+      #   if: github.event_name != 'pull_request'
+      #   run: |
+      #     cosign sign -y --key env://COSIGN_PRIVATE_KEY ${{ steps.registry_case.outputs.lowercase }}/${{ env.MY_IMAGE_NAME }}:latest
+      #   env:
+      #     COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
