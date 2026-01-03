@@ -25,7 +25,7 @@ env:
 jobs:
   build_push:
     name: Build and push image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Required for rechunk action
 
     permissions:
       contents: read
@@ -105,10 +105,25 @@ jobs:
           image: ${{ env.MY_IMAGE_NAME }}
           tags: |
             ${{ steps.generate-tags.outputs.alias_tags }}
-          extra-args: |
-            --squash
           labels: ${{ steps.meta.outputs.labels }}
           oci: false
+
+      # Rechunk the image to fix ostree layer annotations for bootc-image-builder
+      - name: Rechunk Image
+        id: rechunk
+        if: github.event_name != 'pull_request'
+        uses: hhd-dev/rechunk@v1
+        with:
+          ref: localhost/${{ env.MY_IMAGE_NAME }}:latest
+          prev-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest
+          skip_compression: true
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Load Rechunked Image
+        if: github.event_name != 'pull_request'
+        run: |
+          podman image load -i ${{ steps.rechunk.outputs.output }}
+          podman image tag ${{ steps.rechunk.outputs.ref }} ${{ env.MY_IMAGE_NAME }}:latest
 
       # Workaround bug where capital letters in your GitHub username make it impossible to push to GHCR.
       # https://github.com/macbre/push-to-ghcr/issues/12
