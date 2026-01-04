@@ -5,6 +5,7 @@
 
 ARG FEDORA_VERSION="43"
 ARG BASE_IMAGE="quay.io/fedora/fedora-bootc"
+ARG APPARATUS_VERSION="dev"
 
 # == Delivery stage for build files
 FROM ${BASE_IMAGE}:${FEDORA_VERSION} AS delivery
@@ -12,6 +13,7 @@ COPY os/build_files /build_files
 
 # == Main image
 FROM ${BASE_IMAGE}:${FEDORA_VERSION}
+ARG APPARATUS_VERSION
 
 # Single layer: prepare, build, and cleanup
 RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
@@ -19,8 +21,8 @@ RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
     # Ensure /opt is writable (symlink to /var/opt)
     rm -rf /opt && ln -sf /var/opt /opt && \
     mkdir -p /var/opt && \
-    # Run build script
-    /delivery/build_files/build.sh && \
+    # Run build script (pass version for os-release)
+    APPARATUS_VERSION="${APPARATUS_VERSION}" /delivery/build_files/build.sh && \
     # Final cleanup (dnf cache is mounted, not in final image)
     dnf5 clean all && \
     rm -rf /var/log/* /tmp/* /var/tmp/* && \

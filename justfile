@@ -5,16 +5,19 @@
 default:
     @just --list
 
+# Get the short git hash for versioning
+version := `git rev-parse --short HEAD 2>/dev/null || echo "dev"`
+
 # Build the container image
 build-container:
-    sudo podman build -f ./os/Containerfile.bootc -t apparatus-os .
+    podman build --build-arg APPARATUS_VERSION={{version}} -f ./os/Containerfile.bootc -t apparatus-os .
 
 # Build the ISO (requires container to be built first)
 build-iso: build-container
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p ./iso-output
-    sudo podman run --rm -it --privileged \
+    podman run --rm -it --privileged \
         --security-opt label=type:unconfined_t \
         -v ./iso-output:/output \
         -v /var/lib/containers/storage:/var/lib/containers/storage \
@@ -36,11 +39,11 @@ iso: build-iso
 # Clean build artifacts
 clean:
     rm -rf ./iso-output
-    sudo podman rmi apparatus-os:latest 2>/dev/null || true
+    podman rmi apparatus-os:latest 2>/dev/null || true
 
 # Run the container for testing
 run-container:
-    sudo podman run --rm -it apparatus-os:latest /bin/bash
+    podman run --rm -it apparatus-os:latest /bin/bash
 
 # Check container image exists
 check:

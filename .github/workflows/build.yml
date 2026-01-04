@@ -55,10 +55,25 @@ jobs:
 
       - name: Build container image
         run: |
+          VERSION="${GITHUB_SHA::7}"
           sudo podman build \
+            --build-arg APPARATUS_VERSION="$VERSION" \
             -f ./os/Containerfile.bootc \
             -t ${{ env.IMAGE_NAME }}:latest \
             .
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push container to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          sudo podman push ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Build ISO
         if: github.event_name != 'pull_request'

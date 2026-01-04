@@ -3,6 +3,7 @@
 set -ouex pipefail
 
 RELEASE="$(rpm -E %fedora)"
+VERSION="${APPARATUS_VERSION:-dev}"
 
 ## -- Install dnf5 plugins (needed for COPR support)
 dnf5 -y install dnf5-plugins
@@ -18,11 +19,15 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
+## -- nwg-displays (Hyprland-aware display configuration)
+dnf5 -y copr enable nwg-shell/nwg-shell
+dnf5 -y install nwg-displays
+
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
 ## -- Bluetooth & Network
-dnf5 -y install blueman network-manager-applet NetworkManager-wifi
+dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui
 
 ## -- Audio
 dnf5 -y install pipewire pipewire-pulseaudio wireplumber
@@ -49,6 +54,7 @@ cat > /usr/share/apparatus/image-info.json <<EOF
   "image-ref": "ghcr.io/vincentvdk/apparatus-os"
 }
 EOF
+
 
 # First-login setup script
 mkdir -p /usr/libexec/apparatus
@@ -126,6 +132,27 @@ cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
+
+## -- Custom os-release for Apparatus (affects GRUB menu entry name)
+cat > /etc/os-release <<EOF
+NAME="Apparatus OS"
+VERSION="${VERSION} (Based on Fedora ${RELEASE})"
+ID=apparatus
+ID_LIKE=fedora
+VERSION_ID=${RELEASE}
+PLATFORM_ID="platform:f${RELEASE}"
+PRETTY_NAME="Apparatus OS ${VERSION}"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:${RELEASE}"
+DEFAULT_HOSTNAME="apparatus"
+HOME_URL="https://github.com/vincentvdk/apparatus"
+SUPPORT_URL="https://github.com/vincentvdk/apparatus/issues"
+BUG_REPORT_URL="https://github.com/vincentvdk/apparatus/issues"
+VARIANT="Hyprland Desktop"
+VARIANT_ID=hyprland
+OSTREE_VERSION=${VERSION}
+EOF
 
 ## -- Workaround for bootc-image-builder vendor detection issue
 # See: https://github.com/osbuild/image-builder-cli/issues/421
