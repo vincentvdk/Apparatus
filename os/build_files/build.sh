@@ -5,6 +5,9 @@ set -ouex pipefail
 RELEASE="$(rpm -E %fedora)"
 VERSION="${APPARATUS_VERSION:-dev}"
 
+# Tool versions
+HYPRDYNAMICMONITORS_VERSION="${HYPRDYNAMICMONITORS_VERSION:-1.4.0}"
+
 ## -- Install dnf5 plugins (needed for COPR support)
 dnf5 -y install dnf5-plugins
 
@@ -19,15 +22,21 @@ dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-p
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
-## -- nwg-displays (Hyprland-aware display configuration)
-dnf5 -y copr enable nwg-shell/nwg-shell
-dnf5 -y install nwg-displays
+## -- hyprdynamicmonitors (automatic monitor profile switching for Hyprland)
+curl -L -o /tmp/hyprdynamicmonitors.tar.gz \
+    "https://github.com/fiffeek/hyprdynamicmonitors/releases/download/v${HYPRDYNAMICMONITORS_VERSION}/hyprdynamicmonitors_Linux_x86_64.tar.gz"
+tar -xzf /tmp/hyprdynamicmonitors.tar.gz -C /tmp
+install -m 755 /tmp/hyprdynamicmonitors /usr/bin/hyprdynamicmonitors
+rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui
+
+## -- Power management (needed for hyprdynamicmonitors lid/power detection)
+dnf5 -y install upower
 
 ## -- Audio
 dnf5 -y install pipewire pipewire-pulseaudio wireplumber

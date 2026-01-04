@@ -128,6 +128,7 @@ distrobox_list() {
 configure() {
   CONFIG_OPTIONS=(
     "Terminal         - Set default terminal"
+    "Monitors         - Configure display setup"
     "Back             - Return to main menu"
   )
 
@@ -139,11 +140,25 @@ configure() {
       terminal)
         configure_terminal
         ;;
+      monitors)
+        configure_monitors
+        ;;
       back)
         return
         ;;
     esac
   done
+}
+
+# -- Configure monitors
+configure_monitors() {
+  echo '{{ Bold "# Monitor Configuration" }}' | gum format -t template
+  echo ""
+  echo "Launching hyprdynamicmonitors TUI..."
+  echo "Use this to create and manage monitor profiles."
+  echo ""
+  sleep 1
+  hyprdynamicmonitors tui
 }
 
 # -- Configure terminal
