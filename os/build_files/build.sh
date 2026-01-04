@@ -143,11 +143,11 @@ cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 systemctl enable swayosd-libinput-backend.service
 
 ## -- Custom os-release for Apparatus (affects GRUB menu entry name)
+# Keep ID=fedora for bootc-image-builder compatibility
 cat > /etc/os-release <<EOF
 NAME="Apparatus OS"
 VERSION="${VERSION} (Based on Fedora ${RELEASE})"
-ID=apparatus
-ID_LIKE=fedora
+ID=fedora
 VERSION_ID=${RELEASE}
 PLATFORM_ID="platform:f${RELEASE}"
 PRETTY_NAME="Apparatus OS ${VERSION}"
