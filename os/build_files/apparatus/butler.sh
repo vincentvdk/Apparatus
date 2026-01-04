@@ -281,6 +281,13 @@ set_theme() {
     sed -i "s/^theme = .*/theme = \"$THEME\"/" "$HOME/.config/rio/config.toml"
   fi
 
+  # Apply GTK theme (dark/light based on theme)
+  if [[ "$THEME" == *"mocha"* ]] || [[ "$THEME" == *"dark"* ]]; then
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  else
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+  fi
+
   # Save current theme
   mkdir -p "$HOME/.config/apparatus"
   echo "$THEME" > "$HOME/.config/apparatus/current-theme"
@@ -333,6 +340,7 @@ init() {
   ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/waybar.css ~/.config/waybar/theme.css
   ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/mako.conf ~/.config/mako/config
   ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/hyprland.conf ~/.config/hypr/theme.conf
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
   echo "$CURRENT_THEME" > ~/.config/apparatus/current-theme
 
   echo '{{ Bold "# Enable Flathub Repository" }}' | gum format -t template
