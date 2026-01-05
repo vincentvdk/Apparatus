@@ -13,7 +13,7 @@ WALKER_VERSION="${WALKER_VERSION:-2.12.2}"
 dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
@@ -83,10 +83,9 @@ mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
 
-# Systemd user service for first-login prompt (runs on graphical session)
-mkdir -p /usr/lib/systemd/user
-cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
-systemctl --global enable apparatus-first-login.service
+# XDG autostart for first-login (runs on any desktop session)
+mkdir -p /etc/xdg/autostart
+cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
 
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
