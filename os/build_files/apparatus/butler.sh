@@ -129,6 +129,8 @@ configure() {
   CONFIG_OPTIONS=(
     "Terminal         - Set default terminal"
     "Monitors         - Configure display setup"
+    "Audio            - Configure audio devices"
+    "AI Workload      - Configure GPU VRAM for AI/ML"
     "Back             - Return to main menu"
   )
 
@@ -142,6 +144,12 @@ configure() {
         ;;
       monitors)
         configure_monitors
+        ;;
+      audio)
+        configure_audio
+        ;;
+      ai-workload)
+        configure_ai_workload
         ;;
       back)
         return
@@ -159,6 +167,74 @@ configure_monitors() {
   echo ""
   sleep 1
   hyprdynamicmonitors tui
+}
+
+# -- Configure audio
+configure_audio() {
+  echo '{{ Bold "# Audio Configuration" }}' | gum format -t template
+  echo ""
+  echo "Launching PulseAudio Volume Control..."
+  echo ""
+  sleep 1
+  pavucontrol &
+  disown
+}
+
+# -- Configure AI workload (VRAM allocation for AMD APUs)
+configure_ai_workload() {
+  echo '{{ Bold "# AI Workload Configuration" }}' | gum format -t template
+  echo ""
+  echo "Configure GPU VRAM allocation for AI/ML workloads."
+  echo "This applies to AMD Ryzen AI / Strix Halo APUs."
+  echo ""
+  echo '{{ Color "3" "⚠ Requires reboot to take effect" }}' | gum format -t template
+  echo ""
+
+  local CHOICE=$(gum choose \
+    "16 GB VRAM" \
+    "32 GB VRAM" \
+    "64 GB VRAM" \
+    "96 GB VRAM (max stable)" \
+    "Reset to default" \
+    "Cancel" \
+    --header "Select VRAM allocation:")
+
+  local PAGES=""
+  case "$CHOICE" in
+    "16 GB VRAM")
+      PAGES="4194304"  # 16GB in 4KB pages
+      ;;
+    "32 GB VRAM")
+      PAGES="8388608"  # 32GB
+      ;;
+    "64 GB VRAM")
+      PAGES="16777216" # 64GB
+      ;;
+    "96 GB VRAM (max stable)")
+      PAGES="25165824" # 96GB
+      ;;
+    "Reset to default")
+      echo '{{ Bold "Removing VRAM configuration..." }}' | gum format -t template
+      pkexec rm -f /etc/kernel/cmdline.d/99-amd-vram.conf
+      echo '{{ Bold "Done! Reboot to apply changes." }}' | gum format -t template
+      sleep 2
+      return
+      ;;
+    *)
+      return
+      ;;
+  esac
+
+  echo '{{ Bold "Applying VRAM configuration..." }}' | gum format -t template
+
+  # Create kernel cmdline snippet for VRAM allocation
+  pkexec bash -c "cat > /etc/kernel/cmdline.d/99-amd-vram.conf <<EOF
+amdttm.pages_limit=${PAGES}
+amdttm.page_pool_size=${PAGES}
+EOF"
+
+  echo '{{ Bold "Done! Reboot to apply changes." }}' | gum format -t template
+  sleep 2
 }
 
 # -- Configure terminal
