@@ -268,7 +268,7 @@ show_help() {
 | Key | Action |
 |-----|--------|
 | Super + Return | Open terminal (kitty) |
-| Super + D | Application launcher (wofi) |
+| Super + D | Application launcher (walker) |
 | Super + E | File manager (thunar) |
 | Super + Q | Close window |
 | Super + Shift + Q | Exit Hyprland |
@@ -291,12 +291,12 @@ show_help() {
 | Super + Mouse Scroll | Cycle workspaces |
 | Super + S | Toggle scratchpad |
 
-## Screenshots
+## Screenshots (with Satty annotation)
 | Key | Action |
 |-----|--------|
-| Print | Screenshot (full) |
-| Shift + Print | Screenshot (window) |
-| Super + Shift + S | Screenshot (region) |
+| Print | Screenshot (full) → Satty |
+| Shift + Print | Screenshot (window) → Satty |
+| Super + Shift + S | Screenshot (region) → Satty |
 
 ## Media
 | Key | Action |
