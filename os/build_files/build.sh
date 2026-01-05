@@ -36,10 +36,13 @@ dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-ic
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui
 
 ## -- Power management (needed for hyprdynamicmonitors lid/power detection)
-dnf5 -y install upower
+dnf5 -y install upower power-profiles-daemon
+
+## -- Hardware support (Framework AMD laptops)
+dnf5 -y install fprintd iio-sensor-proxy
 
 ## -- Audio
-dnf5 -y install pipewire pipewire-pulseaudio wireplumber
+dnf5 -y install pipewire pipewire-pulseaudio wireplumber pavucontrol
 
 ## -- Development & System tools
 # Note: Virtualization (libvirt/qemu/virt-manager) and docker removed to reduce image size
@@ -135,9 +138,19 @@ if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
     cp /delivery/build_files/wallpapers/default.jpg /usr/share/apparatus/wallpapers/
 fi
 
-# -- Hardware Support (Framework laptops)
+# -- Hardware Support (Framework laptops/desktops)
 mkdir -p /etc/modprobe.d
 cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
+
+# Kernel parameters for AMD (Framework AMD laptops/desktops)
+# /etc/kernel/cmdline.d/ is the standard Fedora location for kernel param snippets
+mkdir -p /etc/kernel/cmdline.d
+cat > /etc/kernel/cmdline.d/99-apparatus.conf <<EOF
+amd_pstate=active
+amdgpu.dcdebugmask=0x10
+amdgpu.abmlevel=0
+amdgpu.sg_display=0
+EOF
 
 # Enable swayosd service (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
