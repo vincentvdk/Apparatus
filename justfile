@@ -48,3 +48,10 @@ run-container:
 # Check container image exists
 check:
     @podman images | grep apparatus-os || echo "No apparatus-os image found. Run 'just build-container' first."
+
+# Push container to GHCR
+push:
+    podman push apparatus-os:latest ghcr.io/vincentvdk/apparatus-os:latest
+
+# Build and push container to GHCR
+build-push: build-container push
