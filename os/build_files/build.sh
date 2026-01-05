@@ -45,7 +45,8 @@ dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-ic
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui
 
 ## -- Power management (needed for hyprdynamicmonitors lid/power detection)
-dnf5 -y install upower power-profiles-daemon
+# tuned-ppd is Fedora 41+ replacement for power-profiles-daemon
+dnf5 -y install upower tuned-ppd
 
 ## -- Hardware support (Framework AMD laptops)
 dnf5 -y install fprintd iio-sensor-proxy
