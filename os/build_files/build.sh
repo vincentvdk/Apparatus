@@ -17,10 +17,12 @@ dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth pl
 
 ## -- Configure Plymouth for graphical boot
 plymouth-set-default-theme spinner
-# Dracut config to include plymouth
+# Dracut config for graphical boot with LUKS prompt
 mkdir -p /etc/dracut.conf.d
 cat > /etc/dracut.conf.d/plymouth.conf <<EOF
 add_dracutmodules+=" plymouth "
+# Include GPU driver for graphical LUKS password prompt
+add_drivers+=" amdgpu "
 EOF
 
 ## -- hyprland COPR from solopasha
@@ -169,7 +171,7 @@ cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 # /etc/kernel/cmdline.d/ is the standard Fedora location for kernel param snippets
 mkdir -p /etc/kernel/cmdline.d
 cat > /etc/kernel/cmdline.d/99-apparatus.conf <<EOF
-quiet splash plymouth.enable=1
+quiet splash plymouth.enable=1 rd.plymouth=1
 amd_pstate=active
 amdgpu.dcdebugmask=0x10
 amdgpu.abmlevel=0
