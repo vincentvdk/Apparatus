@@ -7,6 +7,7 @@ VERSION="${APPARATUS_VERSION:-dev}"
 
 # Tool versions
 HYPRDYNAMICMONITORS_VERSION="${HYPRDYNAMICMONITORS_VERSION:-1.4.0}"
+WALKER_VERSION="${WALKER_VERSION:-2.12.2}"
 
 ## -- Install dnf5 plugins (needed for COPR support)
 dnf5 -y install dnf5-plugins
@@ -16,7 +17,7 @@ dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm
+dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
@@ -28,6 +29,14 @@ curl -L -o /tmp/hyprdynamicmonitors.tar.gz \
 tar -xzf /tmp/hyprdynamicmonitors.tar.gz -C /tmp
 install -m 755 /tmp/hyprdynamicmonitors /usr/bin/hyprdynamicmonitors
 rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors
+
+## -- walker (modern app launcher)
+dnf5 -y install gtk4-layer-shell
+curl -L -o /tmp/walker.tar.gz \
+    "https://github.com/abenz1267/walker/releases/download/v${WALKER_VERSION}/walker-v${WALKER_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+tar -xzf /tmp/walker.tar.gz -C /tmp
+install -m 755 /tmp/walker /usr/bin/walker
+rm -f /tmp/walker.tar.gz /tmp/walker
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
