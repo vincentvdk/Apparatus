@@ -93,15 +93,9 @@ mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
 
-# System-wide Hyprland fallback config (used on first boot before user config exists)
-# This sources the apparatus config and runs first-login
-mkdir -p /etc/hypr
-cat > /etc/hypr/hyprland.conf <<'EOF'
-# Apparatus System Fallback Config
-# Used only on first boot when no user config exists
-source = /usr/share/apparatus/hypr/hyprland.conf
-exec-once = /usr/libexec/apparatus/first-login.sh
-EOF
+# Add first-login to Hyprland's default config
+# This file gets auto-copied to ~/.config/hypr/ on first login
+echo -e "\n# Apparatus first-login setup\nexec-once = /usr/libexec/apparatus/first-login.sh" >> /usr/share/hypr/hyprland.conf
 
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
