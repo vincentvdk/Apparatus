@@ -13,7 +13,15 @@ WALKER_VERSION="${WALKER_VERSION:-2.12.2}"
 dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-theme-spinner
+
+## -- Configure Plymouth for graphical boot
+plymouth-set-default-theme spinner
+# Dracut config to include plymouth
+mkdir -p /etc/dracut.conf.d
+cat > /etc/dracut.conf.d/plymouth.conf <<EOF
+add_dracutmodules+=" plymouth "
+EOF
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
@@ -83,9 +91,15 @@ mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
 
-# XDG autostart for first-login (runs on any desktop session)
-mkdir -p /etc/xdg/autostart
-cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
+# System-wide Hyprland fallback config (used on first boot before user config exists)
+# This sources the apparatus config and runs first-login
+mkdir -p /etc/hypr
+cat > /etc/hypr/hyprland.conf <<'EOF'
+# Apparatus System Fallback Config
+# Used only on first boot when no user config exists
+source = /usr/share/apparatus/hypr/hyprland.conf
+exec-once = /usr/libexec/apparatus/first-login.sh
+EOF
 
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
@@ -155,6 +169,7 @@ cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 # /etc/kernel/cmdline.d/ is the standard Fedora location for kernel param snippets
 mkdir -p /etc/kernel/cmdline.d
 cat > /etc/kernel/cmdline.d/99-apparatus.conf <<EOF
+quiet splash plymouth.enable=1
 amd_pstate=active
 amdgpu.dcdebugmask=0x10
 amdgpu.abmlevel=0
