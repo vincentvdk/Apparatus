@@ -13,10 +13,21 @@ WALKER_VERSION="${WALKER_VERSION:-2.12.2}"
 dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-theme-spinner
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-plugin-script
 
 ## -- Configure Plymouth for graphical boot
-plymouth-set-default-theme spinner
+# Download connect theme from adi1090x/plymouth-themes
+mkdir -p /usr/share/plymouth/themes/connect
+THEME_BASE="https://raw.githubusercontent.com/adi1090x/plymouth-themes/master/pack_1/connect"
+curl -sL "$THEME_BASE/connect.plymouth" -o /usr/share/plymouth/themes/connect/connect.plymouth
+curl -sL "$THEME_BASE/connect.script" -o /usr/share/plymouth/themes/connect/connect.script
+# Download progress animation frames (0-119)
+for i in $(seq 0 119); do
+    curl -sL "$THEME_BASE/progress-$i.png" -o /usr/share/plymouth/themes/connect/progress-$i.png &
+done
+wait
+
+plymouth-set-default-theme connect
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
@@ -166,15 +177,11 @@ fi
 mkdir -p /etc/modprobe.d
 cp /delivery/build_files/config/modprobe.d/*.conf /etc/modprobe.d/
 
-# Kernel parameters for AMD (Framework AMD laptops/desktops)
-# /etc/kernel/cmdline.d/ is the standard Fedora location for kernel param snippets
-mkdir -p /etc/kernel/cmdline.d
-cat > /etc/kernel/cmdline.d/99-apparatus.conf <<EOF
-quiet splash plymouth.enable=1 rd.plymouth=1
-amd_pstate=active
-amdgpu.dcdebugmask=0x10
-amdgpu.abmlevel=0
-amdgpu.sg_display=0
+# Kernel parameters for bootc
+# Must use /usr/lib/bootc/kargs.d/ with TOML format
+mkdir -p /usr/lib/bootc/kargs.d
+cat > /usr/lib/bootc/kargs.d/50-apparatus.toml <<EOF
+kargs = ["quiet", "splash", "plymouth.enable=1", "rd.plymouth=1", "amd_pstate=active", "amdgpu.dcdebugmask=0x10", "amdgpu.abmlevel=0", "amdgpu.sg_display=0"]
 EOF
 
 # Enable swayosd service (for on-screen display)
