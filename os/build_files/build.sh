@@ -112,9 +112,9 @@ chmod +x /usr/libexec/apparatus/first-login.sh
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
 chmod +x /usr/libexec/apparatus/smart-split
 
-# Add first-login to Hyprland's default config
-# This file gets auto-copied to ~/.config/hypr/ on first login
-echo -e "\n# Apparatus first-login setup\nexec-once = /usr/libexec/apparatus/first-login.sh" >> /usr/share/hypr/hyprland.conf
+# First-login XDG autostart (runs when graphical session starts)
+mkdir -p /etc/xdg/autostart
+cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
 
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
