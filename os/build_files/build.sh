@@ -18,8 +18,9 @@ dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth pl
 ## -- Configure Plymouth for graphical boot
 plymouth-set-default-theme spinner
 # Dracut config for graphical boot with LUKS prompt
-mkdir -p /etc/dracut.conf.d
-cat > /etc/dracut.conf.d/plymouth.conf <<EOF
+# For bootc, config must be in /usr/lib/dracut/dracut.conf.d
+mkdir -p /usr/lib/dracut/dracut.conf.d
+cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
 add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
@@ -229,6 +230,11 @@ if [ -f /usr/share/shim/*/shimx64.efi ]; then
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/fedora/ 2>/dev/null || true
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/BOOT/BOOTX64.EFI 2>/dev/null || true
 fi
+
+## -- Rebuild initramfs with plymouth and amdgpu
+# For bootc, initramfs is built at container build time
+KVER=$(ls /usr/lib/modules | head -1)
+dracut --force --kver "$KVER"
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
