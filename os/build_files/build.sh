@@ -232,9 +232,9 @@ if [ -f /usr/share/shim/*/shimx64.efi ]; then
 fi
 
 ## -- Rebuild initramfs with plymouth and amdgpu
-# For bootc, initramfs is built at container build time
+# For bootc, initramfs lives in /usr/lib/modules/$kver/initramfs.img
 KVER=$(ls /usr/lib/modules | head -1)
-dracut --force --kver "$KVER"
+DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$KVER/initramfs.img "$KVER"
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
