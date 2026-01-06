@@ -18,12 +18,6 @@ on:
   schedule:
     - cron: '05 10 * * *'  # 10:05am UTC everyday
   workflow_dispatch:
-    inputs:
-      upload-to-s3:
-        description: "Upload ISO to S3"
-        required: false
-        default: true
-        type: boolean
 
 env:
   IMAGE_NAME: "apparatus-os"
@@ -85,7 +79,7 @@ jobs:
             localhost/${{ env.IMAGE_NAME }}:latest
 
       - name: Upload to S3
-        if: github.event_name != 'pull_request' && (inputs.upload-to-s3 == true || inputs.upload-to-s3 == null)
+        if: github.event_name != 'pull_request'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
@@ -99,12 +93,3 @@ jobs:
             --endpoint-url "https://${{ secrets.HETZNER_S3_ENDPOINT }}"
 
           echo "ISO uploaded successfully"
-
-      - name: Upload ISO artifact (fallback)
-        if: github.event_name != 'pull_request' && inputs.upload-to-s3 == false
-        uses: actions/upload-artifact@v4
-        with:
-          name: apparatus-os-iso
-          path: ./iso-output
-          retention-days: 7
-          compression-level: 0
