@@ -13,7 +13,8 @@ WALKER_VERSION="${WALKER_VERSION:-2.12.2}"
 dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-plugin-script
+# dejavu-sans-fonts needed for plymouth password prompt (Image.Text requires fonts in initramfs)
+dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-plugin-script plymouth-plugin-label dejavu-sans-fonts
 
 ## -- Configure Plymouth for graphical boot
 # Download connect theme from adi1090x/plymouth-themes
@@ -35,6 +36,8 @@ cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
 add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
+# Include fonts for plymouth password prompt (Image.Text needs fonts)
+install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
 EOF
 
 ## -- hyprland COPR from solopasha
@@ -104,6 +107,10 @@ EOF
 mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
+
+# Smart-split script for kitty (detects distrobox and enters same container)
+cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
+chmod +x /usr/libexec/apparatus/smart-split
 
 # Add first-login to Hyprland's default config
 # This file gets auto-copied to ~/.config/hypr/ on first login

@@ -49,13 +49,13 @@ Apparatus uses **Hyprland** as its desktop environment with a Catppuccin Mocha c
 | Window Manager | Hyprland |
 | Status Bar | Waybar |
 | Terminal | kitty, rio |
-| App Launcher | wofi |
+| App Launcher | walker |
 | File Manager | thunar |
 | Notifications | mako |
 | Lock Screen | hyprlock |
 | Idle Daemon | hypridle |
 | Wallpaper | hyprpaper |
-| Screenshots | hyprshot |
+| Screenshots | hyprshot + satty |
 | OSD | swayosd |
 
 ### Keybindings
@@ -143,6 +143,22 @@ Change your default terminal:
 butler configure
 # Select "Terminal" and choose kitty or rio
 ```
+
+### Kitty Terminal Splits
+
+Kitty is configured with smart splits that automatically detect if you're inside a distrobox. When you create a new split, it will enter the same distrobox container (or stay on the host if you're not in a container).
+
+#### Split Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+Shift+V` | Vertical split (same distrobox/host) |
+| `Ctrl+Shift+S` | Horizontal split (same distrobox/host) |
+| `Ctrl+Shift+Arrow` | Navigate between splits |
+| `Ctrl+Shift+R` | Resize split |
+| `Ctrl+Shift+W` | Close split |
+
+This is powered by the `smart-split` script which checks the `$CONTAINER_ID` environment variable to detect the current distrobox.
 
 ### Configuration
 
