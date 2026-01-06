@@ -1,0 +1,15 @@
+[Unit]
+Description=Switch bootc to GHCR registry
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/apparatus/bootc-switched
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bootc switch --transport registry ghcr.io/vincentvdk/apparatus-os:latest
+ExecStartPost=/usr/bin/mkdir -p /var/lib/apparatus
+ExecStartPost=/usr/bin/touch /var/lib/apparatus/bootc-switched
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

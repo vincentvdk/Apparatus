@@ -108,6 +108,10 @@ cp /delivery/build_files/config/uwsm/env /etc/uwsm/env
 systemctl enable gdm.service
 systemctl enable podman.socket
 
+# Bootc switch service (runs once after install to point updates to GHCR)
+cp /delivery/build_files/config/systemd/apparatus-bootc-switch.service /usr/lib/systemd/system/
+systemctl enable apparatus-bootc-switch.service
+
 ## -- Mask services that don't work on immutable ostree systems
 systemctl mask systemd-remount-fs.service
 
