@@ -11,14 +11,13 @@ if [ -f "$INIT_DONE" ]; then
 fi
 
 # Switch bootc to remote registry (runs once, in background)
-# This ensures rpm-ostree/bootc updates pull from GHCR instead of install source
+# This ensures bootc updates pull from GHCR instead of install media
 if [ ! -f "$BOOTC_SWITCHED" ]; then
     (
         sleep 5  # Wait for network
-        if bootc status 2>/dev/null | grep -q "ostree-unverified-image:oci:/run/install"; then
-            pkexec bootc switch --transport registry ghcr.io/vincentvdk/apparatus-os:latest || true
-        fi
         mkdir -p "$HOME/.config/apparatus"
+        # Always attempt switch - will fail gracefully if already on correct source
+        pkexec bootc switch --transport registry ghcr.io/vincentvdk/apparatus-os:latest 2>/dev/null || true
         touch "$BOOTC_SWITCHED"
     ) &
 fi
