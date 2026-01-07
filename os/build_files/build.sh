@@ -79,9 +79,9 @@ rm -f /tmp/elephant*.tar.gz /tmp/elephant-linux-amd64 /tmp/desktopapplications-l
 # Elephant systemd user service (auto-starts with graphical session)
 mkdir -p /usr/lib/systemd/user
 cp /delivery/build_files/config/systemd/user/elephant.service /usr/lib/systemd/user/
-# Enable via user preset
-mkdir -p /usr/lib/systemd/user-preset
-echo "enable elephant.service" >> /usr/lib/systemd/user-preset/50-apparatus.preset
+# Enable by creating static symlink (works for all users without needing preset)
+mkdir -p /usr/lib/systemd/user/graphical-session.target.wants
+ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/elephant.service
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
