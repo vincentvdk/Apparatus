@@ -132,12 +132,6 @@ chmod +x /usr/libexec/apparatus/first-login.sh
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
 chmod +x /usr/libexec/apparatus/smart-split
 
-# First-login: use /etc/skel to pre-populate new user home directories
-# This ensures our hyprland.conf (with first-login exec-once) is used instead of Hyprland's auto-generated one
-mkdir -p /etc/skel/.config/hypr
-cp /usr/share/apparatus/hypr/hyprland.conf /etc/skel/.config/hypr/
-echo -e "\n# Apparatus first-login setup\nexec-once = /usr/libexec/apparatus/first-login.sh" >> /etc/skel/.config/hypr/hyprland.conf
-
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
 
@@ -196,6 +190,12 @@ cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
 
 # Ensure apparatus files are world-readable
 chmod -R a+rX /usr/share/apparatus
+
+# First-login: use /etc/skel to pre-populate new user home directories
+# This ensures our hyprland.conf (with first-login exec-once) is used instead of Hyprland's auto-generated one
+mkdir -p /etc/skel/.config/hypr
+cp /usr/share/apparatus/hypr/hyprland.conf /etc/skel/.config/hypr/
+echo -e "\n# Apparatus first-login setup\nexec-once = /usr/libexec/apparatus/first-login.sh" >> /etc/skel/.config/hypr/hyprland.conf
 
 # Copy wallpaper
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
