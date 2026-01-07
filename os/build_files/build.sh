@@ -84,7 +84,7 @@ mkdir -p /usr/lib/systemd/user/graphical-session.target.wants
 ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/elephant.service
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
+dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui
