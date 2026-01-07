@@ -434,10 +434,6 @@ init() {
   echo '{{ Bold "# Installing Rio Terminal" }}' | gum format -t template
   /usr/bin/flatpak install --user --noninteractive flathub com.rioterm.Rio || exit 1
 
-  echo '{{ Bold "# Enabling Walker services" }}' | gum format -t template
-  elephant service enable
-  systemctl --user start elephant.service
-
   echo '{{ Bold "# Setup complete!" }}' | gum format -t template
   mkdir -p "$HOME"/.config/apparatus
   touch "$HOME"/.config/apparatus/init-done

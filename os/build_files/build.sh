@@ -76,6 +76,13 @@ mkdir -p /usr/lib/elephant/providers
 install -m 755 /tmp/desktopapplications-linux-amd64.so /usr/lib/elephant/providers/desktopapplications.so
 rm -f /tmp/elephant*.tar.gz /tmp/elephant-linux-amd64 /tmp/desktopapplications-linux-amd64.so
 
+# Elephant systemd user service (auto-starts with graphical session)
+mkdir -p /usr/lib/systemd/user
+cp /delivery/build_files/config/systemd/user/elephant.service /usr/lib/systemd/user/
+# Enable via user preset
+mkdir -p /usr/lib/systemd/user-preset
+echo "enable elephant.service" >> /usr/lib/systemd/user-preset/50-apparatus.preset
+
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
 
