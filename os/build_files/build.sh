@@ -37,6 +37,8 @@ cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
 add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
+# Include USB/HID drivers for keyboard input during boot
+add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 # Include fonts for plymouth password prompt (Image.Text needs fonts)
 install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
 EOF
@@ -191,11 +193,10 @@ cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
 # Ensure apparatus files are world-readable
 chmod -R a+rX /usr/share/apparatus
 
-# First-login: use /etc/skel to pre-populate new user home directories
-# This ensures our hyprland.conf (with first-login exec-once) is used instead of Hyprland's auto-generated one
-mkdir -p /etc/skel/.config/hypr
-cp /usr/share/apparatus/hypr/hyprland.conf /etc/skel/.config/hypr/
-echo -e "\n# Apparatus first-login setup\nexec-once = /usr/libexec/apparatus/first-login.sh" >> /etc/skel/.config/hypr/hyprland.conf
+# First-login systemd user service (runs butler init on first graphical login)
+cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
+# Enable via static symlink (like elephant)
+ln -sf ../apparatus-first-login.service /usr/lib/systemd/user/graphical-session.target.wants/apparatus-first-login.service
 
 # Copy wallpaper
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
