@@ -8,6 +8,7 @@ VERSION="${APPARATUS_VERSION:-dev}"
 # Tool versions
 HYPRDYNAMICMONITORS_VERSION="${HYPRDYNAMICMONITORS_VERSION:-1.4.0}"
 WALKER_VERSION="${WALKER_VERSION:-2.12.2}"
+ELEPHANT_VERSION="${ELEPHANT_VERSION:-2.17.2}"
 
 ## -- Install dnf5 plugins (needed for COPR support)
 dnf5 -y install dnf5-plugins
@@ -55,13 +56,25 @@ tar -xzf /tmp/hyprdynamicmonitors.tar.gz -C /tmp
 install -m 755 /tmp/hyprdynamicmonitors /usr/bin/hyprdynamicmonitors
 rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors
 
-## -- walker (modern app launcher)
+## -- walker (modern app launcher) and elephant (backend service)
 dnf5 -y install gtk4-layer-shell
 curl -L -o /tmp/walker.tar.gz \
     "https://github.com/abenz1267/walker/releases/download/v${WALKER_VERSION}/walker-v${WALKER_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
 tar -xzf /tmp/walker.tar.gz -C /tmp
 install -m 755 /tmp/walker /usr/bin/walker
 rm -f /tmp/walker.tar.gz /tmp/walker
+
+## -- elephant (backend for walker - indexes apps, files, etc.)
+ELEPHANT_BASE="https://github.com/abenz1267/elephant/releases/download/v${ELEPHANT_VERSION}"
+curl -L -o /tmp/elephant.tar.gz "${ELEPHANT_BASE}/elephant-linux-amd64.tar.gz"
+curl -L -o /tmp/elephant-desktopapplications.tar.gz "${ELEPHANT_BASE}/desktopapplications-linux-amd64.tar.gz"
+tar -xzf /tmp/elephant.tar.gz -C /tmp
+tar -xzf /tmp/elephant-desktopapplications.tar.gz -C /tmp
+install -m 755 /tmp/elephant /usr/bin/elephant
+# Providers go in /usr/lib/elephant/providers
+mkdir -p /usr/lib/elephant/providers
+install -m 755 /tmp/desktopapplications /usr/lib/elephant/providers/
+rm -f /tmp/elephant*.tar.gz /tmp/elephant /tmp/desktopapplications
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
