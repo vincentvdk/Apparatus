@@ -70,11 +70,11 @@ curl -L -o /tmp/elephant.tar.gz "${ELEPHANT_BASE}/elephant-linux-amd64.tar.gz"
 curl -L -o /tmp/elephant-desktopapplications.tar.gz "${ELEPHANT_BASE}/desktopapplications-linux-amd64.tar.gz"
 tar -xzf /tmp/elephant.tar.gz -C /tmp
 tar -xzf /tmp/elephant-desktopapplications.tar.gz -C /tmp
-install -m 755 /tmp/elephant /usr/bin/elephant
-# Providers go in /usr/lib/elephant/providers
+install -m 755 /tmp/elephant-linux-amd64 /usr/bin/elephant
+# Providers are .so files, go in /usr/lib/elephant/providers
 mkdir -p /usr/lib/elephant/providers
-install -m 755 /tmp/desktopapplications /usr/lib/elephant/providers/
-rm -f /tmp/elephant*.tar.gz /tmp/elephant /tmp/desktopapplications
+install -m 755 /tmp/desktopapplications-linux-amd64.so /usr/lib/elephant/providers/desktopapplications.so
+rm -f /tmp/elephant*.tar.gz /tmp/elephant-linux-amd64 /tmp/desktopapplications-linux-amd64.so
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard
