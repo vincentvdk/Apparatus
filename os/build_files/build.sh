@@ -87,7 +87,7 @@ ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/
 dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
-dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui
+dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
 
 ## -- Power management (needed for hyprdynamicmonitors lid/power detection)
 # tuned-ppd is Fedora 41+ replacement for power-profiles-daemon
@@ -132,9 +132,11 @@ chmod +x /usr/libexec/apparatus/first-login.sh
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
 chmod +x /usr/libexec/apparatus/smart-split
 
-# First-login XDG autostart (runs when graphical session starts)
-mkdir -p /etc/xdg/autostart
-cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
+# First-login: use /etc/skel to pre-populate new user home directories
+# This ensures our hyprland.conf (with first-login exec-once) is used instead of Hyprland's auto-generated one
+mkdir -p /etc/skel/.config/hypr
+cp /usr/share/apparatus/hypr/hyprland.conf /etc/skel/.config/hypr/
+echo -e "\n# Apparatus first-login setup\nexec-once = /usr/libexec/apparatus/first-login.sh" >> /etc/skel/.config/hypr/hyprland.conf
 
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
