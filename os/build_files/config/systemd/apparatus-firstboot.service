@@ -1,0 +1,12 @@
+[Unit]
+Description=Apparatus First Boot Setup
+ConditionFirstBoot=yes
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/apparatus/firstboot-setup.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

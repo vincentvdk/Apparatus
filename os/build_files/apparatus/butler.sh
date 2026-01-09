@@ -15,7 +15,6 @@ echo -e "$logo"
 
 # Available options
 OPTIONS=(
-  "Init             - Initialize a fresh install"
   "Distrobox        - Manage distroboxes"
   "Configure        - Configure Hyprland settings"
   "Theme            - Select a theme"
@@ -30,9 +29,6 @@ main() {
   case "${CHOICE}" in
     theme)
       set_theme
-      ;;
-    init)
-      init
       ;;
     distrobox)
       distrobox_menu
@@ -377,73 +373,8 @@ set_theme() {
   sleep 2
 }
 
-# -- Init new install
-init() {
-  # Check if init already ran
-  if test -e "$HOME"/.config/apparatus/init-done; then
-    echo '{{ Bold "System already initialized.."}}' | gum format -t template
-    sleep 2
-    return
-  fi
-
-  echo '{{ Bold "# Configuring Hyprland" }}' | gum format -t template
-  mkdir -p ${HOME}/.config/hypr
-  mkdir -p ${HOME}/.config/waybar
-  mkdir -p ${HOME}/.config/mako
-  mkdir -p ${HOME}/.config/kitty
-  mkdir -p ${HOME}/.config/rio/themes
-  mkdir -p ${HOME}/.config/uwsm
-  mkdir -p ${HOME}/.config/apparatus
-
-  # Copy configs
-  cp /usr/share/apparatus/hypr/* ~/.config/hypr/
-  cp /usr/share/apparatus/waybar/* ~/.config/waybar/
-  cp /usr/share/apparatus/kitty/* ~/.config/kitty/
-  cp /usr/share/apparatus/rio/config.toml ~/.config/rio/
-  cp /usr/share/apparatus/uwsm/* ~/.config/uwsm/
-
-  # Symlink rio themes from central themes folder
-  ln -sf /usr/share/apparatus/themes/catppuccin-mocha/rio.toml ~/.config/rio/themes/catppuccin-mocha.toml
-  ln -sf /usr/share/apparatus/themes/catppuccin-latte/rio.toml ~/.config/rio/themes/catppuccin-latte.toml
-
-  # Symlink rio config for flatpak (rio looks in ~/.var/app/com.rioterm.Rio/config/rio/)
-  mkdir -p ${HOME}/.var/app/com.rioterm.Rio/config
-  ln -sfn ${HOME}/.config/rio ${HOME}/.var/app/com.rioterm.Rio/config/rio
-
-  echo '{{ Bold "# Applying theme" }}' | gum format -t template
-  local CURRENT_THEME="catppuccin-mocha"
-  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/kitty.conf ~/.config/kitty/theme.conf
-  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/waybar.css ~/.config/waybar/theme.css
-  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/mako.conf ~/.config/mako/config
-  ln -sf /usr/share/apparatus/themes/$CURRENT_THEME/hyprland.conf ~/.config/hypr/theme.conf
-  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-  echo "$CURRENT_THEME" > ~/.config/apparatus/current-theme
-
-  echo '{{ Bold "# Enable Flathub Repository" }}' | gum format -t template
-  /usr/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || exit 1
-
-  echo '{{ Bold "# Installing Firefox" }}' | gum format -t template
-  /usr/bin/flatpak install --user --noninteractive flathub org.mozilla.firefox || exit 1
-
-  echo '{{ Bold "# Installing Signal" }}' | gum format -t template
-  /usr/bin/flatpak install --user --noninteractive flathub org.signal.Signal || exit 1
-
-  echo '{{ Bold "# Installing Joplin" }}' | gum format -t template
-  /usr/bin/flatpak install --user --noninteractive flathub net.cozic.joplin_desktop || exit 1
-
-  echo '{{ Bold "# Installing Rio Terminal" }}' | gum format -t template
-  /usr/bin/flatpak install --user --noninteractive flathub com.rioterm.Rio || exit 1
-
-  echo '{{ Bold "# Setup complete!" }}' | gum format -t template
-  mkdir -p "$HOME"/.config/apparatus
-  touch "$HOME"/.config/apparatus/init-done
-}
-
 # Main - handle command line arguments or show menu
 case "${1:-}" in
-  init)
-    init
-    ;;
   distrobox)
     distrobox_menu
     ;;

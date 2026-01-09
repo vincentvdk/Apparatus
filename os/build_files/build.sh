@@ -125,10 +125,12 @@ cat > /usr/share/apparatus/image-info.json <<EOF
 EOF
 
 
-# First-login setup script
+# Apparatus scripts
 mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
+cp /delivery/build_files/apparatus/firstboot-setup.sh /usr/libexec/apparatus/
 chmod +x /usr/libexec/apparatus/first-login.sh
+chmod +x /usr/libexec/apparatus/firstboot-setup.sh
 
 # Smart-split script for kitty (detects distrobox and enters same container)
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
@@ -141,6 +143,10 @@ cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-se
 mkdir -p /etc/uwsm
 cp /delivery/build_files/config/uwsm/env /etc/uwsm/env
 
+## -- Set Hyprland (UWSM) as default session for new users
+mkdir -p /etc/accountsservice/user-templates
+cp /delivery/build_files/config/accountsservice/user-templates/standard /etc/accountsservice/user-templates/
+
 ## -- Enabling Systemd services
 systemctl enable gdm.service
 systemctl enable podman.socket
@@ -148,6 +154,10 @@ systemctl enable podman.socket
 # Bootc switch service (runs once after install to point updates to GHCR)
 cp /delivery/build_files/config/systemd/apparatus-bootc-switch.service /usr/lib/systemd/system/
 systemctl enable apparatus-bootc-switch.service
+
+# Firstboot service (sets up user config on first boot)
+cp /delivery/build_files/config/systemd/apparatus-firstboot.service /usr/lib/systemd/system/
+systemctl enable apparatus-firstboot.service
 
 ## -- Mask services that don't work on immutable ostree systems
 systemctl mask systemd-remount-fs.service
@@ -193,10 +203,9 @@ cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
 # Ensure apparatus files are world-readable
 chmod -R a+rX /usr/share/apparatus
 
-# First-login systemd user service (runs butler init on first graphical login)
-cp /delivery/build_files/config/systemd/apparatus-first-login.service /usr/lib/systemd/user/
-# Enable via static symlink (like elephant)
-ln -sf ../apparatus-first-login.service /usr/lib/systemd/user/graphical-session.target.wants/apparatus-first-login.service
+# First-login via XDG autostart (runs on first graphical login)
+mkdir -p /etc/xdg/autostart
+cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
 
 # Copy wallpaper
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then

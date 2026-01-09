@@ -1,8 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Apparatus First Login
-Comment=Run butler setup on first login
-Exec=/usr/libexec/apparatus/first-login.sh
-Terminal=false
-NoDisplay=true
+Exec=kitty --class apparatus-setup -e /usr/libexec/apparatus/first-login.sh
 X-GNOME-Autostart-enabled=true
+NoDisplay=true
