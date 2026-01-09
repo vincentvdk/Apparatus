@@ -43,7 +43,7 @@ ln -sfn "$USER_HOME"/.config/rio "$USER_HOME"/.var/app/com.rioterm.Rio/config/ri
 # Apply default theme (catppuccin-mocha)
 THEME="catppuccin-mocha"
 ln -sf /usr/share/apparatus/themes/$THEME/kitty.conf "$USER_HOME"/.config/kitty/theme.conf
-ln -sf /usr/share/apparatus/themes/$THEME/waybar.css "$USER_HOME"/.config/waybar/theme.conf
+ln -sf /usr/share/apparatus/themes/$THEME/waybar.css "$USER_HOME"/.config/waybar/theme.css
 ln -sf /usr/share/apparatus/themes/$THEME/mako.conf "$USER_HOME"/.config/mako/config
 ln -sf /usr/share/apparatus/themes/$THEME/hyprland.conf "$USER_HOME"/.config/hypr/theme.conf
 echo "$THEME" > "$USER_HOME"/.config/apparatus/current-theme

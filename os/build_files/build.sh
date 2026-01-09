@@ -129,12 +129,12 @@ EOF
 mkdir -p /usr/libexec/apparatus
 cp /delivery/build_files/apparatus/first-login.sh /usr/libexec/apparatus/
 cp /delivery/build_files/apparatus/firstboot-setup.sh /usr/libexec/apparatus/
-chmod +x /usr/libexec/apparatus/first-login.sh
-chmod +x /usr/libexec/apparatus/firstboot-setup.sh
+chmod 755 /usr/libexec/apparatus/first-login.sh
+chmod 755 /usr/libexec/apparatus/firstboot-setup.sh
 
 # Smart-split script for kitty (detects distrobox and enters same container)
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
-chmod +x /usr/libexec/apparatus/smart-split
+chmod 755 /usr/libexec/apparatus/smart-split
 
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
@@ -146,6 +146,7 @@ cp /delivery/build_files/config/uwsm/env /etc/uwsm/env
 ## -- Set Hyprland (UWSM) as default session for new users
 mkdir -p /etc/accountsservice/user-templates
 cp /delivery/build_files/config/accountsservice/user-templates/standard /etc/accountsservice/user-templates/
+cp /delivery/build_files/config/accountsservice/user-templates/administrator /etc/accountsservice/user-templates/
 
 ## -- Enabling Systemd services
 systemctl enable gdm.service
