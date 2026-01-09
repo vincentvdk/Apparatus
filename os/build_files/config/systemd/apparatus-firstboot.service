@@ -1,7 +1,8 @@
 [Unit]
 Description=Apparatus First Boot Setup
-ConditionFirstBoot=yes
+ConditionPathExists=!/var/lib/apparatus/firstboot-done
 After=local-fs.target
+Before=gdm.service display-manager.service
 
 [Service]
 Type=oneshot

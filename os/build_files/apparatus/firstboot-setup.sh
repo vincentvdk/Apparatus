@@ -53,4 +53,8 @@ chown -R "$USER_NAME:$USER_NAME" "$USER_HOME"/.config
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME"/.local
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME"/.var
 
+# Mark firstboot as done
+mkdir -p /var/lib/apparatus
+touch /var/lib/apparatus/firstboot-done
+
 echo "Apparatus setup complete for $USER_NAME"
