@@ -43,17 +43,6 @@ else
   echo 'Powerlevel10k already configured. Skipping..'
 fi
 
-# TMUX
-if [[ ! -f "${HOME}/.config/tmux/tmux.conf" ]]; then
-  echo "tmux config.."
-  mkdir -p "${HOME}/.config/tmux"
-  cp ${DEFAULT_CONFIG_PATH}/tmux.conf "${HOME}/.config/tmux/tmux.conf"
-  git clone https://github.com/tmux-plugins/tpm ${HOME}/.config/tmux/plugins/tpm
-  ${HOME}/.config/tmux/plugins/tpm/bin/install_plugins
-else
-  echo 'tmux.conf already exists. Skipping..'
-fi
-
 # NVM / Node
 if [[ ! -f "${NVM_DIR}/nvm.sh" ]]; then
 git clone https://github.com/nvm-sh/nvm.git "$NVM_DIR" && \

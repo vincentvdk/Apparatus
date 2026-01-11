@@ -1,64 +1,78 @@
+#!/usr/bin/env bash
+# Tool version manager for pulumi (using mise)
 # $1: action to take
-#
+# $2: version (optional, for install_version)
 
 TOOL="pulumi"
-AVAILABLE_VERSIONS=($(asdf list $TOOL | tr -d '*\n' | xargs printf '%s '))
 ACTION=$1
 
+get_installed_versions() {
+  mise ls "$TOOL" 2>/dev/null | awk '{print $2}' | tr '\n' ' '
+}
+
 main() {
-  if [[ $1 == "latest" ]]; then
-    version_latest ${TOOL}
-  elif [[ $1 == "current" ]]; then
-    version_current ${TOOL}
-  elif [[ $1 == "available" ]]; then
-    list_installed_versions ${TOOL}
-  elif [[ $1 == "setversion" ]]; then
-    set_version ${TOOL}
-  elif [[ $1 == "install_version" ]]; then
-    version_manual ${TOOL} $2
-  else
-    echo "Action or option not supported.."
-  fi
+  case "$1" in
+    latest)
+      version_latest
+      ;;
+    current)
+      version_current
+      ;;
+    available)
+      list_installed_versions
+      ;;
+    setversion)
+      set_version
+      ;;
+    install_version)
+      version_manual "$2"
+      ;;
+    *)
+      echo "Usage: $0 {latest|current|available|setversion|install_version <version>}"
+      ;;
+  esac
 }
 
 # Install the latest version
 version_latest() {
   echo "Installing/updating LATEST of: ${TOOL}"
-  asdf plugin add "${TOOL}"
-  asdf install "${TOOL}" latest
-  asdf global "${TOOL}" latest
+  mise use --global "${TOOL}@latest"
 }
 
 # Show the current version
 version_current() {
-  CURRENT_VERSION=$(asdf current ${TOOL})
+  CURRENT_VERSION=$(mise current "$TOOL" 2>/dev/null)
   if [[ -z "${CURRENT_VERSION}" ]]; then
     gum style --foreground "#f14e32" "${TOOL} is not installed. Please install it first.."
   else
-    gum style --foreground "#f14e32" ${CURRENT_VERSION}
+    gum style --foreground "#f14e32" "${CURRENT_VERSION}"
   fi
 }
 
 # List all installed versions
 list_installed_versions() {
+  AVAILABLE_VERSIONS=$(get_installed_versions)
   if [[ -z "${AVAILABLE_VERSIONS}" ]]; then
     gum style --foreground "#f14e32" "${TOOL} is not installed. Please install it first.."
   else
-    gum style --foreground "#f14e32" ${AVAILABLE_VERSIONS}
+    gum style --foreground "#f14e32" "${AVAILABLE_VERSIONS}"
   fi
 }
 
-# Install specifig version
+# Install specific version
 version_manual() {
-  asdf install ${TOOL} $2
-  asdf global ${TOOL} $2
+  mise use --global "${TOOL}@$1"
 }
 
-# Set a default version
+# Set a default version from installed versions
 set_version() {
-  VERSION=$(gum choose ${AVAILABLE_VERSIONS})
-  asdf global ${TOOL} ${VERSION}
-  asdf reshim ${TOOL}
+  AVAILABLE_VERSIONS=($(get_installed_versions))
+  if [[ ${#AVAILABLE_VERSIONS[@]} -eq 0 ]]; then
+    gum style --foreground "#f14e32" "${TOOL} is not installed. Please install it first.."
+    return 1
+  fi
+  VERSION=$(gum choose "${AVAILABLE_VERSIONS[@]}")
+  mise use --global "${TOOL}@${VERSION}"
 }
 
-main $1 $2
+main "$1" "$2"

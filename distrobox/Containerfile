@@ -3,20 +3,21 @@ LABEL com.github.containers.toolbox="true"
 
 ARG VERSION_GUM="0.14.5"
 ARG VERSION_NEOVIM="0.10.0"
-#ARG NODE_VERSION="20"
-ARG ASDF_VERSION="0.14.1"
+ARG VERSION_MISE="2025.1.6"
 ARG CHEZMOI_VERSION="2.52.2"
 ARG ZELLIJ_VERSION="0.42.0"
 
+# -- Set zsh as default shell
+ENV SHELL=/bin/zsh
+
 # -- Packages
 # fuse deps are needed to work with appimage
-RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk tmux gcc gcc-c++
+RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk gcc gcc-c++ && \
+    sed -i 's|SHELL=/bin/bash|SHELL=/bin/zsh|' /etc/default/useradd
 
-## -- Directories
-RUN mkdir -p /opt/asdf
-
-## -- ASDF for binaries
-RUN git clone https://github.com/asdf-vm/asdf.git /opt/asdf --branch v${ASDF_VERSION}
+## -- mise (modern replacement for asdf)
+RUN curl -L "https://github.com/jdx/mise/releases/download/v${VERSION_MISE}/mise-v${VERSION_MISE}-linux-x64" -o /usr/local/bin/mise && \
+    chmod +x /usr/local/bin/mise
 
 ## -- Charm
 RUN curl -OL https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_Linux_x86_64.tar.gz && \
