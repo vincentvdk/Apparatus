@@ -1,0 +1,8 @@
+module greetd-auth 1.0;
+
+require {
+    type xdm_t;
+}
+
+# Make xdm_t (used by greetd) permissive for authentication
+permissive xdm_t;

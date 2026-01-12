@@ -1,0 +1,12 @@
+# greetd configuration for Apparatus OS
+# Uses gtkgreet greeter running under cage (minimal Wayland compositor)
+
+[terminal]
+vt = 1
+
+[default_session]
+# Run gtkgreet under cage (Wayland kiosk compositor)
+# cage -s: single application mode (exit when app exits)
+# gtkgreet -s: load custom CSS stylesheet
+command = "cage -s -- gtkgreet -s /etc/greetd/gtkgreet.css -c 'uwsm start hyprland'"
+user = "greeter"

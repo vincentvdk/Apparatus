@@ -1,0 +1,49 @@
+/* Apparatus OS gtkgreet theme - Catppuccin Mocha */
+
+window {
+    background-color: #1e1e2e;
+    background-image: url("/usr/share/apparatus/wallpapers/default.jpg");
+    background-size: cover;
+    background-position: center;
+}
+
+box#body {
+    background-color: rgba(30, 30, 46, 0.9);
+    border-radius: 10px;
+    padding: 30px;
+    margin: 50px;
+}
+
+entry {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 2px solid #45475a;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+entry:focus {
+    border-color: #cba6f7;
+}
+
+button {
+    background-color: #cba6f7;
+    color: #1e1e2e;
+    border-radius: 5px;
+    padding: 8px 16px;
+}
+
+button:hover {
+    background-color: #b4befe;
+}
+
+label {
+    color: #cdd6f4;
+}
+
+combobox {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 2px solid #45475a;
+    border-radius: 5px;
+}

@@ -5,6 +5,7 @@
 
 INIT_DONE="$HOME/.local/state/apparatus/init-done"
 LOG_FILE="$HOME/.local/state/apparatus/first-login.log"
+LOCK_FILE="$HOME/.local/state/apparatus/first-login.lock"
 
 # Create state directory
 mkdir -p "$HOME/.local/state/apparatus"
@@ -19,6 +20,13 @@ log "=== Apparatus First Login started ==="
 # Exit if already initialized
 if [ -f "$INIT_DONE" ]; then
     log "Already initialized, exiting"
+    exit 0
+fi
+
+# Prevent concurrent runs with lock file
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+    log "Another instance is running, exiting"
     exit 0
 fi
 

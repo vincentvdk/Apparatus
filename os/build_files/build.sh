@@ -15,7 +15,8 @@ dnf5 -y install dnf5-plugins
 
 ## -- Display Manager & Wayland base
 # dejavu-sans-fonts needed for plymouth password prompt (Image.Text requires fonts in initramfs)
-dnf5 -y install gdm xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-plugin-script plymouth-plugin-label dejavu-sans-fonts
+# Using greetd + gtkgreet instead of GDM to save ~2GB of GNOME dependencies
+dnf5 -y install greetd greetd-selinux gtkgreet cage xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-plugin-script plymouth-plugin-label dejavu-sans-fonts
 
 ## -- Configure Plymouth for graphical boot
 # Download connect theme from adi1090x/plymouth-themes
@@ -86,7 +87,7 @@ mkdir -p /usr/lib/systemd/user/graphical-session.target.wants
 ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/elephant.service
 
 ## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit papirus-icon-theme wl-clipboard gvfs gvfs-smb gvfs-fuse
+dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
@@ -143,13 +144,30 @@ cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-se
 mkdir -p /etc/uwsm
 cp /delivery/build_files/config/uwsm/env /etc/uwsm/env
 
-## -- Set Hyprland (UWSM) as default session for new users
-mkdir -p /etc/accountsservice/user-templates
-cp /delivery/build_files/config/accountsservice/user-templates/standard /etc/accountsservice/user-templates/
-cp /delivery/build_files/config/accountsservice/user-templates/administrator /etc/accountsservice/user-templates/
+## -- greetd configuration (gtkgreet greeter running under cage)
+# Create greeter user for greetd (runs the greeter process)
+useradd -r -M -s /bin/false greeter || true
+
+# SELinux: Make xdm_t (greetd's domain) permissive for authentication
+# greetd runs as xdm_t per greetd-selinux package file contexts
+dnf5 -y install selinux-policy-devel
+mkdir -p /tmp/selinux-build
+cp /delivery/build_files/config/selinux/greetd-auth.te /tmp/selinux-build/
+cd /tmp/selinux-build
+checkmodule -M -m -o greetd-auth.mod greetd-auth.te
+semodule_package -o greetd-auth.pp -m greetd-auth.mod
+semodule -i greetd-auth.pp
+cd /
+rm -rf /tmp/selinux-build
+
+mkdir -p /etc/greetd
+cp /delivery/build_files/config/greetd/config.toml /etc/greetd/
+cp /delivery/build_files/config/greetd/gtkgreet.css /etc/greetd/
+chmod 644 /etc/greetd/*.css /etc/greetd/*.toml
+chmod 755 /etc/greetd
 
 ## -- Enabling Systemd services
-systemctl enable gdm.service
+systemctl enable greetd.service
 systemctl enable podman.socket
 
 # Bootc switch service (runs once after install to point updates to GHCR)
