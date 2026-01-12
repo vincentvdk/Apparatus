@@ -34,6 +34,34 @@ fi
 export PATH="/usr/bin:/usr/local/bin:$PATH"
 log "PATH: $PATH"
 
+# Wait for network connectivity
+wait_for_network() {
+    local max_attempts=30
+    local attempt=1
+
+    echo "Waiting for network connection..."
+    while [ $attempt -le $max_attempts ]; do
+        if /usr/bin/curl -s --max-time 5 https://flathub.org > /dev/null 2>&1; then
+            log "Network available after $attempt attempts"
+            return 0
+        fi
+        log "Network check attempt $attempt/$max_attempts failed"
+        sleep 2
+        ((attempt++))
+    done
+
+    log "Network not available after $max_attempts attempts"
+    return 1
+}
+
+if ! wait_for_network; then
+    /usr/bin/gum style --foreground 196 --bold "No network connection available."
+    echo "Please connect to the internet and run 'butler setup' to install applications."
+    echo ""
+    read -rp "Press Enter to close..."
+    exit 1
+fi
+
 # Logo
 echo '
    _____                                          __
