@@ -218,6 +218,7 @@ cp /delivery/build_files/config/kitty/* /usr/share/apparatus/kitty/
 cp /delivery/build_files/config/rio/* /usr/share/apparatus/rio/
 cp /delivery/build_files/config/uwsm/* /usr/share/apparatus/uwsm/
 cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
+cp /delivery/build_files/config/flatpaks.conf /usr/share/apparatus/
 
 # Ensure apparatus files are world-readable
 chmod -R a+rX /usr/share/apparatus
