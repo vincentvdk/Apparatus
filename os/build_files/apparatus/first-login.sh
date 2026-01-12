@@ -142,6 +142,10 @@ else
     done <<< "$selected_apps"
 fi
 
+# Restart elephant to index new apps
+log "Restarting elephant to index new applications"
+systemctl --user restart elephant.service 2>/dev/null || true
+
 # Mark init as done
 touch "$INIT_DONE"
 log "First login setup complete"
