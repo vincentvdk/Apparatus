@@ -58,14 +58,6 @@ else
   echo 'nvm already configured. Skipping..'
 fi
 
-## Zellij
-if [ ! -f "${HOME}/.config/zellij/config.kdl" ]; then
-  mkdir ~/.config/zellij
-  zellij setup --dump-config > ~/.config/zellij/config.kdl
-else
-  echo 'Zellij already exists. Skipping..'
-fi
-
 # SSH
 if [[ ! -d "${HOME}/.ssh" ]]; then
   echo "ssh config.."
@@ -73,6 +65,16 @@ if [[ ! -d "${HOME}/.ssh" ]]; then
   chmod 0700 ${HOME}/.ssh
 else
   echo '.ssh folder already exists. Skipping..'
+fi
+
+# Atuin (shell history)
+if ! command -v atuin &>/dev/null; then
+  echo "Installing Atuin.."
+  curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+  echo '# Atuin' >> "${ZDOTDIR}/.zshrc"
+  echo 'eval "$(atuin init zsh)"' >> "${ZDOTDIR}/.zshrc"
+else
+  echo 'Atuin already installed. Skipping..'
 fi
 
 # Git

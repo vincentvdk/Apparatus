@@ -5,7 +5,6 @@ ARG VERSION_GUM="0.14.5"
 ARG VERSION_NEOVIM="0.10.0"
 ARG VERSION_MISE="2025.1.6"
 ARG CHEZMOI_VERSION="2.52.2"
-ARG ZELLIJ_VERSION="0.42.0"
 
 # -- Set zsh as default shell
 ENV SHELL=/bin/zsh
@@ -23,15 +22,6 @@ RUN curl -L "https://github.com/jdx/mise/releases/download/v${VERSION_MISE}/mise
 RUN curl -OL https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_Linux_x86_64.tar.gz && \
   tar -C /usr/local/bin --strip-components=1 -xzf gum_${VERSION_GUM}_Linux_x86_64.tar.gz gum_${VERSION_GUM}_Linux_x86_64/gum && \
   rm gum_${VERSION_GUM}_Linux_x86_64.tar.gz
-
-## -- NodeJS, nvm, npm,.. (needed for LSP)
-#ENV NVM_DIR="/opt/nvm"
-
-#RUN git clone https://github.com/nvm-sh/nvm.git "$NVM_DIR" && \
-#  cd "$NVM_DIR" && \
-#  git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)` && . "$NVM_DIR/nvm.sh" && \
-#  nvm install ${NODE_VERSION} && \
-#  npm install -g typescript typescript-language-server
 
 ## -- NeoVim
 RUN mkdir /opt/nvim && \

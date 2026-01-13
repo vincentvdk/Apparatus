@@ -2,23 +2,14 @@
 #set -x
 
 logo='
-   _____                                          __                 
+   _____                                          __
   /  _  \  ______  ______ _____  _______ _____  _/  |_  __ __  ______
  /  /_\  \ \____ \ \____ \\__  \ \_  __ \\__  \ \   __\|  |  \/  ___/
-/    |    \|  |_> >|  |_> >/ __ \_|  | \/ / __ \_|  |  |  |  /\___ \ 
+/    |    \|  |_> >|  |_> >/ __ \_|  | \/ / __ \_|  |  |  |  /\___ \
 \____|__  /|   __/ |   __/(____  /|__|   (____  /|__|  |____//____  >
-        \/ |__|    |__|        \/             \/                  \/ 
+        \/ |__|    |__|        \/             \/                  \/
 
 '
-
-# Check if asdf is added to $PATH.
-if [ $? -ne 0 ]
-  then
-    echo "asdf not found in PATH. Adding.."
-    export -p PATH="$PATH:/opt/asdf/bin"
-  else
-    echo "asdf installed.."
-fi
 
 echo -e "$logo"
 
@@ -27,72 +18,131 @@ OPTIONS=(
   "Init             - Initialize a new Apparatus box"
   "Manage Tools     - Install and manage tools"
   "Theme            - Select a theme"
+  "Exit             - Exit butler"
 )
 
 # -- Main func
 main() {
-  local OPT=$(gum choose "${OPTIONS[@]}" --height 15 --header "Option:")
-  local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+  while true; do
+    local OPT=$(gum choose "${OPTIONS[@]}" --height 15 --header "Option:")
+    local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
 
-  case "${CHOICE}" in
-    init)
-      init
-      ;;
-    manage-tools)
-      get_binary
-      ;;
-    theme)
-      set_theme
-      ;;
-  esac
+    case "${CHOICE}" in
+      init)
+        init
+        ;;
+      manage-tools)
+        manage_tools
+        ;;
+      theme)
+        set_theme
+        ;;
+      exit|"")
+        echo "Goodbye!"
+        return
+        ;;
+    esac
+  done
 }
 
 # -- Run init script
 init() {
-echo '{{ Bold "# Manage binaries:" }}' | gum format -t template
-gum confirm  && /opt/bin/init.sh
+  echo '{{ Bold "# Initialize Apparatus box" }}' | gum format -t template
+  echo ""
+  if gum confirm "Run initialization script?"; then
+    /opt/bin/init.sh
+    echo ""
+    echo '{{ Color "2" "✓ Initialization complete" }}' | gum format -t template
+  fi
+  echo ""
+  echo "Press any key to continue..."
+  read -k 1
 }
 
 # -- Manage tools
-get_binary () {
-echo '{{ Bold "# Manage tools:" }}' | gum format -t template
-  local OPT=$(gum choose "terraform" "terraform-ls" "kubectl" "gcloud_cli" "golang" "kubie" "pulumi") #TODO read this from a config file
-  local CHOICE=$(echo "$OPT")
+manage_tools() {
+  while true; do
+    echo '{{ Bold "# Manage tools" }}' | gum format -t template
+    local TOOL=$(gum choose \
+      "terraform" \
+      "terraform-ls" \
+      "kubectl" \
+      "gcloud_cli" \
+      "golang" \
+      "kubie" \
+      "pulumi" \
+      "Back             - Return to main menu" \
+      --height 15 --header "Select tool:")
 
-  ACTION=$(gum choose "latest" "enter version" "show available" "show current" "set version")
-   case $ACTION in
-    'show available')
-      source "tool_${OPT}.sh" available
-      ;;
-    'show current')
-      source "tool_${OPT}.sh" current
-      ;;
-    'latest')
-      source "tool_${OPT}.sh" $ACTION
-      ;;
-    'enter version')
-      VERSION=$(gum input --placeholder="Enter version to install (ex 1.2.1)")
-      source "tool_${OPT}.sh" install_version ${VERSION}
-      ;;
-    'set version')
-      source "tool_${OPT}.sh" setversion
-  esac
+    [[ "$TOOL" == "Back"* || -z "$TOOL" ]] && return
+
+    local ACTION=$(gum choose \
+      "latest           - Install latest version" \
+      "enter version    - Install specific version" \
+      "show available   - Show available versions" \
+      "show current     - Show current version" \
+      "set version      - Set active version" \
+      "Back             - Return to tool selection" \
+      --height 15 --header "Action for $TOOL:")
+
+    local ACTION_KEY=$(echo "$ACTION" | awk -F ' {2,}' '{print $1}')
+
+    case "$ACTION_KEY" in
+      'show available')
+        source "tool_${TOOL}.sh" available
+        ;;
+      'show current')
+        source "tool_${TOOL}.sh" current
+        ;;
+      'latest')
+        source "tool_${TOOL}.sh" latest
+        ;;
+      'enter version')
+        VERSION=$(gum input --placeholder "Enter version (e.g. 1.2.1)")
+        [[ -n "$VERSION" ]] && source "tool_${TOOL}.sh" install_version "$VERSION"
+        ;;
+      'set version')
+        source "tool_${TOOL}.sh" setversion
+        ;;
+      'Back'|'')
+        continue
+        ;;
+    esac
+
+    echo ""
+    echo "Press any key to continue..."
+    read -k 1
+  done
 }
 
 # -- Set theme
 set_theme() {
-  echo '{{ Bold "# Set theme:" }}' | gum format -t template
-  local OPT=$(gum choose "catpuccin-dark" "catpuccin-light") #TODO read this from a config file
-  local CHOICE=$(echo "$OPT")
+  echo '{{ Bold "# Set theme" }}' | gum format -t template
+  local CHOICE=$(gum choose \
+    "catppuccin-dark  - Dark theme" \
+    "catppuccin-light - Light theme" \
+    "Back             - Return to main menu" \
+    --height 15 --header "Select theme:")
 
-  case ${CHOICE} in
-    catpuccin-dark)
+  local THEME_KEY=$(echo "$CHOICE" | awk -F ' {2,}' '{print $1}')
+
+  case "$THEME_KEY" in
+    catppuccin-dark)
       distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style dark
+      echo '{{ Color "2" "✓ Dark theme applied" }}' | gum format -t template
       ;;
-    catpuccin-light)
+    catppuccin-light)
       distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style light
+      echo '{{ Color "2" "✓ Light theme applied" }}' | gum format -t template
+      ;;
+    Back|"")
+      return
       ;;
   esac
+
+  echo ""
+  echo "Press any key to continue..."
+  read -k 1
 }
 
 # Main
