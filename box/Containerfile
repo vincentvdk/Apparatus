@@ -1,4 +1,4 @@
-FROM docker.io/fedora:latest
+FROM docker.io/fedora:43
 LABEL com.github.containers.toolbox="true"
 
 ARG VERSION_GUM="0.14.5"
@@ -57,8 +57,3 @@ RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
     ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
     ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
     ln -sf /usr/bin/distrobox-host-exec /usr/bin/gsettings
-
-### -- Zellij
-#RUN curl -OL https://github.com/zellij-org/zellij/releases/download/v${ZELLIJ_VERSION}/zellij-x86_64-unknown-linux-musl.tar.gz &&\
-#  tar -C /usr/local/bin -xzf zellij-x86_64-unknown-linux-musl.tar.gz
-
