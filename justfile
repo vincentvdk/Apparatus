@@ -21,7 +21,7 @@ build-iso: build-container
         --security-opt label=type:unconfined_t \
         -v ./iso-output:/output \
         -v /var/lib/containers/storage:/var/lib/containers/storage \
-        -v ./disk_config/iso.toml:/config.toml:ro \
+        -v ./os/disk_config/iso.toml:/config.toml:ro \
         quay.io/centos-bootc/bootc-image-builder:latest \
         --type anaconda-iso \
         --rootfs ext4 \

@@ -11,11 +11,11 @@ ARG ZELLIJ_VERSION="0.42.0"
 ENV SHELL=/bin/zsh
 
 # -- Packages
-# fuse deps are needed to work with appimage
-RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk gcc gcc-c++ && \
+# fuse deps are needed to work with appimage. wget2-wget is needed to prevent installing packaes when starting distrobox https://github.com/89luca89/distrobox/issues/1734
+RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk gcc gcc-c++ wget2-wget && \
     sed -i 's|SHELL=/bin/bash|SHELL=/bin/zsh|' /etc/default/useradd
 
-## -- mise (modern replacement for asdf)
+## -- mise
 RUN curl -L "https://github.com/jdx/mise/releases/download/v${VERSION_MISE}/mise-v${VERSION_MISE}-linux-x64" -o /usr/local/bin/mise && \
     chmod +x /usr/local/bin/mise
 
@@ -44,15 +44,21 @@ RUN curl -OL https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VER
   tar -C /usr/local/bin -xzf "chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz"
 
 ## -- Environment variables
-COPY distrobox/system/profile-custom.sh /etc/profile.d/99-custom.sh
+COPY box/system/profile-custom.sh /etc/profile.d/99-custom.sh
 
 ## -- Copy default configuration
-COPY distrobox/defaults/* /usr/share/apparatus/
+COPY box/config/* /usr/share/apparatus/
 
 ## -- Scripts
-COPY --chmod=0755 distrobox/scripts/ /opt/bin
+COPY --chmod=0755 box/bin/ /opt/bin
 
-## -- Zellij
-RUN curl -OL https://github.com/zellij-org/zellij/releases/download/v${ZELLIJ_VERSION}/zellij-x86_64-unknown-linux-musl.tar.gz &&\
-  tar -C /usr/local/bin -xzf zellij-x86_64-unknown-linux-musl.tar.gz
+## -- Host command symlinks (distrobox-host-exec)
+RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
+    ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
+    ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
+    ln -sf /usr/bin/distrobox-host-exec /usr/bin/gsettings
+
+### -- Zellij
+#RUN curl -OL https://github.com/zellij-org/zellij/releases/download/v${ZELLIJ_VERSION}/zellij-x86_64-unknown-linux-musl.tar.gz &&\
+#  tar -C /usr/local/bin -xzf zellij-x86_64-unknown-linux-musl.tar.gz
 

@@ -6,14 +6,12 @@ on:
       - main
     paths:
       - 'os/**'
-      - 'disk_config/**'
       - '.github/workflows/build.yml'
   push:
     branches:
       - main
     paths:
       - 'os/**'
-      - 'disk_config/**'
       - '.github/workflows/build.yml'
   schedule:
     - cron: '05 10 * * *'  # 10:05am UTC everyday
@@ -71,7 +69,7 @@ jobs:
             --security-opt label=type:unconfined_t \
             -v ./iso-output:/output \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
-            -v ./disk_config/iso.toml:/config.toml:ro \
+            -v ./os/disk_config/iso.toml:/config.toml:ro \
             ${{ env.BIB_IMAGE }} \
             --type anaconda-iso \
             --rootfs ext4 \
