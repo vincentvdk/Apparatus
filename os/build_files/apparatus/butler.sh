@@ -47,6 +47,7 @@ main() {
 distrobox_menu() {
   DISTROBOX_OPTIONS=(
     "Create           - Create a new distrobox"
+    "Upgrade          - Upgrade a distrobox [BETA]"
     "List             - List existing distroboxes"
     "Back             - Return to main menu"
   )
@@ -58,6 +59,9 @@ distrobox_menu() {
     case "${CHOICE}" in
       create)
         distrobox_create
+        ;;
+      upgrade)
+        distrobox_upgrade
         ;;
       list)
         distrobox_list
@@ -115,6 +119,86 @@ distrobox_list() {
   echo '{{ Bold "# Existing Distroboxes" }}' | gum format -t template
   echo ""
   distrobox list
+  echo ""
+  echo "Press any key to continue..."
+  read -n 1
+}
+
+# -- Upgrade distrobox [BETA]
+distrobox_upgrade() {
+  echo '{{ Bold "# Upgrade Distrobox [BETA]" }}' | gum format -t template
+  echo '{{ Color "3" "⚠ This feature is experimental" }}' | gum format -t template
+  echo ""
+
+  # Get list of existing distroboxes
+  local BOXES=$(distrobox list --no-color 2>/dev/null | tail -n +2 | awk '{print $3}')
+  if [ -z "$BOXES" ]; then
+    echo '{{ Color "1" "No distroboxes found" }}' | gum format -t template
+    sleep 2
+    return
+  fi
+
+  # Select distrobox
+  local CONTAINER=$(echo "$BOXES" | gum choose --header "Select distrobox to upgrade:")
+  [ -z "$CONTAINER" ] && return
+
+  # Select upgrade type
+  local ACTION=$(gum choose \
+    "packages         - Update packages inside container" \
+    "image            - Recreate with latest image (keeps home dir)" \
+    "Back             - Cancel" \
+    --height 15 --header "Upgrade type for $CONTAINER:")
+
+  local ACTION_KEY=$(echo "$ACTION" | awk -F ' {2,}' '{print $1}')
+
+  case "$ACTION_KEY" in
+    packages)
+      echo ""
+      echo "Upgrading packages in $CONTAINER..."
+      echo ""
+      distrobox upgrade "$CONTAINER"
+      echo ""
+      echo '{{ Color "2" "✓ Package upgrade complete" }}' | gum format -t template
+      ;;
+    image)
+      echo ""
+      echo '{{ Color "3" "⚠ This will:" }}' | gum format -t template
+      echo "  1. Pull the latest apparatus-box image"
+      echo "  2. Stop and remove the container"
+      echo "  3. Create a new container with the same name"
+      echo ""
+      echo '{{ Color "2" "✓ Your home directory will be preserved" }}' | gum format -t template
+      echo ""
+
+      if gum confirm "Proceed with image upgrade for $CONTAINER?"; then
+        local IMAGE="ghcr.io/vincentvdk/apparatus-box:latest"
+
+        echo ""
+        echo "Pulling latest image..."
+        podman pull "$IMAGE"
+
+        echo ""
+        echo "Stopping $CONTAINER..."
+        distrobox stop "$CONTAINER" --yes 2>/dev/null
+
+        echo ""
+        echo "Removing $CONTAINER..."
+        distrobox rm "$CONTAINER" --force 2>/dev/null
+
+        echo ""
+        echo "Creating new $CONTAINER..."
+        distrobox create -n "$CONTAINER" -i "$IMAGE"
+
+        echo ""
+        echo '{{ Color "2" "✓ Distrobox upgraded successfully" }}' | gum format -t template
+        echo "Enter with: distrobox enter $CONTAINER"
+      fi
+      ;;
+    Back|"")
+      return
+      ;;
+  esac
+
   echo ""
   echo "Press any key to continue..."
   read -n 1
