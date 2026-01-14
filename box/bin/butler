@@ -15,10 +15,11 @@ echo -e "$logo"
 
 # Available options
 OPTIONS=(
-  "Init             - Initialize a new Apparatus box"
-  "Manage Tools     - Install and manage tools"
-  "Theme            - Select a theme"
-  "Exit             - Exit butler"
+  "Init              - Initialize a new Apparatus box"
+  "Manage Tools      - Install and manage tools"
+  "Manage Tools TUI  - Tool manager (enhanced UI)"
+  "Theme             - Select a theme"
+  "Exit              - Exit butler"
 )
 
 # -- Main func
@@ -34,15 +35,31 @@ main() {
       manage-tools)
         manage_tools
         ;;
+      manage-tools-tui)
+        manage_tools_tui
+        ;;
       theme)
         set_theme
         ;;
-      exit|"")
+      exit|q|"")
         echo "Goodbye!"
         return
         ;;
     esac
   done
+}
+
+# -- Manage tools TUI (Bubbletea)
+manage_tools_tui() {
+  if command -v butler-tools &>/dev/null; then
+    butler-tools
+  else
+    echo '{{ Color "1" "butler-tools not installed" }}' | gum format -t template
+    echo "The enhanced TUI requires the butler-tools binary."
+    echo ""
+    echo "Press any key to continue..."
+    read -k 1
+  fi
 }
 
 # -- Run init script
@@ -60,80 +77,185 @@ init() {
 }
 
 # -- Manage tools
+# Tools are auto-discovered from /opt/bin/tool_<category>_<name>.sh
+
+# Category icons
+typeset -A CATEGORY_ICONS
+CATEGORY_ICONS=(
+  [cloud]="☁️ "
+  [kubernetes]="⎈ "
+  [development]="🔧"
+)
+
+get_categories() {
+  ls /opt/bin/tool_*.sh 2>/dev/null | sed 's|.*/tool_||;s|_[^_]*\.sh$||' | sort -u
+}
+
+get_tools_for_category() {
+  local category=$1
+  ls /opt/bin/tool_${category}_*.sh 2>/dev/null | sed "s|.*/tool_${category}_||;s|\.sh$||"
+}
+
+get_all_tools() {
+  ls /opt/bin/tool_*.sh 2>/dev/null | sed 's|.*/tool_[^_]*_||;s|\.sh$||'
+}
+
+get_tool_script() {
+  local tool=$1
+  ls /opt/bin/tool_*_${tool}.sh 2>/dev/null | head -1
+}
+
 manage_tools() {
   while true; do
     echo '{{ Bold "# Manage tools" }}' | gum format -t template
-    local TOOL=$(gum choose \
-      "terraform" \
-      "terraform-ls" \
-      "kubectl" \
-      "gcloud_cli" \
-      "golang" \
-      "kubie" \
-      "pulumi" \
-      "Back             - Return to main menu" \
-      --height 15 --header "Select tool:")
 
-    [[ "$TOOL" == "Back"* || -z "$TOOL" ]] && return
+    # Build category menu dynamically
+    local categories=($(get_categories))
+    local category_menu=()
 
-    local ACTION=$(gum choose \
-      "latest           - Install latest version" \
-      "enter version    - Install specific version" \
-      "show available   - Show available versions" \
-      "show current     - Show current version" \
-      "set version      - Set active version" \
-      "Back             - Return to tool selection" \
-      --height 15 --header "Action for $TOOL:")
+    for cat in "${categories[@]}"; do
+      local count=$(get_tools_for_category "$cat" | wc -l)
+      local icon="${CATEGORY_ICONS[$cat]:-📦}"
+      # Capitalize category name
+      local display_name="$(echo $cat | sed 's/./\U&/')"
+      category_menu+=("${icon} ${display_name}|${cat}|${count}")
+    done
 
-    local ACTION_KEY=$(echo "$ACTION" | awk -F ' {2,}' '{print $1}')
+    # Format menu items
+    local menu_display=()
+    for item in "${category_menu[@]}"; do
+      local icon_name=$(echo "$item" | cut -d'|' -f1)
+      local count=$(echo "$item" | cut -d'|' -f3)
+      menu_display+=("${icon_name} (${count} tools)")
+    done
+    menu_display+=("📋 All tools")
+    menu_display+=("Back             - Return to main menu")
 
-    case "$ACTION_KEY" in
-      'show available')
-        source "tool_${TOOL}.sh" available
-        ;;
-      'show current')
-        source "tool_${TOOL}.sh" current
-        ;;
-      'latest')
-        source "tool_${TOOL}.sh" latest
-        ;;
-      'enter version')
-        VERSION=$(gum input --placeholder "Enter version (e.g. 1.2.1)")
-        [[ -n "$VERSION" ]] && source "tool_${TOOL}.sh" install_version "$VERSION"
-        ;;
-      'set version')
-        source "tool_${TOOL}.sh" setversion
-        ;;
-      'Back'|'')
-        continue
-        ;;
-    esac
+    local CATEGORY=$(gum choose "${menu_display[@]}" --height 15 --header "Select category:")
 
-    echo ""
-    echo "Press any key to continue..."
-    read -k 1
+    [[ "$CATEGORY" == "Back"* || -z "$CATEGORY" ]] && return
+
+    # Get tools for selected category
+    local TOOLS=()
+    if [[ "$CATEGORY" == *"All tools"* ]]; then
+      TOOLS=($(get_all_tools))
+    else
+      # Extract category key from selection
+      local selected_cat=""
+      for item in "${category_menu[@]}"; do
+        local icon_name=$(echo "$item" | cut -d'|' -f1)
+        if [[ "$CATEGORY" == "${icon_name}"* ]]; then
+          selected_cat=$(echo "$item" | cut -d'|' -f2)
+          break
+        fi
+      done
+      TOOLS=($(get_tools_for_category "$selected_cat"))
+    fi
+
+    # Tool selection loop
+    while true; do
+      local TOOL=$(gum choose \
+        "${TOOLS[@]}" \
+        "← Back           - Return to categories" \
+        --height 15 --header "Select tool:")
+
+      [[ "$TOOL" == "←"* || -z "$TOOL" ]] && break
+
+      # Get the actual script path for this tool
+      local TOOL_SCRIPT=$(get_tool_script "$TOOL")
+
+      # Action loop for selected tool
+      while true; do
+        local ACTION=$(gum choose \
+          "latest           - Install latest version" \
+          "enter version    - Install specific version" \
+          "show available   - Show available versions" \
+          "show current     - Show current version" \
+          "set version      - Set active version" \
+          "← Back           - Return to tool selection" \
+          --height 15 --header "Action for $TOOL:")
+
+        local ACTION_KEY=$(echo "$ACTION" | awk -F ' {2,}' '{print $1}')
+
+        case "$ACTION_KEY" in
+          'show available')
+            source "$TOOL_SCRIPT" available
+            ;;
+          'show current')
+            source "$TOOL_SCRIPT" current
+            ;;
+          'latest')
+            source "$TOOL_SCRIPT" latest
+            ;;
+          'enter version')
+            VERSION=$(gum input --placeholder "Enter version (e.g. 1.2.1)")
+            [[ -n "$VERSION" ]] && source "$TOOL_SCRIPT" install_version "$VERSION"
+            ;;
+          'set version')
+            source "$TOOL_SCRIPT" setversion
+            ;;
+          '←'*|'')
+            break
+            ;;
+        esac
+
+        echo ""
+        echo "Press any key to continue..."
+        read -k 1
+      done
+    done
   done
 }
 
 # -- Set theme
 set_theme() {
+  local THEMES_DIR="/usr/share/apparatus/themes"
+  local HOST_HOME="$DISTROBOX_HOST_HOME"
+
   echo '{{ Bold "# Set theme" }}' | gum format -t template
   local CHOICE=$(gum choose \
-    "catppuccin-dark  - Dark theme" \
-    "catppuccin-light - Light theme" \
-    "Back             - Return to main menu" \
+    "catppuccin-mocha  - Dark theme" \
+    "catppuccin-latte  - Light theme" \
+    "Back              - Return to main menu" \
     --height 15 --header "Select theme:")
 
-  local THEME_KEY=$(echo "$CHOICE" | awk -F ' {2,}' '{print $1}')
+  local THEME=$(echo "$CHOICE" | awk -F ' {2,}' '{print $1}')
 
-  case "$THEME_KEY" in
-    catppuccin-dark)
-      distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style dark
-      echo '{{ Color "2" "✓ Dark theme applied" }}' | gum format -t template
-      ;;
-    catppuccin-light)
-      distrobox-host-exec gsettings set org.gnome.Ptyxis interface-style light
-      echo '{{ Color "2" "✓ Light theme applied" }}' | gum format -t template
+  case "$THEME" in
+    catppuccin-mocha|catppuccin-latte)
+      echo '{{ Bold "# Applying theme: " }}'"$THEME" | gum format -t template
+
+      # Apply kitty theme
+      distrobox-host-exec bash -c "[ -d '$HOST_HOME/.config/kitty' ] && ln -sf '$THEMES_DIR/$THEME/kitty.conf' '$HOST_HOME/.config/kitty/theme.conf'"
+
+      # Apply waybar theme
+      distrobox-host-exec bash -c "[ -d '$HOST_HOME/.config/waybar' ] && ln -sf '$THEMES_DIR/$THEME/waybar.css' '$HOST_HOME/.config/waybar/theme.css'"
+
+      # Apply mako theme
+      distrobox-host-exec bash -c "[ -d '$HOST_HOME/.config/mako' ] && ln -sf '$THEMES_DIR/$THEME/mako.conf' '$HOST_HOME/.config/mako/config'"
+
+      # Apply hyprland theme
+      distrobox-host-exec bash -c "[ -d '$HOST_HOME/.config/hypr' ] && ln -sf '$THEMES_DIR/$THEME/hyprland.conf' '$HOST_HOME/.config/hypr/theme.conf'"
+
+      # Apply rio theme
+      distrobox-host-exec bash -c "[ -f '$HOST_HOME/.config/rio/config.toml' ] && sed -i 's/^theme = .*/theme = \"$THEME\"/' '$HOST_HOME/.config/rio/config.toml'"
+
+      # Apply GTK theme
+      if [[ "$THEME" == *"mocha"* ]]; then
+        distrobox-host-exec gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+      else
+        distrobox-host-exec gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+      fi
+
+      # Save current theme
+      distrobox-host-exec bash -c "mkdir -p '$HOST_HOME/.config/apparatus' && echo '$THEME' > '$HOST_HOME/.config/apparatus/current-theme'"
+
+      # Reload services
+      distrobox-host-exec hyprctl reload 2>/dev/null || true
+      distrobox-host-exec pkill -SIGUSR1 kitty 2>/dev/null || true
+      distrobox-host-exec makoctl reload 2>/dev/null || true
+
+      echo '{{ Color "2" "✓ Theme applied" }}' | gum format -t template
       ;;
     Back|"")
       return

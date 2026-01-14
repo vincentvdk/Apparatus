@@ -1,3 +1,10 @@
+# Build stage for butler-tools
+FROM docker.io/golang:1.22-alpine AS builder
+WORKDIR /build
+COPY box/cmd/butler-tools/ .
+RUN go build -o butler-tools .
+
+# Main image
 FROM docker.io/fedora:43
 LABEL com.github.containers.toolbox="true"
 
@@ -41,6 +48,9 @@ COPY box/config/* /usr/share/apparatus/
 
 ## -- Scripts
 COPY --chmod=0755 box/bin/ /opt/bin
+
+## -- Butler tools TUI (from builder stage)
+COPY --from=builder /build/butler-tools /usr/local/bin/butler-tools
 
 ## -- Host command symlinks (distrobox-host-exec)
 RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
