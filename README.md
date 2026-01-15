@@ -8,7 +8,7 @@ Apparatus is a Fedora Silverblue-based operating system configured for Developer
 
 - **Hyprland** - A modern, tiling Wayland compositor
 - **Pre-configured Distroboxes** - Isolated development environments
-- **Developer tools** - Neovim, Zellij, asdf, chezmoi, and more
+- **Developer tools** - Neovim, Zellij, mise, chezmoi, and more
 
 ## Installation
 
@@ -222,7 +222,7 @@ The development container includes:
 
 - **Neovim** - Text editor
 - **Zellij** - Terminal multiplexer
-- **asdf** - Version manager
+- **mise** - Version manager
 - **chezmoi** - Dotfiles manager
 - **zsh** - Shell with Powerlevel10k
 
@@ -246,34 +246,19 @@ chezmoi init --apply https://github.com/$GITHUB_USERNAME/dotfiles.git
 
 See the [chezmoi documentation](https://www.chezmoi.io/user-guide/setup/) for more details.
 
-## ASDF Version Manager
+## Mise Version Manager
 
-### Example: Golang
+[Mise](https://mise.jdx.dev/) manages tool versions. Example:
 
 ```bash
-# Add plugin
-asdf plugin add golang
+# Install a tool
+mise use go@1.21
 
-# Install version
-asdf install golang 1.21.6
+# Install globally
+mise use -g go@1.21
 
-# Set global version
-asdf global golang 1.21.6
-
-# Switch versions
-asdf shell golang 1.21.6
-
-# After installing new packages
-asdf reshim golang
-```
-
-### Default Packages
-
-Create `~/.default-golang-pkgs` to auto-install packages with new Go versions:
-
-```
-// allows comments
-github.com/jesseduffield/lazygit
+# List installed tools
+mise list
 ```
 
 ## Fonts
