@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"sort"
-	"strings"
 	"syscall"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -15,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"gopkg.in/yaml.v3"
 )
 
 // Styles
@@ -25,12 +23,6 @@ var (
 			Foreground(lipgloss.Color("#FFFDF5")).
 			Background(lipgloss.Color("#6C50FF")).
 			Padding(0, 1)
-
-	categoryIcons = map[string]string{
-		"cloud":       "☁️ ",
-		"kubernetes":  "⎈ ",
-		"development": "🔧",
-	}
 
 	panelStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -60,15 +52,30 @@ var (
 			Bold(true)
 )
 
-// Tool represents a discovered tool
+// YAML config structures
+type ToolConfig struct {
+	Categories map[string]CategoryConfig `yaml:"categories"`
+}
+
+type CategoryConfig struct {
+	Icon  string       `yaml:"icon"`
+	Tools []ToolEntry  `yaml:"tools"`
+}
+
+type ToolEntry struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+}
+
+// Tool represents a tool for the list
 type Tool struct {
-	Name     string
-	Category string
-	Script   string
+	Name        string
+	Description string
+	Category    string
 }
 
 func (t Tool) Title() string       { return t.Name }
-func (t Tool) Description() string { return t.Category }
+func (t Tool) Description() string { return t.Description }
 func (t Tool) FilterValue() string { return t.Name }
 
 // Category represents a tool category
@@ -96,7 +103,7 @@ type Action struct {
 	Name       string
 	Desc       string
 	Command    string
-	ShowOutput bool // Whether to show output in popup
+	ShowOutput bool
 }
 
 func (a Action) Title() string       { return a.Name }
@@ -119,15 +126,16 @@ type commandDoneMsg struct {
 
 // Model is the main application model
 type Model struct {
-	categories   list.Model
-	tools        list.Model
-	actions      list.Model
-	allTools     []Tool
-	activePanel  Panel
-	selectedTool *Tool
-	width        int
-	height       int
-	quitting     bool
+	categories    list.Model
+	tools         list.Model
+	actions       list.Model
+	allTools      []Tool
+	activePanel   Panel
+	selectedTool  *Tool
+	width         int
+	height        int
+	quitting      bool
+	toolManagerScript string
 
 	// Spinner state
 	spinner     spinner.Model
@@ -281,13 +289,13 @@ func (m *Model) handleEnter() (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) executeAction(action Action) tea.Cmd {
-	script := m.selectedTool.Script
+	toolName := m.selectedTool.Name
 	command := action.Command
 	showOutput := action.ShowOutput
 
 	return func() tea.Msg {
-		// Execute script directly with arguments
-		cmd := exec.Command("bash", script, command)
+		// Execute tool-manager.sh with tool name and action
+		cmd := exec.Command("bash", m.toolManagerScript, toolName, command)
 		var out bytes.Buffer
 		cmd.Stdout = &out
 		cmd.Stderr = &out
@@ -311,7 +319,7 @@ func (m *Model) updateToolsForCategory() {
 	if item, ok := m.categories.SelectedItem().(Category); ok {
 		var filtered []list.Item
 		for _, t := range m.allTools {
-			if item.Name == "All" || t.Category == strings.ToLower(item.Name) {
+			if item.Name == "All" || t.Category == item.Name {
 				filtered = append(filtered, t)
 			}
 		}
@@ -446,60 +454,50 @@ func (m Model) View() string {
 	return mainView
 }
 
-// discoverTools finds all tool scripts in the given directory
-func discoverTools(dir string) ([]Tool, map[string]int) {
-	var tools []Tool
-	categoryCounts := make(map[string]int)
-
-	pattern := filepath.Join(dir, "tool_*_*.sh")
-	matches, err := filepath.Glob(pattern)
+// loadToolsConfig loads tools from YAML config file
+func loadToolsConfig(configPath string) ([]Tool, map[string]CategoryConfig, error) {
+	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return tools, categoryCounts
+		return nil, nil, err
 	}
 
-	for _, match := range matches {
-		base := filepath.Base(match)
-		// Parse: tool_<category>_<name>.sh
-		parts := strings.Split(strings.TrimSuffix(strings.TrimPrefix(base, "tool_"), ".sh"), "_")
-		if len(parts) >= 2 {
-			category := parts[0]
-			name := strings.Join(parts[1:], "_")
+	var config ToolConfig
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil, nil, err
+	}
+
+	var tools []Tool
+	for catName, catConfig := range config.Categories {
+		for _, toolEntry := range catConfig.Tools {
 			tools = append(tools, Tool{
-				Name:     name,
-				Category: category,
-				Script:   match,
+				Name:        toolEntry.Name,
+				Description: toolEntry.Description,
+				Category:    catName,
 			})
-			categoryCounts[category]++
 		}
 	}
 
-	return tools, categoryCounts
+	return tools, config.Categories, nil
 }
 
-func newModel(toolsDir string) Model {
-	// Discover tools
-	tools, categoryCounts := discoverTools(toolsDir)
+func newModel(configPath, toolManagerScript string) Model {
+	// Load tools from YAML config
+	tools, categoryConfigs, err := loadToolsConfig(configPath)
+	if err != nil {
+		fmt.Printf("Error loading config: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Build categories
 	var categories []list.Item
-	var catNames []string
-	for name := range categoryCounts {
-		catNames = append(catNames, name)
-	}
-	sort.Strings(catNames)
-
 	totalTools := 0
-	for _, name := range catNames {
-		count := categoryCounts[name]
+
+	for catName, catConfig := range categoryConfigs {
+		count := len(catConfig.Tools)
 		totalTools += count
-		icon := categoryIcons[name]
-		if icon == "" {
-			icon = "📦"
-		}
-		displayName := strings.ToUpper(name[:1]) + name[1:]
 		categories = append(categories, Category{
-			Name:  displayName,
-			Icon:  icon,
+			Name:  catName,
+			Icon:  catConfig.Icon,
 			Count: count,
 		})
 	}
@@ -548,24 +546,31 @@ func newModel(toolsDir string) Model {
 	vp := viewport.New(80, 20)
 
 	return Model{
-		categories:   categoryList,
-		tools:        toolList,
-		actions:      actionList,
-		allTools:     tools,
-		activePanel:  CategoryPanel,
-		spinner:      s,
-		popupContent: vp,
+		categories:        categoryList,
+		tools:             toolList,
+		actions:           actionList,
+		allTools:          tools,
+		activePanel:       CategoryPanel,
+		spinner:           s,
+		popupContent:      vp,
+		toolManagerScript: toolManagerScript,
 	}
 }
 
 func main() {
-	// Default tools directory
-	toolsDir := "/opt/bin"
+	// Default paths
+	configPath := "/usr/share/apparatus/tools.yaml"
+	toolManagerScript := "/opt/bin/tool-manager.sh"
+
+	// Allow overrides via args
 	if len(os.Args) > 1 {
-		toolsDir = os.Args[1]
+		configPath = os.Args[1]
+	}
+	if len(os.Args) > 2 {
+		toolManagerScript = os.Args[2]
 	}
 
-	p := tea.NewProgram(newModel(toolsDir), tea.WithAltScreen())
+	p := tea.NewProgram(newModel(configPath, toolManagerScript), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)

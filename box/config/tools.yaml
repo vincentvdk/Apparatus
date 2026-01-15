@@ -1,0 +1,24 @@
+categories:
+  cloud:
+    icon: "☁️"
+    tools:
+      - name: gcloud
+        description: Google Cloud SDK - CLI for Google Cloud Platform
+      - name: terraform
+        description: Infrastructure as Code tool by HashiCorp
+      - name: pulumi
+        description: Infrastructure as Code using programming languages
+
+  kubernetes:
+    icon: "⎈"
+    tools:
+      - name: kubectl
+        description: Kubernetes command-line tool
+      - name: kubie
+        description: Kubernetes context and namespace switcher
+
+  development:
+    icon: "🔧"
+    tools:
+      - name: golang
+        description: Go programming language

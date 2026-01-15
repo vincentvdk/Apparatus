@@ -17,7 +17,6 @@ echo -e "$logo"
 OPTIONS=(
   "Init              - Initialize a new Apparatus box"
   "Manage Tools      - Install and manage tools"
-  "Manage Tools TUI  - Tool manager (enhanced UI)"
   "Theme             - Select a theme"
   "Exit              - Exit butler"
 )
@@ -33,9 +32,6 @@ main() {
         init
         ;;
       manage-tools)
-        manage_tools
-        ;;
-      manage-tools-tui)
         manage_tools_tui
         ;;
       theme)
@@ -76,136 +72,6 @@ init() {
   read -k 1
 }
 
-# -- Manage tools
-# Tools are auto-discovered from /opt/bin/tool_<category>_<name>.sh
-
-# Category icons
-typeset -A CATEGORY_ICONS
-CATEGORY_ICONS=(
-  [cloud]="☁️ "
-  [kubernetes]="⎈ "
-  [development]="🔧"
-)
-
-get_categories() {
-  ls /opt/bin/tool_*.sh 2>/dev/null | sed 's|.*/tool_||;s|_[^_]*\.sh$||' | sort -u
-}
-
-get_tools_for_category() {
-  local category=$1
-  ls /opt/bin/tool_${category}_*.sh 2>/dev/null | sed "s|.*/tool_${category}_||;s|\.sh$||"
-}
-
-get_all_tools() {
-  ls /opt/bin/tool_*.sh 2>/dev/null | sed 's|.*/tool_[^_]*_||;s|\.sh$||'
-}
-
-get_tool_script() {
-  local tool=$1
-  ls /opt/bin/tool_*_${tool}.sh 2>/dev/null | head -1
-}
-
-manage_tools() {
-  while true; do
-    echo '{{ Bold "# Manage tools" }}' | gum format -t template
-
-    # Build category menu dynamically
-    local categories=($(get_categories))
-    local category_menu=()
-
-    for cat in "${categories[@]}"; do
-      local count=$(get_tools_for_category "$cat" | wc -l)
-      local icon="${CATEGORY_ICONS[$cat]:-📦}"
-      # Capitalize category name
-      local display_name="$(echo $cat | sed 's/./\U&/')"
-      category_menu+=("${icon} ${display_name}|${cat}|${count}")
-    done
-
-    # Format menu items
-    local menu_display=()
-    for item in "${category_menu[@]}"; do
-      local icon_name=$(echo "$item" | cut -d'|' -f1)
-      local count=$(echo "$item" | cut -d'|' -f3)
-      menu_display+=("${icon_name} (${count} tools)")
-    done
-    menu_display+=("📋 All tools")
-    menu_display+=("Back             - Return to main menu")
-
-    local CATEGORY=$(gum choose "${menu_display[@]}" --height 15 --header "Select category:")
-
-    [[ "$CATEGORY" == "Back"* || -z "$CATEGORY" ]] && return
-
-    # Get tools for selected category
-    local TOOLS=()
-    if [[ "$CATEGORY" == *"All tools"* ]]; then
-      TOOLS=($(get_all_tools))
-    else
-      # Extract category key from selection
-      local selected_cat=""
-      for item in "${category_menu[@]}"; do
-        local icon_name=$(echo "$item" | cut -d'|' -f1)
-        if [[ "$CATEGORY" == "${icon_name}"* ]]; then
-          selected_cat=$(echo "$item" | cut -d'|' -f2)
-          break
-        fi
-      done
-      TOOLS=($(get_tools_for_category "$selected_cat"))
-    fi
-
-    # Tool selection loop
-    while true; do
-      local TOOL=$(gum choose \
-        "${TOOLS[@]}" \
-        "← Back           - Return to categories" \
-        --height 15 --header "Select tool:")
-
-      [[ "$TOOL" == "←"* || -z "$TOOL" ]] && break
-
-      # Get the actual script path for this tool
-      local TOOL_SCRIPT=$(get_tool_script "$TOOL")
-
-      # Action loop for selected tool
-      while true; do
-        local ACTION=$(gum choose \
-          "latest           - Install latest version" \
-          "enter version    - Install specific version" \
-          "show available   - Show available versions" \
-          "show current     - Show current version" \
-          "set version      - Set active version" \
-          "← Back           - Return to tool selection" \
-          --height 15 --header "Action for $TOOL:")
-
-        local ACTION_KEY=$(echo "$ACTION" | awk -F ' {2,}' '{print $1}')
-
-        case "$ACTION_KEY" in
-          'show available')
-            source "$TOOL_SCRIPT" available
-            ;;
-          'show current')
-            source "$TOOL_SCRIPT" current
-            ;;
-          'latest')
-            source "$TOOL_SCRIPT" latest
-            ;;
-          'enter version')
-            VERSION=$(gum input --placeholder "Enter version (e.g. 1.2.1)")
-            [[ -n "$VERSION" ]] && source "$TOOL_SCRIPT" install_version "$VERSION"
-            ;;
-          'set version')
-            source "$TOOL_SCRIPT" setversion
-            ;;
-          '←'*|'')
-            break
-            ;;
-        esac
-
-        echo ""
-        echo "Press any key to continue..."
-        read -k 1
-      done
-    done
-  done
-}
 
 # -- Set theme
 set_theme() {

@@ -132,3 +132,11 @@ if [[ "$APPARATUS_SHARED_HOME" == "1" ]]; then
 fi
 git config --global core.editor /opt/nvim/nvim.appimage
 
+# Chezmoi (dotfiles manager)
+if [[ ! -d "${HOME}/.local/share/chezmoi" ]]; then
+  echo "Initializing chezmoi dotfiles.."
+  chezmoi init --apply https://github.com/vincentvdk/dotfiles.git
+else
+  echo 'Chezmoi already initialized. Skipping..'
+fi
+
