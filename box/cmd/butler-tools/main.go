@@ -69,13 +69,13 @@ type ToolEntry struct {
 
 // Tool represents a tool for the list
 type Tool struct {
-	Name        string
-	Description string
-	Category    string
+	Name     string
+	Desc     string
+	Category string
 }
 
 func (t Tool) Title() string       { return t.Name }
-func (t Tool) Description() string { return t.Description }
+func (t Tool) Description() string { return t.Desc }
 func (t Tool) FilterValue() string { return t.Name }
 
 // Category represents a tool category
@@ -470,9 +470,9 @@ func loadToolsConfig(configPath string) ([]Tool, map[string]CategoryConfig, erro
 	for catName, catConfig := range config.Categories {
 		for _, toolEntry := range catConfig.Tools {
 			tools = append(tools, Tool{
-				Name:        toolEntry.Name,
-				Description: toolEntry.Description,
-				Category:    catName,
+				Name:     toolEntry.Name,
+				Desc:     toolEntry.Description,
+				Category: catName,
 			})
 		}
 	}
