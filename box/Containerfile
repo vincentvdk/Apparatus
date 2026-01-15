@@ -9,7 +9,7 @@ FROM docker.io/fedora:43
 LABEL com.github.containers.toolbox="true"
 
 ARG VERSION_GUM="0.14.5"
-ARG VERSION_NEOVIM="0.10.0"
+ARG VERSION_NEOVIM="0.11.5"
 ARG VERSION_MISE="2025.1.6"
 ARG CHEZMOI_VERSION="2.52.2"
 
@@ -31,10 +31,10 @@ RUN curl -OL https://github.com/charmbracelet/gum/releases/download/v${VERSION_G
   rm gum_${VERSION_GUM}_Linux_x86_64.tar.gz
 
 ## -- NeoVim
-RUN mkdir /opt/nvim && \
-    curl -OL https://github.com/neovim/neovim/releases/download/v${VERSION_NEOVIM}/nvim.appimage && \
-    mv nvim.appimage /opt/nvim && \
-    chmod +x /opt/nvim/nvim.appimage
+RUN mkdir /opt/nvim &&\
+    curl -OL https://github.com/neovim/neovim/releases/download/v${VERSION_NEOVIM}/nvim-linux-x86_64.tar.gz &&\
+    tar -C /opt -xzf nvim-linux-x86_64.tar.gz &&\
+    rm nvim-linux-x86_64.tar.gz
 
 ## -- Chezmoi
 RUN curl -OL https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VERSION}/chezmoi_${CHEZMOI_VERSION}_linux_amd64.tar.gz && \
