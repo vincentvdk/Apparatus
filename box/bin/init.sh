@@ -130,13 +130,14 @@ if [[ "$APPARATUS_SHARED_HOME" == "1" ]]; then
   mkdir -p "$(dirname "$GIT_CONFIG_GLOBAL")"
   echo 'Using container-specific git config'
 fi
-git config --global core.editor /opt/nvim/nvim.appimage
+git config --global core.editor /opt/nvim-linux-x86_64/bin/nvim
 
 # Chezmoi (dotfiles manager)
-if [[ ! -d "${HOME}/.local/share/chezmoi" ]]; then
-  echo "Initializing chezmoi dotfiles.."
-  chezmoi init --apply https://github.com/vincentvdk/dotfiles.git
-else
-  echo 'Chezmoi already initialized. Skipping..'
-fi
+# Disabled for now
+# if [[ ! -d "${HOME}/.local/share/chezmoi" ]]; then
+#   echo "Initializing chezmoi dotfiles.."
+#   chezmoi init --apply https://github.com/vincentvdk/dotfiles.git
+# else
+#   echo 'Chezmoi already initialized. Skipping..'
+# fi
 

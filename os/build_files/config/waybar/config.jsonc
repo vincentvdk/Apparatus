@@ -69,7 +69,7 @@
     "clock": {
         "format": " {:%a %d %b  %H:%M}",
         "format-alt": " {:%Y-%m-%d %H:%M:%S}",
-        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "tooltip-format": "<tt><big>{calendar}</big></tt>",
         "calendar": {
             "mode": "year",
             "mode-mon-col": 3,

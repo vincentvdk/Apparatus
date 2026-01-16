@@ -16,6 +16,12 @@ ARG CHEZMOI_VERSION="2.52.2"
 # -- Set zsh as default shell
 ENV SHELL=/bin/zsh
 
+## -- Host command symlinks (distrobox-host-exec)
+RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
+    ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
+    ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
+    ln -sf /usr/bin/distrobox-host-exec /usr/bin/gsettings
+
 # -- Packages
 # fuse deps are needed to work with appimage. wget2-wget is needed to prevent installing packaes when starting distrobox https://github.com/89luca89/distrobox/issues/1734
 RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk gcc gcc-c++ wget2-wget && \
@@ -52,8 +58,3 @@ COPY --chmod=0755 box/bin/ /opt/bin
 ## -- Butler tools TUI (from builder stage)
 COPY --from=builder /build/butler-tools /usr/local/bin/butler-tools
 
-## -- Host command symlinks (distrobox-host-exec)
-RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
-    ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
-    ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
-    ln -sf /usr/bin/distrobox-host-exec /usr/bin/gsettings

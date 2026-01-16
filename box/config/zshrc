@@ -11,8 +11,8 @@ antidote load ${ZDOTDIR:-$HOME}/.zsh_plugins.txt
 # antidote load
 
 # Env vars
-export VISUAL="/opt/nvim/nvim.appimage"
-export EDITOR="/opt/nvim/nvim.appimage"
+export VISUAL="/opt/nvim-linux-x86_64/bin/nvim"
+export EDITOR="/opt/nvim-linux-x86_64/bin/nvim"
 
 # To customize prompt, run `p10k configure` or edit ~/.config/zsh/.p10k.zsh.
 [[ ! -f ~/.config/zsh/.p10k.zsh ]] || source ~/.config/zsh/.p10k.zsh
@@ -21,4 +21,4 @@ export EDITOR="/opt/nvim/nvim.appimage"
 eval "$(mise activate zsh)"
 
 # Aliases
-alias vim="/opt/nvim/nvim.appimage"
+alias vim="/opt/nvim-linux-x86_64/bin/nvim"
