@@ -14,7 +14,7 @@ ARG VERSION_MISE="2025.1.6"
 ARG CHEZMOI_VERSION="2.52.2"
 
 # -- Set zsh as default shell
-ENV SHELL=/bin/zsh
+ENV SHELL=/usr/bin/zsh
 
 ## -- Host command symlinks (distrobox-host-exec)
 RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
@@ -22,10 +22,21 @@ RUN ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/docker && \
     ln -sf /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
     ln -sf /usr/bin/distrobox-host-exec /usr/bin/gsettings
 
+# -- Skip installing docs/man pages
+RUN echo -e "tsflags=nodocs" >> /etc/dnf/dnf.conf
+
 # -- Packages
-# fuse deps are needed to work with appimage. wget2-wget is needed to prevent installing packaes when starting distrobox https://github.com/89luca89/distrobox/issues/1734
-RUN dnf install -y bash zsh fuse fuse-libs curl git unzip ripgrep bat wl-clipboard flatpak-spawn sudo gawk gcc gcc-c++ wget2-wget && \
-    sed -i 's|SHELL=/bin/bash|SHELL=/bin/zsh|' /etc/default/useradd
+# Distrobox required packages (to skip "Installing basic packages" on every start)
+# See: https://github.com/89luca89/distrobox/issues/1734
+RUN dnf install -y \
+    bash bash-completion bc bzip2 curl diffutils findutils \
+    hostname iproute iputils less lsof ncurses \
+    openssh-clients passwd pigz procps-ng rsync shadow-utils sudo \
+    time tree tzdata unzip util-linux vte-profile wget which xz zip \
+    mesa-dri-drivers mesa-vulkan-drivers vulkan \
+    # Apparatus specific packages
+    zsh fuse fuse-libs git ripgrep bat wl-clipboard flatpak-spawn gawk gcc gcc-c++ && \
+    sed -i 's|SHELL=/bin/bash|SHELL=/usr/bin/zsh|' /etc/default/useradd
 
 ## -- mise
 RUN curl -L "https://github.com/jdx/mise/releases/download/v${VERSION_MISE}/mise-v${VERSION_MISE}-linux-x64" -o /usr/local/bin/mise && \
@@ -50,10 +61,15 @@ RUN curl -OL https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VER
 COPY box/system/profile-custom.sh /etc/profile.d/99-custom.sh
 
 ## -- Copy default configuration
-COPY box/config/* /usr/share/apparatus/
+COPY box/config/tools.yaml box/config/zshrc box/config/zsh_plugins.txt box/config/p10k.zsh box/config/atuin_config.toml /usr/share/apparatus/
+
+## -- Neovim config template and LSP configs
+COPY box/config/nvim/init.lua /usr/share/apparatus/
+COPY box/config/nvim/lsp/ /usr/share/apparatus/lsp/
 
 ## -- Scripts
 COPY --chmod=0755 box/bin/ /opt/bin
+COPY --chmod=0755 box/bin/init.sh /opt/apparatus/init.sh
 
 ## -- Butler tools TUI (from builder stage)
 COPY --from=builder /build/butler-tools /usr/local/bin/butler-tools

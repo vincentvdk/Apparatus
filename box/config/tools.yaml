@@ -17,8 +17,46 @@ categories:
       - name: kubie
         description: Kubernetes context and namespace switcher
 
-  development:
-    icon: "🔧"
+  languages:
+    icon: "💻"
     tools:
       - name: golang
         description: Go programming language
+        lsp:
+          name: gopls
+          install_cmd: go install golang.org/x/tools/gopls@latest
+      - name: python
+        description: Python programming language
+        lsp:
+          name: pyright
+          install_cmd: npm install -g pyright
+      - name: node
+        description: Node.js JavaScript runtime
+        lsp:
+          name: ts_ls
+          install_cmd: npm install -g typescript typescript-language-server
+      - name: rust
+        description: Rust programming language
+        lsp:
+          name: rust_analyzer
+          install_cmd: rustup component add rust-analyzer
+      - name: lua
+        description: Lua programming language
+        lsp:
+          name: lua_ls
+          install_cmd: mise use -g lua-language-server@latest
+      - name: zig
+        description: Zig programming language
+        lsp:
+          name: zls
+          install_cmd: mise use -g zls@latest
+      - name: ruby
+        description: Ruby programming language
+        lsp:
+          name: solargraph
+          install_cmd: gem install solargraph
+      - name: java
+        description: Java programming language
+        lsp:
+          name: jdtls
+          install_cmd: mise use -g jdtls@latest

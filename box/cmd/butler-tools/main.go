@@ -62,9 +62,15 @@ type CategoryConfig struct {
 	Tools []ToolEntry  `yaml:"tools"`
 }
 
+type LSPConfig struct {
+	Name       string `yaml:"name"`
+	InstallCmd string `yaml:"install_cmd"`
+}
+
 type ToolEntry struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
+	Name        string     `yaml:"name"`
+	Description string     `yaml:"description"`
+	LSP         *LSPConfig `yaml:"lsp,omitempty"`
 }
 
 // Tool represents a tool for the list
@@ -72,11 +78,13 @@ type Tool struct {
 	Name     string
 	Desc     string
 	Category string
+	LSP      *LSPConfig
 }
 
 func (t Tool) Title() string       { return t.Name }
 func (t Tool) Description() string { return t.Desc }
 func (t Tool) FilterValue() string { return t.Name }
+func (t Tool) HasLSP() bool        { return t.LSP != nil }
 
 // Category represents a tool category
 type Category struct {
@@ -136,6 +144,7 @@ type Model struct {
 	height        int
 	quitting      bool
 	toolManagerScript string
+	lspTemplatesDir   string
 
 	// Spinner state
 	spinner     spinner.Model
@@ -292,19 +301,55 @@ func (m *Model) executeAction(action Action) tea.Cmd {
 	toolName := m.selectedTool.Name
 	command := action.Command
 	showOutput := action.ShowOutput
+	lsp := m.selectedTool.LSP
+	lspTemplatesDir := m.lspTemplatesDir
 
 	return func() tea.Msg {
+		var out bytes.Buffer
+
 		// Execute tool-manager.sh with tool name and action
 		cmd := exec.Command("bash", m.toolManagerScript, toolName, command)
-		var out bytes.Buffer
 		cmd.Stdout = &out
 		cmd.Stderr = &out
 		cmd.Stdin = nil
-
-		// Run in new session to prevent /dev/tty access
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 
 		err := cmd.Run()
+
+		// If installing latest and tool has LSP config, set up LSP
+		if command == "latest" && lsp != nil && err == nil {
+			out.WriteString("\n--- LSP Setup ---\n")
+
+			// Install LSP
+			out.WriteString(fmt.Sprintf("Installing LSP (%s)...\n", lsp.Name))
+			lspCmd := exec.Command("bash", "-c", lsp.InstallCmd)
+			lspCmd.Stdout = &out
+			lspCmd.Stderr = &out
+			lspCmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+			if lspErr := lspCmd.Run(); lspErr != nil {
+				out.WriteString(fmt.Sprintf("LSP install warning: %v\n", lspErr))
+			}
+
+			// Copy LSP config
+			homeDir, _ := os.UserHomeDir()
+			nvimLspDir := homeDir + "/.config/nvim/lsp"
+			lspConfigSrc := lspTemplatesDir + "/" + lsp.Name + ".lua"
+			lspConfigDst := nvimLspDir + "/" + lsp.Name + ".lua"
+
+			// Create nvim lsp directory if needed
+			os.MkdirAll(nvimLspDir, 0755)
+
+			// Copy LSP config file
+			if srcData, readErr := os.ReadFile(lspConfigSrc); readErr == nil {
+				if writeErr := os.WriteFile(lspConfigDst, srcData, 0644); writeErr == nil {
+					out.WriteString(fmt.Sprintf("LSP config copied to %s\n", lspConfigDst))
+				} else {
+					out.WriteString(fmt.Sprintf("Failed to write LSP config: %v\n", writeErr))
+				}
+			} else {
+				out.WriteString(fmt.Sprintf("LSP config template not found: %s\n", lspConfigSrc))
+			}
+		}
 
 		output := out.String()
 		if err != nil && output == "" {
@@ -473,6 +518,7 @@ func loadToolsConfig(configPath string) ([]Tool, map[string]CategoryConfig, erro
 				Name:     toolEntry.Name,
 				Desc:     toolEntry.Description,
 				Category: catName,
+				LSP:      toolEntry.LSP,
 			})
 		}
 	}
@@ -480,7 +526,7 @@ func loadToolsConfig(configPath string) ([]Tool, map[string]CategoryConfig, erro
 	return tools, config.Categories, nil
 }
 
-func newModel(configPath, toolManagerScript string) Model {
+func newModel(configPath, toolManagerScript, lspTemplatesDir string) Model {
 	// Load tools from YAML config
 	tools, categoryConfigs, err := loadToolsConfig(configPath)
 	if err != nil {
@@ -554,6 +600,7 @@ func newModel(configPath, toolManagerScript string) Model {
 		spinner:           s,
 		popupContent:      vp,
 		toolManagerScript: toolManagerScript,
+		lspTemplatesDir:   lspTemplatesDir,
 	}
 }
 
@@ -561,6 +608,7 @@ func main() {
 	// Default paths
 	configPath := "/usr/share/apparatus/tools.yaml"
 	toolManagerScript := "/opt/bin/tool-manager.sh"
+	lspTemplatesDir := "/usr/share/apparatus/lsp"
 
 	// Allow overrides via args
 	if len(os.Args) > 1 {
@@ -569,8 +617,11 @@ func main() {
 	if len(os.Args) > 2 {
 		toolManagerScript = os.Args[2]
 	}
+	if len(os.Args) > 3 {
+		lspTemplatesDir = os.Args[3]
+	}
 
-	p := tea.NewProgram(newModel(configPath, toolManagerScript), tea.WithAltScreen())
+	p := tea.NewProgram(newModel(configPath, toolManagerScript, lspTemplatesDir), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)

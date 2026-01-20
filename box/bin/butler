@@ -63,7 +63,7 @@ init() {
   echo '{{ Bold "# Initialize Apparatus box" }}' | gum format -t template
   echo ""
   if gum confirm "Run initialization script?"; then
-    /opt/bin/init.sh
+    /opt/apparatus/init.sh
     echo ""
     echo '{{ Color "2" "✓ Initialization complete" }}' | gum format -t template
   fi

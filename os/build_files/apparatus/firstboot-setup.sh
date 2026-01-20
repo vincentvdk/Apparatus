@@ -28,7 +28,14 @@ mkdir -p "$USER_HOME"/.local/state/apparatus
 # Copy configs
 cp /usr/share/apparatus/hypr/* "$USER_HOME"/.config/hypr/
 cp /usr/share/apparatus/waybar/* "$USER_HOME"/.config/waybar/
-cp /usr/share/apparatus/kitty/* "$USER_HOME"/.config/kitty/
+# Include system config (updates with OS) with space for user customizations
+cat > "$USER_HOME"/.config/kitty/kitty.conf << 'EOF'
+# Include Apparatus defaults (updates with OS)
+include /usr/share/apparatus/kitty/kitty.conf
+
+# User customizations below
+
+EOF
 cp /usr/share/apparatus/rio/config.toml "$USER_HOME"/.config/rio/
 cp /usr/share/apparatus/uwsm/* "$USER_HOME"/.config/uwsm/
 
