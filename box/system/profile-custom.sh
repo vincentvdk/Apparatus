@@ -1,4 +1,4 @@
-export PATH=$PATH:/opt/bin
+export PATH="$HOME/.local/bin:$PATH:/opt/bin"
 export TMUX_TMPDIR=/tmp
 
 # Detect if using shared home with host

@@ -16,6 +16,10 @@ categories:
         description: Kubernetes command-line tool
       - name: kubie
         description: Kubernetes context and namespace switcher
+      - name: flux
+        description: FluxCD CLI for GitOps continuous delivery
+      - name: k9s
+        description: Terminal UI for Kubernetes clusters
 
   languages:
     icon: "💻"

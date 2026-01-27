@@ -1,0 +1,42 @@
+# Apparatus OS - Walker Configuration
+# https://github.com/abenz1267/walker
+
+# Behavior
+close_when_open = true
+click_to_close = true
+single_click_activation = true
+theme = "default"
+
+# Search
+exact_search_prefix = "'"
+
+# Window positioning
+[shell]
+anchor_top = true
+anchor_bottom = true
+anchor_left = true
+anchor_right = true
+
+# Placeholder text
+[placeholders]
+"default" = { input = "Search applications...", list = "No results" }
+
+# Keybindings
+[keybinds]
+close = ["Escape"]
+next = ["Down", "Tab"]
+previous = ["Up", "shift Tab"]
+toggle_exact = ["ctrl e"]
+quick_activate = ["F1", "F2", "F3", "F4"]
+page_down = ["Page_Down"]
+page_up = ["Page_Up"]
+show_actions = ["alt j"]
+
+# Provider prefixes (shortcuts to specific search types)
+[providers]
+  [providers.prefixes]
+  "/" = "files"        # File browser
+  ">" = "runner"       # Run commands
+  "@" = "websearch"    # Web search
+  "=" = "calc"         # Calculator
+  ":" = "clipboard"    # Clipboard history

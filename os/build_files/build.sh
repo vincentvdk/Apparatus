@@ -107,6 +107,9 @@ dnf5 -y install pipewire pipewire-pulseaudio wireplumber pavucontrol
 # Install these in a distrobox if needed
 dnf5 -y install distrobox podman git curl unzip flatpak
 
+## -- Printing
+dnf5 -y install system-config-printer
+
 ## -- Gum (for butler TUI)
 dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
 
@@ -207,6 +210,7 @@ mkdir -p /usr/share/apparatus/waybar
 mkdir -p /usr/share/apparatus/mako
 mkdir -p /usr/share/apparatus/kitty
 mkdir -p /usr/share/apparatus/rio
+mkdir -p /usr/share/apparatus/walker
 mkdir -p /usr/share/apparatus/wallpapers
 mkdir -p /usr/share/apparatus/uwsm
 mkdir -p /usr/share/apparatus/themes
@@ -216,6 +220,7 @@ cp /delivery/build_files/config/waybar/* /usr/share/apparatus/waybar/
 cp /delivery/build_files/config/mako/* /usr/share/apparatus/mako/
 cp /delivery/build_files/config/kitty/* /usr/share/apparatus/kitty/
 cp /delivery/build_files/config/rio/* /usr/share/apparatus/rio/
+cp /delivery/build_files/config/walker/* /usr/share/apparatus/walker/
 cp /delivery/build_files/config/uwsm/* /usr/share/apparatus/uwsm/
 cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
 cp /delivery/build_files/config/flatpaks.conf /usr/share/apparatus/

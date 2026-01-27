@@ -21,6 +21,7 @@ mkdir -p "$USER_HOME"/.config/waybar
 mkdir -p "$USER_HOME"/.config/mako
 mkdir -p "$USER_HOME"/.config/kitty
 mkdir -p "$USER_HOME"/.config/rio/themes
+mkdir -p "$USER_HOME"/.config/walker
 mkdir -p "$USER_HOME"/.config/uwsm
 mkdir -p "$USER_HOME"/.config/apparatus
 mkdir -p "$USER_HOME"/.local/state/apparatus
@@ -37,6 +38,7 @@ include /usr/share/apparatus/kitty/kitty.conf
 
 EOF
 cp /usr/share/apparatus/rio/config.toml "$USER_HOME"/.config/rio/
+cp /usr/share/apparatus/walker/* "$USER_HOME"/.config/walker/
 cp /usr/share/apparatus/uwsm/* "$USER_HOME"/.config/uwsm/
 
 # Symlink rio themes
