@@ -26,31 +26,25 @@ mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
 # ZSH
 if [[ ! -f "${ZDOTDIR}/.zshrc" ]]; then
   mkdir -p "${ZDOTDIR}"
-  cp ${DEFAULT_CONFIG_PATH}/zshrc "${ZDOTDIR}/.zshrc"
+  cp ${DEFAULT_CONFIG_PATH}/zsh/.zshrc "${ZDOTDIR}/.zshrc"
 else
   echo 'zsh config already exists'
 fi
 
 # ZSH plugin manager
 if [[ ! -f "${ZDOTDIR}/.antidote/antidote.zsh" ]]; then
-  git clone --depth=1 https://github.com/mattmc3/antidote.git "${ZDOTDIR}/.antidote"
-  cp ${DEFAULT_CONFIG_PATH}/zsh_plugins.txt ${ZDOTDIR}/.zsh_plugins.txt
   echo "Installing Antidote (zsh plugin manager).."
-  echo '# Antidote' >> "${ZDOTDIR}/.zshrc"
-  echo 'source ${ZDOTDIR}/.antidote/antidote.zsh' >> "${ZDOTDIR}/.zshrc"
-  echo 'antidote load' >> "${ZDOTDIR}/.zshrc"
+  git clone --depth=1 https://github.com/mattmc3/antidote.git "${ZDOTDIR}/.antidote"
+  cp ${DEFAULT_CONFIG_PATH}/zsh/.zsh_plugins.txt ${ZDOTDIR}/.zsh_plugins.txt
 else
   echo 'Antidote already configured. Skipping..'
 fi
 
 
 # p10k Prompt
-if [[ ! -f "${ZDOTDIR}/p10k.zsh" ]]; then
+if [[ ! -f "${ZDOTDIR}/.p10k.zsh" ]]; then
   echo "Installing Powerlevel10k.."
-  cp ${DEFAULT_CONFIG_PATH}/p10k.zsh "${ZDOTDIR}/p10k.zsh"
-  echo '# Powerlevel10k' >> ${ZDOTDIR}/.zshrc
-  echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> ${ZDOTDIR}/.zshrc
-  echo 'source ${ZDOTDIR}/p10k.zsh' >> ${ZDOTDIR}/.zshrc
+  cp ${DEFAULT_CONFIG_PATH}/zsh/.p10k.zsh "${ZDOTDIR}/.p10k.zsh"
 else
   echo 'Powerlevel10k already configured. Skipping..'
 fi
@@ -94,7 +88,7 @@ if ! command -v atuin &>/dev/null; then
   echo "Installing Atuin.."
   curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh >/dev/null 2>&1
   mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/atuin"
-  cp ${DEFAULT_CONFIG_PATH}/atuin_config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/atuin/config.toml"
+  cp ${DEFAULT_CONFIG_PATH}/atuin/config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/atuin/config.toml"
   echo '# Atuin' >> "${ZDOTDIR}/.zshrc"
   echo 'eval "$(atuin init zsh)"' >> "${ZDOTDIR}/.zshrc"
 else
@@ -116,19 +110,31 @@ NVIM_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 if [[ ! -d "$NVIM_CONFIG_DIR" ]]; then
   echo "Setting up neovim config.."
   mkdir -p "$NVIM_CONFIG_DIR"
-  cp "${DEFAULT_CONFIG_PATH}/init.lua" "$NVIM_CONFIG_DIR/init.lua"
+  cp "${DEFAULT_CONFIG_PATH}/nvim/init.lua" "$NVIM_CONFIG_DIR/init.lua"
+  # Copy LSP server configs
+  if [[ -d "${DEFAULT_CONFIG_PATH}/nvim/lsp" ]]; then
+    cp -r "${DEFAULT_CONFIG_PATH}/nvim/lsp" "$NVIM_CONFIG_DIR/lsp"
+  fi
 else
   echo 'Neovim config already exists. Skipping..'
 fi
 
-# Chezmoi (dotfiles manager)
-# Disabled for now
-# if [[ ! -d "${HOME}/.local/share/chezmoi" ]]; then
-#   echo "Initializing chezmoi dotfiles.."
-#   chezmoi init --apply https://github.com/vincentvdk/dotfiles.git
-# else
-#   echo 'Chezmoi already initialized. Skipping..'
-# fi
+# Chezmoi (dotfiles manager) - init only, configs already copied above
+CHEZMOI_REPO_DEFAULT="vincentvdk/apparatus-dotfiles"
+CHEZMOI_REPO_FILE="${HOME}/.config/apparatus/chezmoi-dotfiles"
+
+if [[ -f "$CHEZMOI_REPO_FILE" ]]; then
+    CHEZMOI_REPO=$(cat "$CHEZMOI_REPO_FILE")
+else
+    CHEZMOI_REPO="$CHEZMOI_REPO_DEFAULT"
+fi
+
+if [[ ! -d "${HOME}/.local/share/chezmoi" ]]; then
+    echo "Setting up config updates..."
+    chezmoi init "$CHEZMOI_REPO"
+else
+    echo 'Chezmoi already initialized. Skipping..'
+fi
 
 # Mark initialization as complete (custom home dir only)
 if [[ "$APPARATUS_SHARED_HOME" != "1" ]]; then

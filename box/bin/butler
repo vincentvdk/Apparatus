@@ -13,10 +13,25 @@ logo='
 
 echo -e "$logo"
 
+# Check for config updates (quick, non-blocking)
+check_config_updates() {
+    if [[ -d "${HOME}/.local/share/chezmoi" ]]; then
+        local DIFF=$(chezmoi diff 2>/dev/null | head -1)
+        if [[ -n "$DIFF" ]]; then
+            echo '{{ Color "3" "Config updates available. Select Update Config to apply." }}' | gum format -t template
+            echo ""
+        fi
+    fi
+}
+
+check_config_updates
+
 # Available options
 OPTIONS=(
   "Init              - Initialize a new Apparatus box"
   "Manage Tools      - Install and manage tools"
+  "Update Config     - Check and apply config updates"
+  "Config Source     - Switch dotfiles repo"
   "Theme             - Select a theme"
   "Exit              - Exit butler"
 )
@@ -33,6 +48,12 @@ main() {
         ;;
       manage-tools)
         manage_tools_tui
+        ;;
+      update-config)
+        update_config
+        ;;
+      config-source)
+        config_source
         ;;
       theme)
         set_theme
@@ -72,6 +93,67 @@ init() {
   read -k 1
 }
 
+
+# -- Update config (chezmoi diff + apply)
+update_config() {
+  echo '{{ Bold "# Update Configs" }}' | gum format -t template
+
+  if [[ ! -d "${HOME}/.local/share/chezmoi" ]]; then
+    echo "Chezmoi not initialized. Run Init first."
+    echo ""
+    echo "Press any key to continue..."
+    read -k 1
+    return
+  fi
+
+  # Show what would change
+  local DIFF=$(chezmoi diff 2>/dev/null)
+  if [[ -z "$DIFF" ]]; then
+    echo "Already up to date."
+    echo ""
+    echo "Press any key to continue..."
+    read -k 1
+    return
+  fi
+
+  echo "Changes available:"
+  echo "$DIFF" | head -30
+  echo ""
+
+  if gum confirm "Apply these changes?"; then
+    chezmoi update --apply
+    # Reload host services
+    distrobox-host-exec hyprctl reload 2>/dev/null || true
+    distrobox-host-exec pkill -SIGUSR1 kitty 2>/dev/null || true
+    distrobox-host-exec makoctl reload 2>/dev/null || true
+    echo '{{ Color "2" "✓ Configs updated" }}' | gum format -t template
+  fi
+
+  echo ""
+  echo "Press any key to continue..."
+  read -k 1
+}
+
+# -- Config source (switch dotfiles repo)
+config_source() {
+  echo '{{ Bold "# Config Source" }}' | gum format -t template
+  local CURRENT="vincentvdk/apparatus-dotfiles"
+  [[ -f "$HOME/.config/apparatus/chezmoi-dotfiles" ]] && CURRENT=$(cat "$HOME/.config/apparatus/chezmoi-dotfiles")
+  echo "Current: $CURRENT"
+  echo ""
+
+  local REPO=$(gum input --placeholder "github-user/repo" --header "Enter dotfiles repo:")
+  if [[ -n "$REPO" ]]; then
+    mkdir -p "$HOME/.config/apparatus"
+    echo "$REPO" > "$HOME/.config/apparatus/chezmoi-dotfiles"
+    chezmoi init --purge "$REPO"
+    echo '{{ Color "2" "✓ Config source updated. Run Update Config to apply." }}' | gum format -t template
+  fi
+
+  echo ""
+  echo "Press any key to continue..."
+  read -k 1
+}
 
 # -- Set theme
 set_theme() {

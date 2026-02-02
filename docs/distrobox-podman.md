@@ -1,3 +1,26 @@
+# Distrobox
+
+## Safe Enter (Typo Protection)
+
+Apparatus wraps the `distrobox` command to prevent accidentally creating new containers when you make a typo with `distrobox enter`.
+
+If you try to enter a non-existent container:
+
+```bash
+$ distrobox enter tyop
+Error: Container 'tyop' does not exist.
+
+Available containers:
+ID           | NAME        | STATUS          | IMAGE
+abc123       | mybox       | Up 2 hours      | fedora:40
+
+To create a new container, use: distrobox create tyop
+```
+
+This wrapper is installed via `/etc/profile.d/distrobox-safe.sh` and only affects `distrobox enter`. All other distrobox commands (`create`, `list`, `rm`, etc.) work normally.
+
+---
+
 # Running Podman Inside Distrobox
 
 ## Problem

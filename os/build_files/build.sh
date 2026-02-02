@@ -140,12 +140,14 @@ chmod 755 /usr/libexec/apparatus/firstboot-setup.sh
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
 chmod 755 /usr/libexec/apparatus/smart-split
 
+# Profile.d scripts (sourced on login)
+cp /delivery/build_files/config/profile.d/*.sh /etc/profile.d/
+chmod 644 /etc/profile.d/distrobox-safe.sh
+
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
 
-## -- UWSM environment config
-mkdir -p /etc/uwsm
-cp /delivery/build_files/config/uwsm/env /etc/uwsm/env
+## -- UWSM environment config (populated from dotfiles repo below)
 
 ## -- greetd configuration (gtkgreet greeter running under cage)
 # Create greeter user for greetd (runs the greeter process)
@@ -203,26 +205,29 @@ rm -rf /tmp/*.zip /tmp/hack-font /tmp/jetbrains-font /tmp/notosans-font
 
 # distrobox
 
-# -- Hyprland Configuration
-# Default configs in /usr/share/apparatus/ (copied to user home by butler init)
-mkdir -p /usr/share/apparatus/hypr
-mkdir -p /usr/share/apparatus/waybar
-mkdir -p /usr/share/apparatus/mako
-mkdir -p /usr/share/apparatus/kitty
-mkdir -p /usr/share/apparatus/rio
-mkdir -p /usr/share/apparatus/walker
-mkdir -p /usr/share/apparatus/wallpapers
-mkdir -p /usr/share/apparatus/uwsm
-mkdir -p /usr/share/apparatus/themes
+# -- Clone dotfiles repo for default user-facing configs
+DOTFILES_REPO="${DOTFILES_REPO:-https://github.com/vincentvdk/apparatus-dotfiles.git}"
+git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles
 
-cp /delivery/build_files/config/hypr/* /usr/share/apparatus/hypr/
-cp /delivery/build_files/config/waybar/* /usr/share/apparatus/waybar/
-cp /delivery/build_files/config/mako/* /usr/share/apparatus/mako/
-cp /delivery/build_files/config/kitty/* /usr/share/apparatus/kitty/
+# Copy OS configs from chezmoi source (home/dot_config/) to /usr/share/apparatus/
+cd /tmp/dotfiles/home/dot_config
+for dir in hypr kitty waybar mako walker uwsm; do
+    [ -d "$dir" ] && cp -r "$dir" /usr/share/apparatus/
+done
+cd /
+
+# Copy uwsm env to system location as well
+mkdir -p /etc/uwsm
+cp /usr/share/apparatus/uwsm/env /etc/uwsm/env
+
+# Copy themes
+cp -r /tmp/dotfiles/themes /usr/share/apparatus/themes/
+rm -rf /tmp/dotfiles
+
+# Rio config and flatpaks (non-dotfiles repo configs)
+mkdir -p /usr/share/apparatus/rio
+mkdir -p /usr/share/apparatus/wallpapers
 cp /delivery/build_files/config/rio/* /usr/share/apparatus/rio/
-cp /delivery/build_files/config/walker/* /usr/share/apparatus/walker/
-cp /delivery/build_files/config/uwsm/* /usr/share/apparatus/uwsm/
-cp -r /delivery/build_files/config/themes/* /usr/share/apparatus/themes/
 cp /delivery/build_files/config/flatpaks.conf /usr/share/apparatus/
 
 # Ensure apparatus files are world-readable

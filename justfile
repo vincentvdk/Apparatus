@@ -55,3 +55,20 @@ push:
 
 # Build and push container to GHCR
 build-push: build-container push
+
+# === Distrobox recipes ===
+
+# Build the distrobox image
+build-box:
+    podman build -f ./box/Containerfile -t ghcr.io/vincentvdk/apparatus-box:latest .
+
+# Push distrobox to GHCR
+push-box:
+    podman push ghcr.io/vincentvdk/apparatus-box:latest
+
+# Build and push distrobox to GHCR
+build-push-box: build-box push-box
+
+# Create a new distrobox from the image (usage: just create-box mybox)
+create-box name:
+    distrobox create --image ghcr.io/vincentvdk/apparatus-box:latest --name {{name}}

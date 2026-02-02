@@ -60,12 +60,24 @@ RUN curl -OL https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VER
 ## -- Environment variables
 COPY box/system/profile-custom.sh /etc/profile.d/99-custom.sh
 
-## -- Copy default configuration
-COPY box/config/tools.yaml box/config/zshrc box/config/zsh_plugins.txt box/config/p10k.zsh box/config/atuin_config.toml /usr/share/apparatus/
+## -- Clone official dotfiles repo for default configs
+ARG DOTFILES_REPO="https://github.com/vincentvdk/apparatus-dotfiles.git"
+RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
+    mkdir -p /usr/share/apparatus && \
+    cd /tmp/dotfiles/home/dot_config && \
+    for dir in zsh atuin nvim; do \
+        [ -d "$dir" ] && cp -r "$dir" /usr/share/apparatus/; \
+    done && \
+    cd /usr/share/apparatus && \
+    find . -name 'dot_*' | while read f; do \
+        d=$(dirname "$f"); b=$(basename "$f"); \
+        mv "$f" "$d/.${b#dot_}"; \
+    done && \
+    cp -r /tmp/dotfiles/themes /usr/share/apparatus/themes && \
+    rm -rf /tmp/dotfiles
 
-## -- Neovim config template and LSP configs
-COPY box/config/nvim/init.lua /usr/share/apparatus/
-COPY box/config/nvim/lsp/ /usr/share/apparatus/lsp/
+## -- Butler-tools config (not in dotfiles repo)
+COPY box/config/tools.yaml /usr/share/apparatus/
 
 ## -- Scripts
 COPY --chmod=0755 box/bin/ /opt/bin
