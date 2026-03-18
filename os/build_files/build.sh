@@ -97,7 +97,7 @@ dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManage
 dnf5 -y install upower tuned-ppd
 
 ## -- Hardware support (Framework AMD laptops)
-dnf5 -y install fprintd iio-sensor-proxy
+dnf5 -y install fprintd iio-sensor-proxy usbutils
 
 ## -- Audio
 dnf5 -y install pipewire pipewire-pulseaudio wireplumber pavucontrol
@@ -139,6 +139,14 @@ chmod 755 /usr/libexec/apparatus/firstboot-setup.sh
 # Smart-split script for kitty (detects distrobox and enters same container)
 cp /delivery/build_files/apparatus/smart-split.sh /usr/libexec/apparatus/smart-split
 chmod 755 /usr/libexec/apparatus/smart-split
+
+# Config update checker (systemd timer + notify-send)
+cp /delivery/build_files/apparatus/check-config-updates.sh /usr/libexec/apparatus/check-config-updates
+chmod 755 /usr/libexec/apparatus/check-config-updates
+cp /delivery/build_files/config/systemd/user/apparatus-config-check.service /usr/lib/systemd/user/
+cp /delivery/build_files/config/systemd/user/apparatus-config-check.timer /usr/lib/systemd/user/
+mkdir -p /usr/lib/systemd/user/timers.target.wants
+ln -sf ../apparatus-config-check.timer /usr/lib/systemd/user/timers.target.wants/apparatus-config-check.timer
 
 # Profile.d scripts (sourced on login)
 cp /delivery/build_files/config/profile.d/*.sh /etc/profile.d/

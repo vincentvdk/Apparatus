@@ -1,0 +1,12 @@
+# Set ZDOTDIR early so zsh looks in the right place for user configs.
+# This must be in /etc/zshenv because it runs before all other zsh startup files.
+
+if [ -n "$DISTROBOX_HOST_HOME" ] && [ "$HOME" = "$DISTROBOX_HOST_HOME" ]; then
+    export ZDOTDIR="$HOME/.config/apparatus-box/zsh"
+else
+    export ZDOTDIR="$HOME/.config/zsh"
+fi
+
+# Remove stale RC files from $HOME — real configs live in $ZDOTDIR
+[ -f "$HOME/.zshrc" ] && rm -f "$HOME/.zshrc"
+[ -f "$HOME/.zprofile" ] && rm -f "$HOME/.zprofile"

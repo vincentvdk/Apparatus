@@ -11,7 +11,10 @@ logo='
 
 '
 
+config_hash=$(git -C ~/.local/share/chezmoi rev-parse --short HEAD 2>/dev/null || echo "n/a")
 echo -e "$logo"
+echo "  version: $config_hash"
+echo ""
 
 # Available options
 OPTIONS=(

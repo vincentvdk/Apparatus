@@ -1,0 +1,9 @@
+[Unit]
+Description=Periodically check for Apparatus config updates
+
+[Timer]
+OnStartupSec=5min
+OnUnitActiveSec=4h
+
+[Install]
+WantedBy=timers.target

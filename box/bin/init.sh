@@ -7,7 +7,7 @@ DEFAULT_CONFIG_PATH="/usr/share/apparatus"
 INIT_MARKER="${HOME}/.local/state/apparatus/box-init-done"
 
 # Custom home dir: check if already initialized (reused home dir)
-if [[ "$APPARATUS_SHARED_HOME" != "1" ]]; then
+if [[ "$APPARATUS_OS_HOME" != "1" ]]; then
     if [[ -f "$INIT_MARKER" ]]; then
         echo "Already initialized. Skipping.."
         exit 0
@@ -61,17 +61,13 @@ if [[ ! -f "${NVM_DIR}/nvm.sh" ]]; then
   nvm install --lts ${NODE_VERSION}
   npm install -g typescript typescript-language-server
   npm install -g bash-language-server
-  # Add nvm to zshrc
-  echo '# NVM' >> "${ZDOTDIR}/.zshrc"
-  echo 'export NVM_DIR="${XDG_CONFIG_HOME}/nvm"' >> "${ZDOTDIR}/.zshrc"
-  echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> "${ZDOTDIR}/.zshrc"
 else
   echo 'nvm already configured. Skipping..'
 fi
 
 # SSH
 # Skip when using shared home - host already has .ssh
-if [[ "$APPARATUS_SHARED_HOME" != "1" ]]; then
+if [[ "$APPARATUS_OS_HOME" != "1" ]]; then
   if [[ ! -d "${HOME}/.ssh" ]]; then
     echo "ssh config.."
     mkdir ${HOME}/.ssh
@@ -89,15 +85,13 @@ if ! command -v atuin &>/dev/null; then
   curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh >/dev/null 2>&1
   mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/atuin"
   cp ${DEFAULT_CONFIG_PATH}/atuin/config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/atuin/config.toml"
-  echo '# Atuin' >> "${ZDOTDIR}/.zshrc"
-  echo 'eval "$(atuin init zsh)"' >> "${ZDOTDIR}/.zshrc"
 else
   echo 'Atuin already installed. Skipping..'
 fi
 
 # Git
 # Set editor - use container-specific config when shared home
-if [[ "$APPARATUS_SHARED_HOME" == "1" ]]; then
+if [[ "$APPARATUS_OS_HOME" == "1" ]]; then
   # Ensure git config directory exists
   mkdir -p "$(dirname "$GIT_CONFIG_GLOBAL")"
   echo 'Using container-specific git config'
@@ -137,7 +131,7 @@ else
 fi
 
 # Mark initialization as complete (custom home dir only)
-if [[ "$APPARATUS_SHARED_HOME" != "1" ]]; then
+if [[ "$APPARATUS_OS_HOME" != "1" ]]; then
   mkdir -p "$(dirname "$INIT_MARKER")"
   touch "$INIT_MARKER"
 fi

@@ -59,7 +59,8 @@ RUN curl -OL https://github.com/twpayne/chezmoi/releases/download/v${CHEZMOI_VER
 
 ## -- Environment variables
 COPY box/system/profile-custom.sh /etc/profile.d/99-custom.sh
-
+## -- Set ZDOTDIR early (before zsh looks for ~/.zshrc)
+COPY box/system/zshenv /etc/zshenv
 ## -- Clone official dotfiles repo for default configs
 ARG DOTFILES_REPO="https://github.com/vincentvdk/apparatus-dotfiles.git"
 RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
