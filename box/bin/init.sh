@@ -82,7 +82,8 @@ fi
 # Atuin (shell history)
 if ! command -v atuin &>/dev/null; then
   echo "Installing Atuin.."
-  curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh >/dev/null 2>&1
+  # Use non-interactive install to avoid hanging
+  curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive >/dev/null 2>&1
   mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/atuin"
   cp ${DEFAULT_CONFIG_PATH}/atuin/config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/atuin/config.toml"
 else
