@@ -34,6 +34,9 @@ cat > "$USER_HOME"/.config/kitty/kitty.conf << 'EOF'
 # Include Apparatus defaults (updates with OS)
 include /usr/share/apparatus/kitty/kitty.conf
 
+# Include theme configuration
+include theme.conf
+
 # User customizations below
 
 EOF
