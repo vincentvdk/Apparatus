@@ -191,6 +191,9 @@ systemctl enable apparatus-bootc-switch.service
 cp /delivery/build_files/config/systemd/apparatus-firstboot.service /usr/lib/systemd/system/
 systemctl enable apparatus-firstboot.service
 
+# SwayOSD server service (for on-screen display)
+cp /delivery/build_files/config/systemd/swayosd-server.service /usr/lib/systemd/system/
+
 ## -- Mask services that don't work on immutable ostree systems
 systemctl mask systemd-remount-fs.service
 
@@ -261,8 +264,9 @@ cat > /usr/lib/bootc/kargs.d/50-apparatus.toml <<EOF
 kargs = ["quiet", "splash", "plymouth.enable=1", "rd.plymouth=1", "amd_pstate=active", "amdgpu.dcdebugmask=0x10", "amdgpu.abmlevel=0", "amdgpu.sg_display=0"]
 EOF
 
-# Enable swayosd service (for on-screen display)
+# Enable swayosd services (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
+systemctl enable swayosd-server.service
 
 ## -- Custom os-release for Apparatus (affects GRUB menu entry name)
 # Keep ID=fedora for bootc-image-builder compatibility
