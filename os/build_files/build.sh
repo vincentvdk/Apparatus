@@ -197,7 +197,6 @@ cp /delivery/build_files/config/systemd/swayosd-server.service /usr/lib/systemd/
 # Podman controller delegation for rootless containers
 mkdir -p /usr/lib/systemd/system/user@.service.d
 cp /delivery/build_files/config/systemd/user@.service.d/delegate.conf /usr/lib/systemd/system/user@.service.d/
-systemctl daemon-reload
 
 ## -- Mask services that don't work on immutable ostree systems
 systemctl mask systemd-remount-fs.service
