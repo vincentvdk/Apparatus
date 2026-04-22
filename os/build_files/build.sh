@@ -148,6 +148,14 @@ cp /delivery/build_files/config/systemd/user/apparatus-config-check.timer /usr/l
 mkdir -p /usr/lib/systemd/user/timers.target.wants
 ln -sf ../apparatus-config-check.timer /usr/lib/systemd/user/timers.target.wants/apparatus-config-check.timer
 
+# Bootc update checker (systemd timer + notify-send)
+cp /delivery/build_files/apparatus/check-bootc-updates.sh /usr/libexec/apparatus/check-bootc-updates
+chmod 755 /usr/libexec/apparatus/check-bootc-updates
+cp /delivery/build_files/config/systemd/apparatus-bootc-check.service /usr/lib/systemd/system/
+cp /delivery/build_files/config/systemd/apparatus-bootc-check.timer /usr/lib/systemd/system/
+mkdir -p /usr/lib/systemd/system/timers.target.wants
+ln -sf ../apparatus-bootc-check.timer /usr/lib/systemd/system/timers.target.wants/apparatus-bootc-check.timer
+
 # Profile.d scripts (sourced on login)
 cp /delivery/build_files/config/profile.d/*.sh /etc/profile.d/
 chmod 644 /etc/profile.d/distrobox-safe.sh
@@ -200,6 +208,10 @@ cp /delivery/build_files/config/systemd/user@.service.d/delegate.conf /usr/lib/s
 
 ## -- Mask services that don't work on immutable ostree systems
 systemctl mask systemd-remount-fs.service
+
+## -- Disable automatic bootc updates (replaced by notification-only service)
+systemctl mask bootc-fetch-apply-updates.timer
+systemctl mask bootc-fetch-apply-updates.service
 
 ## -- System Configuration
 # Fonts (download in parallel)

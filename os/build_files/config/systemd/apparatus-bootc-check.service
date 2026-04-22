@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for bootc OS updates
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/apparatus/check-bootc-updates
+
+[Install]
+WantedBy=multi-user.target
