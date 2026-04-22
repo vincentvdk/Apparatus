@@ -165,6 +165,19 @@ distrobox_upgrade() {
       ;;
     image)
       echo ""
+
+      # Extract home dir from existing container args
+      local HOME_DIR=$(podman inspect "$CONTAINER" --format '{{json .Args}}' | \
+        jq -r '.[]' | grep -A1 '^--home$' | tail -1)
+
+      if [ -z "$HOME_DIR" ]; then
+        echo '{{ Color "3" "⚠ Could not detect custom home dir, will use default" }}' | gum format -t template
+        local HOME_ARG=""
+      else
+        echo "Detected home dir: $HOME_DIR"
+        local HOME_ARG="--home $HOME_DIR"
+      fi
+
       echo '{{ Color "3" "⚠ This will:" }}' | gum format -t template
       echo "  1. Pull the latest apparatus-box image"
       echo "  2. Stop and remove the container"
