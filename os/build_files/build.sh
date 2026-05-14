@@ -111,7 +111,7 @@ dnf5 -y install distrobox podman git curl unzip flatpak
 dnf5 -y install system-config-printer
 
 ## -- Gum (for butler TUI)
-dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.14.5/gum-0.14.5-1.x86_64.rpm
+dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.17.0/gum-0.17.0-1.x86_64.rpm
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
@@ -218,17 +218,22 @@ systemctl mask bootc-fetch-apply-updates.service
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip &
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip &
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip &
+# Download Ioskeley Mono (Berkeley Mono alternative)
+curl -L --output-dir /tmp https://github.com/ahatem/IoskeleyMono/releases/latest/download/IoskeleyMono-NerdFont.zip &
 wait
 unzip -d /tmp/hack-font /tmp/Hack.zip
 unzip -d /tmp/jetbrains-font /tmp/JetBrainsMono.zip
 unzip -d /tmp/notosans-font /tmp/Noto.zip
+# Install Ioskeley Mono
+unzip -d /tmp/ioskeley-font /tmp/IoskeleyMono-NerdFont.zip
 cp -r /tmp/hack-font /usr/share/fonts/
 cp -r /tmp/jetbrains-font /usr/share/fonts/
 cp -r /tmp/notosans-font /usr/share/fonts/
+cp -r /tmp/ioskeley-font /usr/share/fonts/
 fc-cache -f -v
 
 # Cleanup temp files
-rm -rf /tmp/*.zip /tmp/hack-font /tmp/jetbrains-font /tmp/notosans-font
+rm -rf /tmp/*.zip /tmp/hack-font /tmp/jetbrains-font /tmp/notosans-font /tmp/ioskeley-font
 
 # distrobox
 

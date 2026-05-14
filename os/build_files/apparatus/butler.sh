@@ -21,17 +21,23 @@ OPTIONS=(
   "Distrobox        - Manage distroboxes"
   "Configure        - Configure Hyprland settings"
   "Theme            - Select a theme"
+  "Font             - Switch system font"
   "Help             - Show keyboard shortcuts"
+  "Quit             - Quit butler (Ctrl+C)"
 )
 
 # -- Main func
 main() {
-  local OPT=$(gum choose "${OPTIONS[@]}" --height 15 --header "Option:")
-  local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+  while true; do
+    local OPT=$(gum choose "${OPTIONS[@]}" --height 15 --header "Option:")
+    local CHOICE=$(echo "$OPT" | awk -F ' {2,}' '{print $1}' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
 
-  case "${CHOICE}" in
+    case "${CHOICE}" in
     theme)
       set_theme
+      ;;
+    font)
+      set_font
       ;;
     distrobox)
       distrobox_menu
@@ -42,7 +48,12 @@ main() {
     help)
       show_help
       ;;
+    quit|exit|"")
+      echo "Goodbye!"
+      exit 0
+      ;;
   esac
+  done
 }
 
 
@@ -426,8 +437,6 @@ set_theme() {
       ;;
   esac
 
-  echo '{{ Bold "# Applying theme: " }}'"$THEME" | gum format -t template
-
   # Apply kitty theme
   if [ -d "$HOME/.config/kitty" ]; then
     ln -sf "$THEMES_DIR/$THEME/kitty.conf" "$HOME/.config/kitty/theme.conf"
@@ -470,7 +479,119 @@ set_theme() {
   makoctl reload || true
 
   echo '{{ Bold "Theme applied!" }}' | gum format -t template
-  sleep 2
+}
+
+# -- Set font
+set_font() {
+  echo '{{ Bold "# Set font" }}' | gum format -t template
+  
+  local CHOICE=$(gum choose \
+    "ioskeley-mono      - Berkeley Mono alternative (Ioskeley Mono)" \
+    "jetbrains-mono     - JetBrains Mono (current default)" \
+    "hack-nerd-font     - Hack Nerd Font" \
+    "Back               - Return to main menu" \
+    --height 15 --header "Select font:")
+
+  local FONT=$(echo "$CHOICE" | awk -F ' {2,}' '{print $1}')
+
+  case "$FONT" in
+    ioskeley-mono)
+      echo '{{ Bold "# Applying font: Ioskeley Mono" }}' | gum format -t template
+      
+      # Update kitty font
+      if [ -f "$HOME/.config/kitty/kitty.conf" ]; then
+        sed -i 's/^font_family.*/font_family      IoskeleyMono Nerd Font/' "$HOME/.config/kitty/kitty.conf"
+      fi
+      
+      # Update waybar font
+      if [ -f "$HOME/.config/waybar/style.css" ]; then
+        sed -i 's/\"Hack Nerd Font\"/\"IoskeleyMono Nerd Font\"/' "$HOME/.config/waybar/style.css"
+        sed -i 's/\"JetBrainsMono Nerd Font\"/\"IoskeleyMono Nerd Font\"/' "$HOME/.config/waybar/style.css"
+      fi
+      
+      # Update mako font
+      if [ -f "$HOME/.config/mako/config" ]; then
+        sed -i 's/Hack Nerd Font/IoskeleyMono Nerd Font/' "$HOME/.config/mako/config"
+        sed -i 's/JetBrainsMono Nerd Font/IoskeleyMono Nerd Font/' "$HOME/.config/mako/config"
+      fi
+      
+      # Save current font
+      mkdir -p "$HOME/.config/apparatus"
+      echo 'ioskeley-mono' > "$HOME/.config/apparatus/current-font"
+      
+      # Reload services
+      pkill -SIGUSR1 kitty || true
+      hyprctl reload || true
+      makoctl reload || true
+      
+      echo '{{ Bold "Ioskeley Mono font applied!" }}' | gum format -t template
+      ;;
+    jetbrains-mono)
+      echo '{{ Bold "# Applying font: JetBrains Mono" }}' | gum format -t template
+      
+      # Update kitty font
+      if [ -f "$HOME/.config/kitty/kitty.conf" ]; then
+        sed -i 's/^font_family.*/font_family      JetBrainsMono Nerd Font/' "$HOME/.config/kitty/kitty.conf"
+      fi
+      
+      # Update waybar font
+      if [ -f "$HOME/.config/waybar/style.css" ]; then
+        sed -i 's/\"IoskeleyMono Nerd Font\"/\"JetBrainsMono Nerd Font\"/' "$HOME/.config/waybar/style.css"
+        sed -i 's/\"Hack Nerd Font\"/\"JetBrainsMono Nerd Font\"/' "$HOME/.config/waybar/style.css"
+      fi
+      
+      # Update mako font
+      if [ -f "$HOME/.config/mako/config" ]; then
+        sed -i 's/IoskeleyMono Nerd Font/JetBrainsMono Nerd Font/' "$HOME/.config/mako/config"
+        sed -i 's/Hack Nerd Font/JetBrainsMono Nerd Font/' "$HOME/.config/mako/config"
+      fi
+      
+      # Save current font
+      mkdir -p "$HOME/.config/apparatus"
+      echo 'jetbrains-mono' > "$HOME/.config/apparatus/current-font"
+      
+      # Reload services
+      pkill -SIGUSR1 kitty || true
+      hyprctl reload || true
+      makoctl reload || true
+      
+      echo '{{ Bold "JetBrains Mono font applied!" }}' | gum format -t template
+      ;;
+    hack-nerd-font)
+      echo '{{ Bold "# Applying font: Hack Nerd Font" }}' | gum format -t template
+      
+      # Update kitty font
+      if [ -f "$HOME/.config/kitty/kitty.conf" ]; then
+        sed -i 's/^font_family.*/font_family      Hack Nerd Font/' "$HOME/.config/kitty/kitty.conf"
+      fi
+      
+      # Update waybar font
+      if [ -f "$HOME/.config/waybar/style.css" ]; then
+        sed -i 's/\"IoskeleyMono Nerd Font\"/\"Hack Nerd Font\"/' "$HOME/.config/waybar/style.css"
+        sed -i 's/\"JetBrainsMono Nerd Font\"/\"Hack Nerd Font\"/' "$HOME/.config/waybar/style.css"
+      fi
+      
+      # Update mako font
+      if [ -f "$HOME/.config/mako/config" ]; then
+        sed -i 's/IoskeleyMono Nerd Font/Hack Nerd Font/' "$HOME/.config/mako/config"
+        sed -i 's/JetBrainsMono Nerd Font/Hack Nerd Font/' "$HOME/.config/mako/config"
+      fi
+      
+      # Save current font
+      mkdir -p "$HOME/.config/apparatus"
+      echo 'hack-nerd-font' > "$HOME/.config/apparatus/current-font"
+      
+      # Reload services
+      pkill -SIGUSR1 kitty || true
+      hyprctl reload || true
+      makoctl reload || true
+      
+      echo '{{ Bold "Hack Nerd Font applied!" }}' | gum format -t template
+      ;;
+    Back|"")
+      return
+      ;;
+  esac
 }
 
 # Main - handle command line arguments or show menu
@@ -483,6 +604,9 @@ case "${1:-}" in
     ;;
   theme)
     set_theme
+    ;;
+  font)
+    set_font
     ;;
   help)
     show_help

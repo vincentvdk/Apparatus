@@ -33,6 +33,7 @@ OPTIONS=(
   "Update Config     - Check and apply config updates"
   "Config Source     - Switch dotfiles repo"
   "Theme             - Select a theme"
+  "Font              - Switch system font"
   "Exit              - Exit butler"
 )
 
@@ -57,6 +58,9 @@ main() {
         ;;
       theme)
         set_theme
+        ;;
+      font)
+        set_font
         ;;
       exit|q|"")
         echo "Goodbye!"
@@ -204,6 +208,140 @@ set_theme() {
       distrobox-host-exec makoctl reload 2>/dev/null || true
 
       echo '{{ Color "2" "✓ Theme applied" }}' | gum format -t template
+      ;;
+    Back|"")
+      return
+      ;;
+  esac
+
+  echo ""
+  echo "Press any key to continue..."
+  read -k 1
+}
+
+# -- Set font
+set_font() {
+  local HOST_HOME="$DISTROBOX_HOST_HOME"
+  
+  echo '{{ Bold "# Set font" }}' | gum format -t template
+  
+  local CHOICE=$(gum choose \
+    "ioskeley-mono      - Berkeley Mono alternative (Ioskeley Mono)" \
+    "jetbrains-mono     - JetBrains Mono (current default)" \
+    "hack-nerd-font     - Hack Nerd Font" \
+    "Back               - Return to main menu" \
+    --height 15 --header "Select font:")
+
+  local FONT=$(echo "$CHOICE" | awk -F ' {2,}' '{print $1}')
+
+  case "$FONT" in
+    ioskeley-mono)
+      echo '{{ Bold "# Applying font: Ioskeley Mono" }}' | gum format -t template
+      
+      # Update kitty font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/kitty/kitty.conf' ]]; then
+          sed -i 's/^font_family.*/font_family      IoskeleyMono Nerd Font/' '$HOST_HOME/.config/kitty/kitty.conf'
+        fi
+      "
+      
+      # Update waybar font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/waybar/style.css' ]]; then
+          sed -i 's/\"Hack Nerd Font\"/\"IoskeleyMono Nerd Font\"/' '$HOST_HOME/.config/waybar/style.css'
+          sed -i 's/\"JetBrainsMono Nerd Font\"/\"IoskeleyMono Nerd Font\"/' '$HOST_HOME/.config/waybar/style.css'
+        fi
+      "
+      
+      # Update mako font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/mako/config' ]]; then
+          sed -i 's/Hack Nerd Font/IoskeleyMono Nerd Font/' '$HOST_HOME/.config/mako/config'
+          sed -i 's/JetBrainsMono Nerd Font/IoskeleyMono Nerd Font/' '$HOST_HOME/.config/mako/config'
+        fi
+      "
+      
+      # Save current font
+      distrobox-host-exec bash -c "mkdir -p '$HOST_HOME/.config/apparatus' && echo 'ioskeley-mono' > '$HOST_HOME/.config/apparatus/current-font'"
+      
+      # Reload services
+      distrobox-host-exec pkill -SIGUSR1 kitty 2>/dev/null || true
+      distrobox-host-exec hyprctl reload 2>/dev/null || true
+      distrobox-host-exec makoctl reload 2>/dev/null || true
+      
+      echo '{{ Color "2" "✓ Ioskeley Mono font applied" }}' | gum format -t template
+      ;;
+    jetbrains-mono)
+      echo '{{ Bold "# Applying font: JetBrains Mono" }}' | gum format -t template
+      
+      # Update kitty font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/kitty/kitty.conf' ]]; then
+          sed -i 's/^font_family.*/font_family      JetBrainsMono Nerd Font/' '$HOST_HOME/.config/kitty/kitty.conf'
+        fi
+      "
+      
+      # Update waybar font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/waybar/style.css' ]]; then
+          sed -i 's/\"IoskeleyMono Nerd Font\"/\"JetBrainsMono Nerd Font\"/' '$HOST_HOME/.config/waybar/style.css'
+          sed -i 's/\"Hack Nerd Font\"/\"JetBrainsMono Nerd Font\"/' '$HOST_HOME/.config/waybar/style.css'
+        fi
+      "
+      
+      # Update mako font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/mako/config' ]]; then
+          sed -i 's/IoskeleyMono Nerd Font/JetBrainsMono Nerd Font/' '$HOST_HOME/.config/mako/config'
+          sed -i 's/Hack Nerd Font/JetBrainsMono Nerd Font/' '$HOST_HOME/.config/mako/config'
+        fi
+      "
+      
+      # Save current font
+      distrobox-host-exec bash -c "mkdir -p '$HOST_HOME/.config/apparatus' && echo 'jetbrains-mono' > '$HOST_HOME/.config/apparatus/current-font'"
+      
+      # Reload services
+      distrobox-host-exec pkill -SIGUSR1 kitty 2>/dev/null || true
+      distrobox-host-exec hyprctl reload 2>/dev/null || true
+      distrobox-host-exec makoctl reload 2>/dev/null || true
+      
+      echo '{{ Color "2" "✓ JetBrains Mono font applied" }}' | gum format -t template
+      ;;
+    hack-nerd-font)
+      echo '{{ Bold "# Applying font: Hack Nerd Font" }}' | gum format -t template
+      
+      # Update kitty font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/kitty/kitty.conf' ]]; then
+          sed -i 's/^font_family.*/font_family      Hack Nerd Font/' '$HOST_HOME/.config/kitty/kitty.conf'
+        fi
+      "
+      
+      # Update waybar font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/waybar/style.css' ]]; then
+          sed -i 's/\"IoskeleyMono Nerd Font\"/\"Hack Nerd Font\"/' '$HOST_HOME/.config/waybar/style.css'
+          sed -i 's/\"JetBrainsMono Nerd Font\"/\"Hack Nerd Font\"/' '$HOST_HOME/.config/waybar/style.css'
+        fi
+      "
+      
+      # Update mako font
+      distrobox-host-exec bash -c "
+        if [[ -f '$HOST_HOME/.config/mako/config' ]]; then
+          sed -i 's/IoskeleyMono Nerd Font/Hack Nerd Font/' '$HOST_HOME/.config/mako/config'
+          sed -i 's/JetBrainsMono Nerd Font/Hack Nerd Font/' '$HOST_HOME/.config/mako/config'
+        fi
+      "
+      
+      # Save current font
+      distrobox-host-exec bash -c "mkdir -p '$HOST_HOME/.config/apparatus' && echo 'hack-nerd-font' > '$HOST_HOME/.config/apparatus/current-font'"
+      
+      # Reload services
+      distrobox-host-exec pkill -SIGUSR1 kitty 2>/dev/null || true
+      distrobox-host-exec hyprctl reload 2>/dev/null || true
+      distrobox-host-exec makoctl reload 2>/dev/null || true
+      
+      echo '{{ Color "2" "✓ Hack Nerd Font applied" }}' | gum format -t template
       ;;
     Back|"")
       return
