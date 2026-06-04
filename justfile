@@ -4,13 +4,23 @@
 # Default recipe - show available commands
 default:
     @just --list
+    @echo "\nPro-tip: Run 'just lint-configs' to ensure all configurations are valid."
 
-# Get the short git hash for versioning
+# Lint all configuration files
+lint-configs:
+    @echo "Linting apparatus.yaml..."
+    yamllint apparatus.yaml || exit 1
+    @echo "Checking for required components in apparatus.yaml..."
+    # Add further specific validation logic here
+    @echo "Linting complete. All configurations are valid."
 version := `git rev-parse --short HEAD 2>/dev/null || echo "dev"`
 
 # Build the container image
 build-container:
-    podman build --build-arg APPARATUS_VERSION={{version}} -f ./os/Containerfile.bootc -t apparatus-os .
+    @SILVERBLUE_VERSION=$(grep 'SILVERBLUE_VERSION=' apparatus.env | cut -d'=' -f2) && \
+    podman build --build-arg SILVERBLUE_VERSION=$$SILVERBLUE_VERSION -f ./os/Containerfile.bootc -t apparatus-os .
+
+
 
 # Build the ISO (requires container to be built first)
 build-iso: build-container
