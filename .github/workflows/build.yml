@@ -50,7 +50,7 @@ jobs:
           VERSION="${GITHUB_SHA::7}"
           sudo podman build \
             --build-arg APPARATUS_VERSION="$VERSION" \
-            -f ./os/Containerfile.bootc \
+            -f ./os/Containerfile \
             -t ${{ env.IMAGE_NAME }}:latest \
             .
 

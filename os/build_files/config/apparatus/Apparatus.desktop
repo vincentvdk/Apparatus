@@ -2,7 +2,7 @@
 Version=1.0
 Name=Apparatus
 Comment=Configure the Apparatus OS
-Exec=alacrtitty -e "butler"
+Exec=kitty -e butler
 Icon=utilities-terminal
 Terminal=false
 Type=Application

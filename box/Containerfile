@@ -1,8 +1,8 @@
-# Build stage for butler-tools
+# Build stage for butler (unified binary)
 FROM docker.io/golang:1.22-alpine AS builder
 WORKDIR /build
-COPY box/cmd/butler-tools/ .
-RUN go build -o butler-tools .
+copy ../cmd/butler/ .
+RUN go build -o butler .
 
 # Main image
 FROM docker.io/fedora:43
@@ -84,6 +84,6 @@ COPY box/config/tools.yaml /usr/share/apparatus/
 COPY --chmod=0755 box/bin/ /opt/bin
 COPY --chmod=0755 box/bin/init.sh /opt/apparatus/init.sh
 
-## -- Butler tools TUI (from builder stage)
-COPY --from=builder /build/butler-tools /usr/local/bin/butler-tools
+## -- Butler binary (from builder stage)
+COPY --from=builder /build/butler /usr/local/bin/butler
 
