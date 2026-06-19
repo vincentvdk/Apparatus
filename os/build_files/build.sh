@@ -200,7 +200,8 @@ cp /delivery/build_files/config/greetd/gtkgreet.css /etc/greetd/
 chmod 644 /etc/greetd/*.css /etc/greetd/*.toml
 chmod 755 /etc/greetd
 
-## -- Enabling Systemd services
+## -- Disable GDM (from fedora-bootc base image) and enable greetd
+systemctl mask gdm.service
 systemctl enable greetd.service
 systemctl enable podman.socket
 
