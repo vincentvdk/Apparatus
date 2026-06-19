@@ -202,8 +202,7 @@ chmod 755 /etc/greetd
 
 ## -- Disable GDM (from fedora-bootc base image) and enable greetd
 systemctl mask gdm.service
-rm -f /etc/systemd/system/display-manager.service
-systemctl mask display-manager.service
+ln -sf /usr/lib/systemd/system/greetd.service /etc/systemd/system/display-manager.service
 systemctl enable greetd.service
 systemctl enable podman.socket
 
@@ -230,17 +229,15 @@ systemctl mask bootc-fetch-apply-updates.timer
 systemctl mask bootc-fetch-apply-updates.service
 
 ## -- System Configuration
-# Fonts (download in parallel)
+# Nerd Fonts
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/Hack.zip &
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip &
 curl -OL --output-dir /tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/Noto.zip &
-# Download Ioskeley Mono (Berkeley Mono alternative)
-curl -L --output-dir /tmp https://github.com/ahatem/IoskeleyMono/releases/latest/download/IoskeleyMono-NerdFont.zip &
+curl -OL --output-dir /tmp https://github.com/ahatem/IoskeleyMono/releases/download/v2.0.0/IoskeleyMono-NerdFont.zip &
 wait
 unzip -d /tmp/hack-font /tmp/Hack.zip
 unzip -d /tmp/jetbrains-font /tmp/JetBrainsMono.zip
 unzip -d /tmp/notosans-font /tmp/Noto.zip
-# Install Ioskeley Mono
 unzip -d /tmp/ioskeley-font /tmp/IoskeleyMono-NerdFont.zip
 cp -r /tmp/hack-font /usr/share/fonts/
 cp -r /tmp/jetbrains-font /usr/share/fonts/
