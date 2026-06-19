@@ -27,14 +27,9 @@ RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
     mkdir -p /var/opt && \
     # Install default (host) packages
     dnf install -y cups cups-pdf pcsc-lite pcsc-tools pcsc-lite-ccid rsync && \
-    # Run build script (pass version for os-radical)
+    dnf clean all && \
+    # Run build script (installs all packages, configs, dotfiles, etc.)
     APPARATUS_VERSION="${APPARATUS_VERSION}" /delivery/build_files/build.sh && \
-    # Install butler (OS config menu)
-    cp /delivery/build_files/apparatus/butler.sh /usr/local/bin/butler && \
-    chmod +x /usr/local/bin/butler && \
-    # Final cleanup (dnf cache is mounted, not in final image)
-    dnf5 clean all && \
-    rm -rf /var/log/* /tmp/* /var/tmp/* && \
     # Finalize ostree layer (generates required ostree.final-diffid annotation)
     mkdir -p /var/lib/alternatives && \
     ostree container commit && \
