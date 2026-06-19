@@ -353,11 +353,6 @@ if [ -f /usr/share/shim/*/shimx64.efi ]; then
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/BOOT/BOOTX64.EFI 2>/dev/null || true
 fi
 
-## -- Rebuild initramfs with plymouth and amdgpu
-# For bootc, initramfs lives in /usr/lib/modules/$kver/initramfs.img
-KVER=$(ls /usr/lib/modules | head -1)
-DRACUT_NO_XATTR=1 dracut -vf /usr/lib/modules/$KVER/initramfs.img "$KVER"
-
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
 rm -rf /var/log/*
