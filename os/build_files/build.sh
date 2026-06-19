@@ -201,7 +201,7 @@ chmod 644 /etc/greetd/*.css /etc/greetd/*.toml
 chmod 755 /etc/greetd
 
 ## -- Disable GDM (from fedora-bootc base image) and enable greetd
-systemctl mask gdm.service
+systemctl mask gdm.service display-manager.service
 systemctl enable greetd.service
 systemctl enable podman.socket
 
