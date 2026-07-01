@@ -44,6 +44,8 @@ done
 wait
 
 plymouth-set-default-theme connect
+# Ensure default theme symlink exists (for bootc first-boot initramfs rebuild)
+ln -sfn connect /usr/share/plymouth/themes/default
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
@@ -55,6 +57,8 @@ add_drivers+=" amdgpu "
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 # Include fonts for plymouth password prompt (Image.Text needs fonts)
 install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
+# Include Plymouth theme files
+install_items+=" /usr/share/plymouth/themes/connect "
 EOF
 
 ## -- hyprland COPR from solopasha
