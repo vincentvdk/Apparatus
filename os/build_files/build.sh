@@ -357,6 +357,10 @@ if [ -f /usr/share/shim/*/shimx64.efi ]; then
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/BOOT/BOOTX64.EFI 2>/dev/null || true
 fi
 
+## -- Rebuild initramfs with Plymouth theme for first boot
+KVER=$(ls /usr/lib/modules | head -1)
+dracut --force --kver "$KVER" --add plymouth --no-hostonly
+
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
 rm -rf /var/log/*
