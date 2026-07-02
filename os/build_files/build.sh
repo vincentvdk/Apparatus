@@ -58,14 +58,9 @@ add_drivers+=" amdgpu "
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 # Include fonts for plymouth password prompt (Image.Text needs fonts)
 install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
-# Include Plymouth theme files
-install_items+=" /usr/share/plymouth/themes/connect/connect.plymouth "
-install_items+=" /usr/share/plymouth/themes/connect/connect.script "
+# Explicitly include the connect theme directory for bootc compatibility
+install_items+=" /usr/share/plymouth/themes/connect "
 EOF
-# Add progress image items to dracut config
-for i in $(seq 0 119); do
-    echo "install_items+=\" /usr/share/plymouth/themes/connect/progress-$i.png \"" >> /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf
-done
 
 ## -- Rebuild initramfs with Plymouth theme for bootc
 # For bootc, we need to explicitly rebuild the initramfs during image build
