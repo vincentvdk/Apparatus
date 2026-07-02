@@ -50,16 +50,18 @@ ln -sfn connect /usr/share/plymouth/themes/default
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
 cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
-add_dracutmodules+=" plymouth "
+# Include Plymouth theme module
+add_dracutmodules+=" plymouth-theme "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 # Include fonts for plymouth password prompt (Image.Text needs fonts)
 install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
-# Include Plymouth theme files
-install_items+=" /usr/share/plymouth/themes/connect "
 EOF
+# Install custom Plymouth theme dracut module
+mkdir -p /usr/lib/dracut/modules
+cp -r /delivery/build_files/config/dracut/modules/plymouth-theme /usr/lib/dracut/modules/
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
@@ -356,10 +358,6 @@ if [ -f /usr/share/shim/*/shimx64.efi ]; then
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/fedora/ 2>/dev/null || true
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/BOOT/BOOTX64.EFI 2>/dev/null || true
 fi
-
-## -- Rebuild initramfs with Plymouth theme for first boot
-KVER=$(ls /usr/lib/modules | head -1)
-dracut --force --kver "$KVER" --add plymouth --no-hostonly
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
