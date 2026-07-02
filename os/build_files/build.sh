@@ -49,19 +49,21 @@ ln -sfn connect /usr/share/plymouth/themes/default
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
-cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
-# Include Plymouth theme module
-add_dracutmodules+=" plymouth-theme "
+cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 # Include fonts for plymouth password prompt (Image.Text needs fonts)
 install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
+# Include Plymouth theme files
+install_items+=" /usr/share/plymouth/themes/connect/connect.plymouth "
+install_items+=" /usr/share/plymouth/themes/connect/connect.script "
 EOF
-# Install custom Plymouth theme dracut module
-mkdir -p /usr/lib/dracut/modules
-cp -r /delivery/build_files/config/dracut/modules/plymouth-theme /usr/lib/dracut/modules/
+# Add progress image items to dracut config
+for i in $(seq 0 119); do
+    echo "install_items+=\" /usr/share/plymouth/themes/connect/progress-$i.png \"" >> /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf
+done
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
