@@ -50,6 +50,8 @@ ln -sfn connect /usr/share/plymouth/themes/default
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
 cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
+# Include Plymouth module for graphical boot
+add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
@@ -64,6 +66,12 @@ EOF
 for i in $(seq 0 119); do
     echo "install_items+=\" /usr/share/plymouth/themes/connect/progress-$i.png \"" >> /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf
 done
+
+## -- Rebuild initramfs with Plymouth theme for bootc
+# For bootc, we need to explicitly rebuild the initramfs during image build
+# since bootc doesn't support runtime initramfs regeneration like rpm-ostree
+KVER=$(ls /usr/lib/modules | head -1)
+dracut --force --kver "$KVER" --no-hostonly
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
