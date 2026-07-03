@@ -44,20 +44,31 @@ done
 wait
 
 plymouth-set-default-theme connect
-# Ensure default theme symlink exists (for bootc first-boot initramfs rebuild)
-ln -sfn connect /usr/share/plymouth/themes/default
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
-# Note: use force_add_dracutmodules (not add_dracutmodules) to override any
-# omit_dracutmodules from the fedora-bootc base image
+# Note: dracut's plymouth module only includes custom themes in hostonly mode.
+# Since bootc requires --no-hostonly, we must manually include theme files
+# and the script renderer plugin via install_items.
 mkdir -p /usr/lib/dracut/dracut.conf.d
-cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
-# Force-include Plymouth module (overrides base image omit list)
+PLYMOUTH_THEME_FILES=$(find /usr/share/plymouth/themes/connect -type f | tr '\n' ' ')
+PLYMOUTH_SCRIPT_SO=$(find /usr/lib64/plymouth /usr/lib/plymouth -name 'script.so' 2>/dev/null | head -1)
+PLYMOUTH_LABEL_SO=$(find /usr/lib64/plymouth /usr/lib/plymouth -name 'label-freetype.so' -o -name 'label.so' 2>/dev/null | head -1)
+FONT_FILES=$(find /usr/share/fonts/dejavu-sans-fonts -type f -name '*.ttf' 2>/dev/null | tr '\n' ' ')
+cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
+# Include Plymouth module for graphical boot
 force_add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
+# Manually include connect theme files (dracut plymouth module skips custom themes in --no-hostonly mode)
+install_items+=" ${PLYMOUTH_THEME_FILES}"
+# Include script renderer plugin (needed for script-based themes like connect)
+install_items+=" ${PLYMOUTH_SCRIPT_SO} ${PLYMOUTH_LABEL_SO} "
+# Include fonts for plymouth password prompt
+install_items+=" ${FONT_FILES}"
+# Include plymouth config so plymouthd knows which theme to use
+install_items+=" /etc/plymouth/plymouthd.conf "
 EOF
 
 ## -- hyprland COPR from solopasha
