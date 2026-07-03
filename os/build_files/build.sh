@@ -49,7 +49,10 @@ ln -sfn connect /usr/share/plymouth/themes/default
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
-cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
+# Build file list for install_items (dracut only accepts individual files, not directories)
+PLYMOUTH_FILES=$(find /usr/share/plymouth/themes/connect -type f | tr '\n' ' ')
+FONT_FILES=$(find /usr/share/fonts/dejavu-sans-fonts -type f -name '*.ttf' | tr '\n' ' ')
+cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
 # Include Plymouth module for graphical boot
 add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
@@ -57,9 +60,9 @@ add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 # Include fonts for plymouth password prompt (Image.Text needs fonts)
-install_items+=" /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf /usr/share/fonts/dejavu-sans-fonts "
-# Explicitly include the connect theme directory for bootc compatibility
-install_items+=" /usr/share/plymouth/themes/connect "
+install_items+=" ${FONT_FILES}"
+# Include all connect theme files for bootc compatibility
+install_items+=" ${PLYMOUTH_FILES}"
 EOF
 
 ## -- Rebuild initramfs with Plymouth theme for bootc
