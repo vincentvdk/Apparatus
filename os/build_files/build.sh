@@ -51,9 +51,10 @@ plymouth-set-default-theme connect
 # and the script renderer plugin via install_items.
 mkdir -p /usr/lib/dracut/dracut.conf.d
 PLYMOUTH_THEME_FILES=$(find /usr/share/plymouth/themes/connect -type f | tr '\n' ' ')
-PLYMOUTH_SCRIPT_SO=$(find /usr/lib64/plymouth /usr/lib/plymouth -name 'script.so' 2>/dev/null | head -1)
-PLYMOUTH_LABEL_SO=$(find /usr/lib64/plymouth /usr/lib/plymouth -name 'label-freetype.so' -o -name 'label.so' 2>/dev/null | head -1)
-FONT_FILES=$(find /usr/share/fonts/dejavu-sans-fonts -type f -name '*.ttf' 2>/dev/null | tr '\n' ' ')
+PLYMOUTH_LIBDIR=$(rpm --eval '%{_libdir}')/plymouth
+PLYMOUTH_SCRIPT_SO="${PLYMOUTH_LIBDIR}/script.so"
+PLYMOUTH_LABEL_SO="${PLYMOUTH_LIBDIR}/label-freetype.so"
+FONT_FILES=$(find /usr/share/fonts/dejavu-sans-fonts -type f -name '*.ttf' 2>/dev/null | tr '\n' ' ' || true)
 cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
 # Include Plymouth module for graphical boot
 force_add_dracutmodules+=" plymouth "
