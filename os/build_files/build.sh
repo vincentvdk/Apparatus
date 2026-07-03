@@ -48,28 +48,17 @@ plymouth-set-default-theme connect
 ln -sfn connect /usr/share/plymouth/themes/default
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
+# Note: use force_add_dracutmodules (not add_dracutmodules) to override any
+# omit_dracutmodules from the fedora-bootc base image
 mkdir -p /usr/lib/dracut/dracut.conf.d
-# Build file list for install_items (dracut only accepts individual files, not directories)
-PLYMOUTH_FILES=$(find /usr/share/plymouth/themes/connect -type f | tr '\n' ' ')
-FONT_FILES=$(find /usr/share/fonts/dejavu-sans-fonts -type f -name '*.ttf' | tr '\n' ' ')
-cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
-# Include Plymouth module for graphical boot
-add_dracutmodules+=" plymouth "
+cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
+# Force-include Plymouth module (overrides base image omit list)
+force_add_dracutmodules+=" plymouth "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
-# Include fonts for plymouth password prompt (Image.Text needs fonts)
-install_items+=" ${FONT_FILES}"
-# Include all connect theme files for bootc compatibility
-install_items+=" ${PLYMOUTH_FILES}"
 EOF
-
-## -- Rebuild initramfs with Plymouth theme for bootc
-# For bootc, we need to explicitly rebuild the initramfs during image build
-# since bootc doesn't support runtime initramfs regeneration like rpm-ostree
-KVER=$(ls /usr/lib/modules | head -1)
-dracut --force --kver "$KVER" --no-hostonly
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
@@ -366,6 +355,12 @@ if [ -f /usr/share/shim/*/shimx64.efi ]; then
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/fedora/ 2>/dev/null || true
     cp /usr/share/shim/*/shimx64.efi /usr/lib/bootupd/updates/EFI/BOOT/BOOTX64.EFI 2>/dev/null || true
 fi
+
+## -- Rebuild initramfs with Plymouth theme for bootc
+# Must be one of the last steps to ensure all dracut configs, drivers, and
+# theme files are in place. bootc does not regenerate initramfs at runtime.
+KVER=$(ls /usr/lib/modules | head -1)
+dracut --force --kver "$KVER" --no-hostonly
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
