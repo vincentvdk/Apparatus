@@ -46,31 +46,59 @@ wait
 plymouth-set-default-theme connect
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
-# Note: dracut's plymouth module only includes custom themes in hostonly mode.
-# Since bootc requires --no-hostonly, we must manually include theme files
-# and the script renderer plugin via install_items.
 mkdir -p /usr/lib/dracut/dracut.conf.d
-PLYMOUTH_THEME_FILES=$(find /usr/share/plymouth/themes/connect -type f | tr '\n' ' ')
-PLYMOUTH_LIBDIR=$(rpm --eval '%{_libdir}')/plymouth
-PLYMOUTH_SCRIPT_SO="${PLYMOUTH_LIBDIR}/script.so"
-PLYMOUTH_LABEL_SO="${PLYMOUTH_LIBDIR}/label-freetype.so"
-FONT_FILES=$(find /usr/share/fonts/dejavu-sans-fonts -type f -name '*.ttf' 2>/dev/null | tr '\n' ' ' || true)
-cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<EOF
-# Include Plymouth module for graphical boot
-force_add_dracutmodules+=" plymouth "
+cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
+# Include Plymouth and custom theme module for graphical boot
+force_add_dracutmodules+=" plymouth plymouth-theme-connect "
 # Include GPU driver for graphical LUKS password prompt
 add_drivers+=" amdgpu "
 # Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
-# Manually include connect theme files (dracut plymouth module skips custom themes in --no-hostonly mode)
-install_items+=" ${PLYMOUTH_THEME_FILES}"
-# Include script renderer plugin (needed for script-based themes like connect)
-install_items+=" ${PLYMOUTH_SCRIPT_SO} ${PLYMOUTH_LABEL_SO} "
-# Include fonts for plymouth password prompt
-install_items+=" ${FONT_FILES}"
-# Include plymouth config so plymouthd knows which theme to use
-install_items+=" /etc/plymouth/plymouthd.conf "
 EOF
+
+# Custom dracut module to install connect theme into initramfs
+# The stock plymouth dracut module (45plymouth) only includes custom themes in
+# hostonly mode. Since bootc uses --no-hostonly, we need our own module that
+# copies theme files, the script renderer plugin, and fixes default.plymouth.
+mkdir -p /usr/lib/dracut/modules.d/46plymouth-theme-connect
+cat > /usr/lib/dracut/modules.d/46plymouth-theme-connect/module-setup.sh <<'MODEOF'
+#!/usr/bin/bash
+
+check() {
+    require_binaries plymouthd || return 1
+    [ -d "$dracutsysrootdir/usr/share/plymouth/themes/connect" ] || return 1
+    return 0
+}
+
+depends() {
+    echo plymouth
+}
+
+install() {
+    # Install all connect theme files
+    for f in "$dracutsysrootdir"/usr/share/plymouth/themes/connect/*; do
+        [ -f "$f" ] || continue
+        inst_simple "${f#"$dracutsysrootdir"}"
+    done
+
+    # Install script renderer plugin (connect theme uses ModuleName=script)
+    inst_libdir_file "plymouth/script.so"
+
+    # Install label plugin and fonts for password prompt text rendering
+    inst_libdir_file "plymouth/label-freetype.so" "plymouth/label.so"
+    for ttf in "$dracutsysrootdir"/usr/share/fonts/dejavu-sans-fonts/*.ttf; do
+        [ -f "$ttf" ] || continue
+        inst_simple "${ttf#"$dracutsysrootdir"}"
+    done
+
+    # Install plymouthd.conf so plymouth uses the connect theme
+    inst_simple /etc/plymouth/plymouthd.conf
+
+    # Override default.plymouth symlink (stock plymouth module points it to text)
+    ln -sf connect/connect.plymouth "${initdir}/usr/share/plymouth/themes/default.plymouth"
+}
+MODEOF
+chmod 755 /usr/lib/dracut/modules.d/46plymouth-theme-connect/module-setup.sh
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
