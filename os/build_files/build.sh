@@ -44,61 +44,26 @@ done
 wait
 
 plymouth-set-default-theme connect
+
+# Verify theme is configured correctly before dracut
+echo "=== Plymouth theme verification ==="
+echo "Default theme: $(plymouth-set-default-theme)"
+echo "plymouthd.conf:"
+cat /etc/plymouth/plymouthd.conf
+echo "default.plymouth symlink: $(readlink -f /usr/share/plymouth/themes/default.plymouth)"
+echo "Theme files: $(ls /usr/share/plymouth/themes/connect/ | wc -l) files"
+echo "plymouth-populate-initrd: $(ls -la /usr/libexec/plymouth/plymouth-populate-initrd 2>/dev/null || echo 'NOT FOUND')"
+echo "script.so: $(ls -la $(rpm --eval '%{_libdir}')/plymouth/script.so 2>/dev/null || echo 'NOT FOUND')"
+echo "==================================="
+
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
 cat > /usr/lib/dracut/dracut.conf.d/50-apparatus-plymouth.conf <<'EOF'
-# Include Plymouth and custom theme module for graphical boot
-force_add_dracutmodules+=" plymouth plymouth-theme-connect "
-# Include GPU driver for graphical LUKS password prompt
+force_add_dracutmodules+=" plymouth "
 add_drivers+=" amdgpu "
-# Include USB/HID drivers for keyboard input during boot
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 EOF
-
-# Custom dracut module to install connect theme into initramfs
-# The stock plymouth dracut module (45plymouth) only includes custom themes in
-# hostonly mode. Since bootc uses --no-hostonly, we need our own module that
-# copies theme files, the script renderer plugin, and fixes default.plymouth.
-mkdir -p /usr/lib/dracut/modules.d/46plymouth-theme-connect
-cat > /usr/lib/dracut/modules.d/46plymouth-theme-connect/module-setup.sh <<'MODEOF'
-#!/usr/bin/bash
-
-check() {
-    require_binaries plymouthd || return 1
-    [ -d "$dracutsysrootdir/usr/share/plymouth/themes/connect" ] || return 1
-    return 0
-}
-
-depends() {
-    echo plymouth
-}
-
-install() {
-    # Install all connect theme files
-    for f in "$dracutsysrootdir"/usr/share/plymouth/themes/connect/*; do
-        [ -f "$f" ] || continue
-        inst_simple "${f#"$dracutsysrootdir"}"
-    done
-
-    # Install script renderer plugin (connect theme uses ModuleName=script)
-    inst_libdir_file "plymouth/script.so"
-
-    # Install label plugin and fonts for password prompt text rendering
-    inst_libdir_file "plymouth/label-freetype.so" "plymouth/label.so"
-    for ttf in "$dracutsysrootdir"/usr/share/fonts/dejavu-sans-fonts/*.ttf; do
-        [ -f "$ttf" ] || continue
-        inst_simple "${ttf#"$dracutsysrootdir"}"
-    done
-
-    # Install plymouthd.conf so plymouth uses the connect theme
-    inst_simple /etc/plymouth/plymouthd.conf
-
-    # Override default.plymouth symlink (stock plymouth module points it to text)
-    ln -sf connect/connect.plymouth "${initdir}/usr/share/plymouth/themes/default.plymouth"
-}
-MODEOF
-chmod 755 /usr/lib/dracut/modules.d/46plymouth-theme-connect/module-setup.sh
 
 ## -- hyprland COPR from solopasha
 dnf5 -y copr enable solopasha/hyprland
@@ -401,6 +366,31 @@ fi
 # theme files are in place. bootc does not regenerate initramfs at runtime.
 KVER=$(ls /usr/lib/modules | head -1)
 dracut --force --kver "$KVER" --no-hostonly
+
+# Verify initramfs contains plymouth theme
+echo "=== Initramfs plymouth verification ==="
+INITRD="/usr/lib/modules/${KVER}/initramfs.img"
+VERIFY_DIR=$(mktemp -d)
+if command -v skipcpio &>/dev/null; then
+    skipcpio "$INITRD" | zcat 2>/dev/null | cpio -t 2>/dev/null > "$VERIFY_DIR/files.txt" || \
+    skipcpio "$INITRD" | zstdcat 2>/dev/null | cpio -t 2>/dev/null > "$VERIFY_DIR/files.txt" || \
+    skipcpio "$INITRD" | xzcat 2>/dev/null | cpio -t 2>/dev/null > "$VERIFY_DIR/files.txt" || true
+elif command -v lsinitrd &>/dev/null; then
+    lsinitrd "$INITRD" 2>/dev/null > "$VERIFY_DIR/files.txt" || true
+fi
+echo "Connect theme files in initramfs:"
+grep -c "plymouth/themes/connect" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "0"
+grep "plymouth/themes/connect" "$VERIFY_DIR/files.txt" 2>/dev/null | head -5
+echo "default.plymouth in initramfs:"
+grep "default.plymouth" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "NOT FOUND"
+echo "script.so in initramfs:"
+grep "script.so" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "NOT FOUND"
+echo "plymouthd.conf in initramfs:"
+grep "plymouthd.conf" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "NOT FOUND"
+echo "Dracut modules loaded:"
+grep "plymouth" "$VERIFY_DIR/files.txt" 2>/dev/null | grep -v themes | head -10
+rm -rf "$VERIFY_DIR"
+echo "==================================="
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
