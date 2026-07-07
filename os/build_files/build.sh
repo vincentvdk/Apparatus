@@ -45,17 +45,6 @@ wait
 
 plymouth-set-default-theme connect
 
-# Verify theme is configured correctly before dracut
-echo "=== Plymouth theme verification ==="
-echo "Default theme: $(plymouth-set-default-theme)"
-echo "plymouthd.conf:"
-cat /etc/plymouth/plymouthd.conf
-echo "default.plymouth symlink: $(readlink -f /usr/share/plymouth/themes/default.plymouth)"
-echo "Theme files: $(ls /usr/share/plymouth/themes/connect/ | wc -l) files"
-echo "plymouth-populate-initrd: $(ls -la /usr/libexec/plymouth/plymouth-populate-initrd 2>/dev/null || echo 'NOT FOUND')"
-echo "script.so: $(ls -la $(rpm --eval '%{_libdir}')/plymouth/script.so 2>/dev/null || echo 'NOT FOUND')"
-echo "==================================="
-
 # Dracut config for graphical boot with LUKS prompt
 # For bootc, config must be in /usr/lib/dracut/dracut.conf.d
 mkdir -p /usr/lib/dracut/dracut.conf.d
@@ -364,33 +353,10 @@ fi
 ## -- Rebuild initramfs with Plymouth theme for bootc
 # Must be one of the last steps to ensure all dracut configs, drivers, and
 # theme files are in place. bootc does not regenerate initramfs at runtime.
+# The output path must be explicitly set — dracut defaults to /boot/ which
+# is not where bootc reads the initramfs from.
 KVER=$(ls /usr/lib/modules | head -1)
-dracut --force --kver "$KVER" --no-hostonly
-
-# Verify initramfs contains plymouth theme
-echo "=== Initramfs plymouth verification ==="
-INITRD="/usr/lib/modules/${KVER}/initramfs.img"
-VERIFY_DIR=$(mktemp -d)
-if command -v skipcpio &>/dev/null; then
-    skipcpio "$INITRD" | zcat 2>/dev/null | cpio -t 2>/dev/null > "$VERIFY_DIR/files.txt" || \
-    skipcpio "$INITRD" | zstdcat 2>/dev/null | cpio -t 2>/dev/null > "$VERIFY_DIR/files.txt" || \
-    skipcpio "$INITRD" | xzcat 2>/dev/null | cpio -t 2>/dev/null > "$VERIFY_DIR/files.txt" || true
-elif command -v lsinitrd &>/dev/null; then
-    lsinitrd "$INITRD" 2>/dev/null > "$VERIFY_DIR/files.txt" || true
-fi
-echo "Connect theme files in initramfs:"
-grep -c "plymouth/themes/connect" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "0"
-grep "plymouth/themes/connect" "$VERIFY_DIR/files.txt" 2>/dev/null | head -5
-echo "default.plymouth in initramfs:"
-grep "default.plymouth" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "NOT FOUND"
-echo "script.so in initramfs:"
-grep "script.so" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "NOT FOUND"
-echo "plymouthd.conf in initramfs:"
-grep "plymouthd.conf" "$VERIFY_DIR/files.txt" 2>/dev/null || echo "NOT FOUND"
-echo "Dracut modules loaded:"
-grep "plymouth" "$VERIFY_DIR/files.txt" 2>/dev/null | grep -v themes | head -10
-rm -rf "$VERIFY_DIR"
-echo "==================================="
+dracut --force --kver "$KVER" --no-hostonly /usr/lib/modules/"$KVER"/initramfs.img
 
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
