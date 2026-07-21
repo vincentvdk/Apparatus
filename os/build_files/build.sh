@@ -69,7 +69,7 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     xcb-util-keysyms-devel xcb-util-renderutil-devel \
     pulseaudio-libs-devel pipewire-devel libX11-devel \
     libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
-    libXinerama-devel libXi-devel
+    libXinerama-devel libXi-devel pugixml-devel
 
 ## -- Build and install hyprwayland-scanner from source (required by aquamarine >= 0.9.3)
 # aquamarine 0.9.3 requires hyprwayland-scanner >= 0.4.0
