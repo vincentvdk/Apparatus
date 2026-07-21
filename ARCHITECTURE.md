@@ -22,7 +22,7 @@ graph TD
 
     subgraph "Layer 2: Provisioning & State Management"
         B[Butler Utility]
-        C[apparatus.yaml Manifest]
+        C[apparatus.env Version Manifest]
         B --> C
     end
 
@@ -43,7 +43,7 @@ graph TD
 
 The management of the system follows an "Infrastructure as Code" philosophy:
 
-1.  **Definition (`apparatus.yaml`)**: The single source of truth for versioned dependencies and component constraints.
+1.  **Definition (`apparatus.env`)**: The single source of truth for versioned dependencies and component constraints.
 2.  **Provisioning (`butler init`)**: The mechanism that applies the defined state to the user's home directory (`~/.config`) and prepares the host environment.
 3.  **Execution (`distrobox`)**: The mechanism for spinning up isolated, reproducible execution environments that inherit the desktop's high-performance characteristics (e.g., GPU acceleration via Wayland) but maintain strict separation from the host's core system files.
 

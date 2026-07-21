@@ -7,20 +7,18 @@ This document outlines a phased, actionable plan to improve the robustness, user
 ## 🚀 Phase 1: Foundation & Stability (Priority: ⭐⭐)
 **Goal:** To make the build process predictable, testable, and reliable by formalizing component dependencies and testing the core loop.
 
-### Task 1.1: Implement Configuration Manifest (`apparatus.yaml`)
-**Description:** Create a top-level manifest file to define the *required, stable versions* of all major, external components used in the OS build. This prevents unintentional breakage during updates.
-**Artifact:** `apparatus.yaml` (Root Directory)
-**Content Structure:** Should contain key-value pairs mapping component names to version constraints.
+### Task 1.1: Use Version Manifest (`apparatus.env`)
+**Description:** Use the existing `apparatus.env` file as the top-level manifest to define the *required, stable versions* of all major, external components used in the OS build. This prevents unintentional breakage during updates.
+**Artifact:** `apparatus.env` (Root Directory)
+**Content Structure:** KEY=VALUE pairs mapping component names to version strings.
 **Example:**
-```yaml
-# apparatus.yaml
-components:
-  hyprland: "^5.2.0"
-  waybar: "^0.11.0"
-  distrobox-base: "^1.1.0"
-  kitty: ">=12.0"
 ```
-**Success Criteria:** The build process must read this file, and every component documented in it must appear in the build inputs or checks.
+# apparatus.env
+HYPRLAND_VERSION=5.2.0
+WAYBAR_VERSION=0.11.0
+KITTY_VERSION=12.0
+```
+**Success Criteria:** The build process reads this file, and every component documented in it must appear in the build inputs or checks.
 
 ### Task 1.2: Establish Linting/Schema Validation Hooks
 **Description:** Automate checks on all core configuration files to enforce style, structure, and syntax *before* they are incorporated into the final OS image.
@@ -63,7 +61,7 @@ components:
 
 ### Task 3.1: Container Dependency Management Layer
 **Description:** Address the gap where system dependencies (like specific SDKs or libraries) are needed *outside* the isolated container environment.
-**Proposal:** Explore using a standardized hook system (potentially managed by `systemd` overlays or a profile flag in `apparatus.yaml`) that allows opt-in installation of host-level "Toolchains" (e.g., "ML Toolkit Profile").
+**Proposal:** Explore using a standardized hook system (potentially managed by `systemd` overlays or a profile flag in `apparatus.env`) that allows opt-in installation of host-level "Toolchains" (e.g., "ML Toolkit Profile").
 **Implementation:** This requires investigating how to cleanly manage global host packages vs. isolated container packages.
 **Success Criteria:** Successful, reproducible installation of a non-containerized, large toolset (e.g., CUDA SDK) that coexists correctly on the host without breaking core components.
 
