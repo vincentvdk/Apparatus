@@ -71,6 +71,20 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
     libXinerama-devel libXi-devel
 
+## -- Build and install hyprwayland-scanner from source (required by aquamarine >= 0.9.3)
+# aquamarine 0.9.3 requires hyprwayland-scanner >= 0.4.0
+HYPRWAYLAND_SCANNER_VERSION="0.4.0"
+curl -L -o /tmp/hyprwayland-scanner.tar.gz \
+    "https://github.com/hyprwm/hyprwayland-scanner/archive/refs/tags/v${HYPRWAYLAND_SCANNER_VERSION}.tar.gz"
+tar -xzf /tmp/hyprwayland-scanner.tar.gz -C /tmp
+cd /tmp/hyprwayland-scanner-${HYPRWAYLAND_SCANNER_VERSION}
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -B build \
+    -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build ./build --config Release --target all -j$(nproc)
+cmake --install ./build
+cd /
+rm -rf /tmp/hyprwayland-scanner-${HYPRWAYLAND_SCANNER_VERSION} /tmp/hyprwayland-scanner.tar.gz
+
 ## -- Build and install aquamarine from source (required by Hyprland >= 0.56.0)
 # Hyprland 0.56.0 requires aquamarine >= 0.9.3, Fedora 43 only has 0.8.0
 AQUAMARINE_VERSION="0.9.3"
