@@ -8,7 +8,7 @@ on:
       - 'os/**'
       - 'cmd/butler/**'
       - 'apparatus.env'
-      - '.github/workflows/build-box-bootc.yml'
+      - '.github/workflows/build-os-bootc.yml'
   schedule:
     - cron: '05 10 * * *'  # 10:05am UTC everyday
   push:
@@ -18,13 +18,14 @@ on:
       - 'os/**'
       - 'cmd/butler/**'
       - 'apparatus.env'
-      - '.github/workflows/build-box-bootc.yml'
+      - '.github/workflows/build-os-bootc.yml'
   workflow_dispatch:
 
 env:
   MY_IMAGE_NAME: "${{ github.event.repository.name }}-os"
   MY_IMAGE_DESC: "Apparatus OS - Hyprland-based Fedora Atomic Desktop"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+  BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
 
 jobs:
   build_push:
@@ -37,6 +38,11 @@ jobs:
       id-token: write
 
     steps:
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e
+        with:
+          remove-codeql: true
+
       - name: Checkout repo
         uses: actions/checkout@v7
 
@@ -130,3 +136,35 @@ jobs:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+
+      - name: Build ISO
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p ./iso-output
+
+          sudo podman run --rm --privileged \
+            --security-opt label=type:unconfined_t \
+            -v ./iso-output:/output \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v ./os/disk_config/iso.toml:/config.toml:ro \
+            ${{ env.BIB_IMAGE }} \
+            --type anaconda-iso \
+            --rootfs ext4 \
+            --local \
+            ${{ env.MY_IMAGE_NAME }}:latest
+
+      - name: Upload to S3
+        if: github.event_name != 'pull_request'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
+        run: |
+          pip install awscli
+
+          ISO_FILE=$(find ./iso-output -name "*.iso" | head -1)
+
+          aws s3 cp "$ISO_FILE" \
+            s3://${{ secrets.HETZNER_S3_BUCKET }}/apparatus-os-latest.iso \
+            --endpoint-url "https://${{ secrets.HETZNER_S3_ENDPOINT }}"
+
+          echo "ISO uploaded successfully"
