@@ -20,6 +20,7 @@ VERSION="${APPARATUS_VERSION:-dev}"
 
 # Ensure essential versions are set
 : "${HYPRLAND_VERSION:?HYPRLAND_VERSION must be defined in apparatus.env}"
+: "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
 : "${HYPRDYNAMICMONITORS_VERSION:?HYPRDYNAMICMONITORS_VERSION must be defined in apparatus.env}"
 : "${WALKER_VERSION:?WALKER_VERSION must be defined in apparatus.env}"
 : "${ELEPHANT_VERSION:?ELEPHANT_VERSION must be defined in apparatus.env}"
@@ -66,7 +67,7 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     libxcb-devel libXcursor-devel libxcvt-devel libxkbcommon-devel pango-devel \
     wayland-devel xcb-util-devel xcb-util-image-devel xcb-util-wm-devel \
     xcb-util-keysyms-devel xcb-util-renderutil-devel \
-    libpulseaudio-devel pipewire-devel libX11-devel \
+    pulseaudio-libs-devel pipewire-devel libX11-devel \
     libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
     libXinerama-devel libXi-devel
 
@@ -137,8 +138,14 @@ cp /delivery/build_files/config/systemd/user/elephant.service /usr/lib/systemd/u
 mkdir -p /usr/lib/systemd/user/graphical-session.target.wants
 ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/elephant.service
 
-## -- Hyprland essentials (terminal, launcher, notifications, file manager, etc.)
-dnf5 -y install kitty wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
+## -- Install kitty from GitHub releases
+curl -L -o /tmp/kitty.txz \
+    "https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz"
+tar -xJf /tmp/kitty.txz -C /
+rm -f /tmp/kitty.txz
+
+## -- Hyprland essentials (launcher, notifications, file manager, etc.)
+dnf5 -y install wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
