@@ -55,12 +55,49 @@ add_drivers+=" amdgpu "
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 EOF
 
-## -- hyprland from ashbuk/Hyprland-Fedora COPR (has latest versions)
-dnf5 -y copr enable ashbuk/Hyprland-Fedora
+## -- Install build dependencies for Hyprland
+# Based on ashbuk/Hyprland-Fedora COPR spec + additional runtime deps
+dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
+    cairo-devel glm-devel glslang-devel hwdata-devel \
+    libdisplay-info-devel libdrm-devel libepoxy-devel \
+    mesa-libgbm-devel mesa-libEGL-devel libglvnd-devel libglvnd-gles \
+    libinput-devel libeis-devel readline-devel libjxl-devel \
+    libliftoff-devel libspng-devel libwebp-devel \
+    libxcb-devel libXcursor-devel libxcvt-devel libxkbcommon-devel pango-devel \
+    wayland-devel xcb-util-devel xcb-util-image-devel xcb-util-wm-devel \
+    xcb-util-keysyms-devel xcb-util-renderutil-devel \
+    libpulseaudio-devel pipewire-devel libX11-devel \
+    libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
+    libXinerama-devel libXi-devel
 
-## -- Additional Hyprland ecosystem packages from solopasha COPR
+## -- Build and install Hyprland from source
+curl -L -o /tmp/hyprland.tar.gz \
+    "https://github.com/hyprwm/Hyprland/archive/refs/tags/v${HYPRLAND_VERSION}.tar.gz"
+tar -xzf /tmp/hyprland.tar.gz -C /tmp
+cd /tmp/Hyprland-${HYPRLAND_VERSION}
+# Create build directory and build
+meson setup build --prefix=/usr --buildtype=release
+ninja -C build
+# Install
+DESTDIR=/ ninja -C build install
+cd /
+rm -rf /tmp/Hyprland-${HYPRLAND_VERSION} /tmp/hyprland.tar.gz
+
+## -- Build and install hyprland-plugins from source
+# Note: hyprland-plugins must match Hyprland version
+curl -L -o /tmp/hyprland-plugins.tar.gz \
+    "https://github.com/hyprwm/hyprland-plugins/archive/refs/tags/v${HYPRLAND_VERSION}.tar.gz"
+tar -xzf /tmp/hyprland-plugins.tar.gz -C /tmp
+cd /tmp/hyprland-plugins-${HYPRLAND_VERSION}
+meson setup build --prefix=/usr --buildtype=release
+ninja -C build
+DESTDIR=/ ninja -C build install
+cd /
+rm -rf /tmp/hyprland-plugins-${HYPRLAND_VERSION} /tmp/hyprland-plugins.tar.gz
+
+## -- Install remaining Hyprland ecosystem packages from solopasha COPR
 dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprland-${HYPRLAND_VERSION} hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
+dnf5 -y install xdg-desktop-portal-hyprland hyprland-contrib hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
