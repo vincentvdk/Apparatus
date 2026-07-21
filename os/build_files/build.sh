@@ -75,7 +75,7 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
 # Hyprland 0.56.0 requires aquamarine >= 0.9.3, Fedora 43 only has 0.8.0
 AQUAMARINE_VERSION="0.9.3"
 curl -L -o /tmp/aquamarine.tar.gz \
-    "https://github.com/Artemsen/aquamarine/archive/refs/tags/v${AQUAMARINE_VERSION}.tar.gz"
+    "https://github.com/hyprwm/aquamarine/archive/refs/tags/v${AQUAMARINE_VERSION}.tar.gz"
 tar -xzf /tmp/aquamarine.tar.gz -C /tmp
 cd /tmp/aquamarine-${AQUAMARINE_VERSION}
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -B build \
