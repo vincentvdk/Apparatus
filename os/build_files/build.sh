@@ -69,7 +69,21 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     xcb-util-keysyms-devel xcb-util-renderutil-devel \
     pulseaudio-libs-devel pipewire-devel libX11-devel \
     libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
-    libXinerama-devel libXi-devel aquamarine-devel
+    libXinerama-devel libXi-devel
+
+## -- Build and install aquamarine from source (required by Hyprland >= 0.56.0)
+# Hyprland 0.56.0 requires aquamarine >= 0.9.3, Fedora 43 only has 0.8.0
+AQUAMARINE_VERSION="0.9.3"
+curl -L -o /tmp/aquamarine.tar.gz \
+    "https://github.com/Artemsen/aquamarine/archive/refs/tags/v${AQUAMARINE_VERSION}.tar.gz"
+tar -xzf /tmp/aquamarine.tar.gz -C /tmp
+cd /tmp/aquamarine-${AQUAMARINE_VERSION}
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -B build \
+    -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build ./build --config Release --target all -j$(nproc)
+cmake --install ./build
+cd /
+rm -rf /tmp/aquamarine-${AQUAMARINE_VERSION} /tmp/aquamarine.tar.gz
 
 ## -- Build and install Hyprland from source
 curl -L -o /tmp/hyprland.tar.gz \
