@@ -19,6 +19,7 @@ RELEASE="$(rpm -E %fedora)"
 VERSION="${APPARATUS_VERSION:-dev}"
 
 # Ensure essential versions are set
+: "${HYPRLAND_VERSION:?HYPRLAND_VERSION must be defined in apparatus.env}"
 : "${HYPRDYNAMICMONITORS_VERSION:?HYPRDYNAMICMONITORS_VERSION must be defined in apparatus.env}"
 : "${WALKER_VERSION:?WALKER_VERSION must be defined in apparatus.env}"
 : "${ELEPHANT_VERSION:?ELEPHANT_VERSION must be defined in apparatus.env}"
@@ -54,9 +55,12 @@ add_drivers+=" amdgpu "
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 EOF
 
-## -- hyprland COPR from solopasha
+## -- hyprland from ashbuk/Hyprland-Fedora COPR (has latest versions)
+dnf5 -y copr enable ashbuk/Hyprland-Fedora
+
+## -- Additional Hyprland ecosystem packages from solopasha COPR
 dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprland hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
+dnf5 -y install xdg-desktop-portal-hyprland hyprland-${HYPRLAND_VERSION} hyprland-contrib hyprland-plugins hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
