@@ -76,11 +76,13 @@ curl -L -o /tmp/hyprland.tar.gz \
     "https://github.com/hyprwm/Hyprland/archive/refs/tags/v${HYPRLAND_VERSION}.tar.gz"
 tar -xzf /tmp/hyprland.tar.gz -C /tmp
 cd /tmp/Hyprland-${HYPRLAND_VERSION}
-# Create build directory and build
-meson setup build --prefix=/usr --buildtype=release
-ninja -C build
+# Create build directory and build with CMake
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -B build \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DSYSTEMD=OFF
+cmake --build ./build --config Release --target all -j$(nproc)
 # Install
-DESTDIR=/ ninja -C build install
+cmake --install ./build
 cd /
 rm -rf /tmp/Hyprland-${HYPRLAND_VERSION} /tmp/hyprland.tar.gz
 
@@ -90,15 +92,19 @@ curl -L -o /tmp/hyprland-plugins.tar.gz \
     "https://github.com/hyprwm/hyprland-plugins/archive/refs/tags/v${HYPRLAND_VERSION}.tar.gz"
 tar -xzf /tmp/hyprland-plugins.tar.gz -C /tmp
 cd /tmp/hyprland-plugins-${HYPRLAND_VERSION}
-meson setup build --prefix=/usr --buildtype=release
-ninja -C build
-DESTDIR=/ ninja -C build install
+# Build with CMake
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -B build \
+    -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build ./build --config Release --target all -j$(nproc)
+# Install
+cmake --install ./build
 cd /
 rm -rf /tmp/hyprland-plugins-${HYPRLAND_VERSION} /tmp/hyprland-plugins.tar.gz
 
 ## -- Install remaining Hyprland ecosystem packages from solopasha COPR
+# Note: hyprland and hyprland-plugins are built from source, so we exclude hyprland-contrib
 dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprland-contrib hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
+dnf5 -y install xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
