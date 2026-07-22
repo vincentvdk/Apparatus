@@ -101,7 +101,7 @@ rm -rf /tmp/hyprwayland-scanner-${HYPRWAYLAND_SCANNER_VERSION} /tmp/hyprwayland-
 
 ## -- Build and install aquamarine from source (required by Hyprland >= 0.56.0)
 # Hyprland 0.56.0 requires aquamarine >= 0.9.3, Fedora 43 only has 0.8.0
-AQUAMARINE_VERSION="0.9.3"
+AQUAMARINE_VERSION="0.13.0"
 curl -L -o /tmp/aquamarine.tar.gz \
     "https://github.com/hyprwm/aquamarine/archive/refs/tags/v${AQUAMARINE_VERSION}.tar.gz"
 tar -xzf /tmp/aquamarine.tar.gz -C /tmp
