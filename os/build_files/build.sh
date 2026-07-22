@@ -113,6 +113,20 @@ cmake --install ./build
 cd /
 rm -rf /tmp/hyprlang-${HYPRLANG_VERSION} /tmp/hyprlang.tar.gz
 
+## -- Build and install hyprcursor from source (required by aquamarine >= 0.13.0)
+# aquamarine 0.13.0 requires hyprcursor >= 0.1.7
+HYPRCURSOR_VERSION="0.1.7"
+curl -L -o /tmp/hyprcursor.tar.gz \
+    "https://github.com/hyprwm/hyprcursor/archive/refs/tags/v${HYPRCURSOR_VERSION}.tar.gz"
+tar -xzf /tmp/hyprcursor.tar.gz -C /tmp
+cd /tmp/hyprcursor-${HYPRCURSOR_VERSION}
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -B build \
+    -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build ./build --config Release --target all -j$(nproc)
+cmake --install ./build
+cd /
+rm -rf /tmp/hyprcursor-${HYPRCURSOR_VERSION} /tmp/hyprcursor.tar.gz
+
 ## -- Build and install aquamarine from source (required by Hyprland >= 0.56.0)
 # Hyprland 0.56.0 requires aquamarine >= 0.9.3, Fedora 43 only has 0.8.0
 AQUAMARINE_VERSION="0.13.0"
