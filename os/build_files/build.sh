@@ -71,9 +71,9 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
     libXinerama-devel libXi-devel pugixml-devel libseat-devel wayland-protocols-devel
 
-## -- Build and install hyprutils from source (required by hyprwayland-scanner >= 0.4.0)
-# hyprwayland-scanner 0.4.0 requires hyprutils >= 0.8.0
-HYPRUTILS_VERSION="0.8.0"
+## -- Build and install hyprutils from source (required by aquamarine >= 0.13.0)
+# aquamarine 0.13.0 requires a newer hyprutils
+HYPRUTILS_VERSION="0.11.0"
 curl -L -o /tmp/hyprutils.tar.gz \
     "https://github.com/hyprwm/hyprutils/archive/refs/tags/v${HYPRUTILS_VERSION}.tar.gz"
 tar -xzf /tmp/hyprutils.tar.gz -C /tmp
@@ -85,9 +85,9 @@ cmake --install ./build
 cd /
 rm -rf /tmp/hyprutils-${HYPRUTILS_VERSION} /tmp/hyprutils.tar.gz
 
-## -- Build and install hyprwayland-scanner from source (required by aquamarine >= 0.9.3)
-# aquamarine 0.9.3 requires hyprwayland-scanner >= 0.4.0
-HYPRWAYLAND_SCANNER_VERSION="0.4.0"
+## -- Build and install hyprwayland-scanner from source (required by aquamarine >= 0.13.0)
+# aquamarine 0.13.0 requires hyprwayland-scanner >= 0.4.0
+HYPRWAYLAND_SCANNER_VERSION="0.4.6"
 curl -L -o /tmp/hyprwayland-scanner.tar.gz \
     "https://github.com/hyprwm/hyprwayland-scanner/archive/refs/tags/v${HYPRWAYLAND_SCANNER_VERSION}.tar.gz"
 tar -xzf /tmp/hyprwayland-scanner.tar.gz -C /tmp
