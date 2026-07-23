@@ -135,8 +135,8 @@ tar -xJf /tmp/kitty.txz -C /
 rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
-# Exclude wsdd which has problematic scriptlets in containers
-dnf5 -y --exclude=wsdd install wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
+# Install shadow-utils for useradd/groupadd needed by wsdd sysusers scriptlet
+dnf5 -y install shadow-utils wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
