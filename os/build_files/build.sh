@@ -123,7 +123,8 @@ tar -xJf /tmp/kitty.txz -C /
 rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
-dnf5 -y install wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
+# noscripts: skip scriptlets that fail in container environment (e.g., wsdd, gvfs, Thunar)
+dnf5 -y install --setopt=tsflags=noscripts wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
