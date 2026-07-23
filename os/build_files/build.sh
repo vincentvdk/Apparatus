@@ -58,8 +58,9 @@ EOF
 
 ## -- Install Hyprland from lionheartp/Hyprland COPR
 # This COPR provides Hyprland with all dependencies pre-built
+# Version from apparatus.env (e.g., 0.56.0-1) is used for installation
 dnf5 -y copr enable lionheartp/Hyprland
-dnf5 -y install hyprland-${HYPRLAND_VERSION}* hyprland-plugins-${HYPRLAND_VERSION}*
+dnf5 -y install hyprland-${HYPRLAND_VERSION} hyprland-plugins-${HYPRLAND_VERSION}
 
 ## -- Install remaining Hyprland ecosystem packages from solopasha COPR
 dnf5 -y copr enable solopasha/hyprland
