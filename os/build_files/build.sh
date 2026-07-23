@@ -19,7 +19,6 @@ RELEASE="$(rpm -E %fedora)"
 VERSION="${APPARATUS_VERSION:-dev}"
 
 # Ensure essential versions are set
-: "${HYPRLAND_VERSION:?HYPRLAND_VERSION must be defined in apparatus.env}"
 : "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
 : "${HYPRDYNAMICMONITORS_VERSION:?HYPRDYNAMICMONITORS_VERSION must be defined in apparatus.env}"
 : "${WALKER_VERSION:?WALKER_VERSION must be defined in apparatus.env}"
@@ -58,9 +57,9 @@ EOF
 
 ## -- Install Hyprland from lionheartp/Hyprland COPR
 # This COPR provides Hyprland with all dependencies pre-built
-# Version from apparatus.env (e.g., 0.56.0-1) is used for installation
+# Install without version pinning - COPR maintainer ensures compatible versions
 dnf5 -y copr enable lionheartp/Hyprland
-dnf5 -y install hyprland-${HYPRLAND_VERSION} hyprland-plugins-${HYPRLAND_VERSION}
+dnf5 -y install hyprland hyprland-plugins
 
 ## -- Install remaining Hyprland ecosystem packages from solopasha COPR
 dnf5 -y copr enable solopasha/hyprland
