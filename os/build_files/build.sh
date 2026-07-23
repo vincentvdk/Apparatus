@@ -119,13 +119,22 @@ mkdir -p /usr/lib/systemd/user/graphical-session.target.wants
 ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/elephant.service
 
 ## -- Install kitty from GitHub releases
-# Extract to /usr (not /) - the tarball's top-level bin/, lib/, share/ dirs
-# would otherwise replace the /bin, /lib symlinks with plain directories,
-# shadowing all of /usr/bin and /usr/lib (including /bin/sh) and breaking
-# every RPM scriptlet run afterward.
+# Kitty ships a self-contained bundle (bin/, lib/, share/); its binaries are
+# built with RPATH=$ORIGIN/../lib, i.e. they expect to run from their own
+# private prefix. Extracting straight into /usr merges its bundled
+# libssl/libcrypto/libz/etc. into /usr/lib, where ldconfig indexes them
+# alongside (and shadows) the real system libraries - this broke `openssl`
+# and dracut's ossl-files step. Keep bin/lib private under /usr/libexec and
+# only expose the binaries; share/ (icons, .desktop, terminfo, man) is just
+# data and safe to merge into the system-wide dirs.
 curl -L -o /tmp/kitty.txz \
     "https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz"
-tar -xJf /tmp/kitty.txz -C /usr
+mkdir -p /usr/libexec/kitty
+tar -xJf /tmp/kitty.txz -C /usr/libexec/kitty
+ln -sf /usr/libexec/kitty/bin/kitty /usr/bin/kitty
+ln -sf /usr/libexec/kitty/bin/kitten /usr/bin/kitten
+cp -r /usr/libexec/kitty/share/. /usr/share/
+rm -rf /usr/libexec/kitty/share
 rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
