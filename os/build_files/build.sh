@@ -67,8 +67,16 @@ dnf5 -y install hyprland hyprland-plugins \
 curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
   curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz"
 tar -xzf /tmp/satty.tar.gz -C /tmp
-install -m 755 /tmp/satty /usr/bin/satty
-rm -f /tmp/satty.tar.gz /tmp/satty
+# Find the satty binary (may be in a subdirectory)
+SATTY_BIN="$(find /tmp -name 'satty' -type f -executable | head -1)"
+if [ -n "$SATTY_BIN" ]; then
+  install -m 755 "$SATTY_BIN" /usr/bin/satty
+else
+  echo "Error: satty binary not found in archive"
+  exit 1
+fi
+rm -f /tmp/satty.tar.gz
+rm -rf /tmp/satty* /tmp/satty-*
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
