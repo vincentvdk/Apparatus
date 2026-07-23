@@ -21,10 +21,14 @@ VERSION="${APPARATUS_VERSION:-dev}"
 # Skip scriptlets that fail in container environment (e.g., useradd, systemctl)
 export DNF5_SYSTEMD_LOG_LEVEL=error
 mkdir -p /etc/dnf
-cat > /etc/dnf/dnf.conf <<'EOF'
-[main]
-tsflags=noscripts
-EOF
+# Ensure noscripts is set in dnf config to avoid scriptlet failures in containers
+if ! grep -q 'tsflags.*noscripts' /etc/dnf/dnf.conf 2>/dev/null; then
+  if [ -f /etc/dnf/dnf.conf ] && grep -q '\[main\]' /etc/dnf/dnf.conf; then
+    echo 'tsflags=noscripts' >> /etc/dnf/dnf.conf
+  else
+    echo -e '[main]\ntsflags=noscripts' > /etc/dnf/dnf.conf
+  fi
+fi
 
 # Ensure essential versions are set
 : "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
@@ -131,7 +135,8 @@ tar -xJf /tmp/kitty.txz -C /
 rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
-dnf5 -y install wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
+# Exclude wsdd which has problematic scriptlets in containers
+dnf5 -y --exclude=wsdd install wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
