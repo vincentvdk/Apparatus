@@ -20,7 +20,8 @@ VERSION="${APPARATUS_VERSION:-dev}"
 
 # Skip scriptlets that fail in container environment (e.g., useradd, systemctl)
 export DNF5_SYSTEMD_LOG_LEVEL=error
-cat > /etc/dnf5/dnf5.conf <<'EOF'
+mkdir -p /etc/dnf
+cat > /etc/dnf/dnf.conf <<'EOF'
 [main]
 tsflags=noscripts
 EOF
