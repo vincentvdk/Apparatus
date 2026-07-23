@@ -55,15 +55,12 @@ add_drivers+=" amdgpu "
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 EOF
 
-## -- Install Hyprland from lionheartp/Hyprland COPR
-# This COPR provides Hyprland with all dependencies pre-built
-# Install without version pinning - COPR maintainer ensures compatible versions
+## -- Install Hyprland and ecosystem packages from lionheartp/Hyprland COPR
+# This COPR provides Hyprland with all dependencies and ecosystem tools pre-built
 dnf5 -y copr enable lionheartp/Hyprland
-dnf5 -y install hyprland hyprland-plugins
-
-## -- Install remaining Hyprland ecosystem packages from solopasha COPR
-dnf5 -y copr enable solopasha/hyprland
-dnf5 -y install xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot hyprlock hyprpolkitagent pyprland waybar-git xdg-desktop-portal-hyprland hyprland-qtutils uwsm satty
+dnf5 -y install hyprland hyprland-plugins \
+    xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot \
+    hyprlock hyprpolkitagent pyprland waybar-git hyprland-qtutils uwsm satty
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
