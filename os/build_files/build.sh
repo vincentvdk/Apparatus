@@ -18,6 +18,13 @@ load_env /delivery/build_files/apparatus.env
 RELEASE="$(rpm -E %fedora)"
 VERSION="${APPARATUS_VERSION:-dev}"
 
+# Skip scriptlets that fail in container environment (e.g., useradd, systemctl)
+export DNF5_SYSTEMD_LOG_LEVEL=error
+cat > /etc/dnf5/dnf5.conf <<'EOF'
+[main]
+tsflags=noscripts
+EOF
+
 # Ensure essential versions are set
 : "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
 : "${SATTY_VERSION:?SATTY_VERSION must be defined in apparatus.env}"
@@ -123,8 +130,7 @@ tar -xJf /tmp/kitty.txz -C /
 rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
-# noscripts: skip scriptlets that fail in container environment (e.g., wsdd, gvfs, Thunar)
-dnf5 -y install --setopt=tsflags=noscripts wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
+dnf5 -y install wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
