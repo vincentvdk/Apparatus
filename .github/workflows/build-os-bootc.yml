@@ -142,6 +142,9 @@ jobs:
         run: |
           mkdir -p ./iso-output
 
+          # bootc-image-builder no longer pulls images automatically
+          sudo podman pull localhost/${{ env.MY_IMAGE_NAME }}:latest
+
           sudo podman run --rm --privileged \
             --security-opt label=type:unconfined_t \
             -v ./iso-output:/output \
@@ -150,7 +153,6 @@ jobs:
             ${{ env.BIB_IMAGE }} \
             --type anaconda-iso \
             --rootfs ext4 \
-            --local \
             ${{ env.MY_IMAGE_NAME }}:latest
 
       - name: Upload to S3
