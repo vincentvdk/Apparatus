@@ -61,7 +61,7 @@ EOF
 ## -- Install Hyprland from lionheartp/Hyprland COPR
 # This COPR provides Hyprland with all dependencies and ecosystem tools pre-built
 dnf5 -y copr enable lionheartp/Hyprland
-dnf5 -y install hyprland hyprland-plugins \
+dnf5 -y install hyprland hyprland-plugins hyprland-guiutils \
     xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot \
     hyprlock hyprpolkitagent waybar-git uwsm
 
