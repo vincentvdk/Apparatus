@@ -20,6 +20,20 @@ VERSION="${APPARATUS_VERSION:-dev}"
 
 # Skip scriptlets that fail in container environment (e.g., useradd, systemctl)
 export DNF5_SYSTEMD_LOG_LEVEL=error
+# Disable all RPM scriptlets (sysusers, post, pre, etc.) for container builds
+# For dnf5, use both tsflags and disable_scriptlets options
+for dnf_conf in /etc/dnf/dnf.conf /usr/etc/dnf/dnf.conf; do
+  mkdir -p "$(dirname "$dnf_conf")"
+  cat > "$dnf_conf" <<'EOF'
+[main]
+tsflags=noscripts,nodocs
+disable_scriptlets=1
+EOF
+done
+
+# Pre-create users/groups needed by packages to avoid scriptlet failures
+# wsdd needs wsdd user
+useradd -r -M -s /bin/false wsdd 2>/dev/null || true
 
 # Ensure essential versions are set
 : "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
@@ -126,9 +140,8 @@ tar -xJf /tmp/kitty.txz -C /
 rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
-# wsdd sysusers scriptlet fails in container; use noscripts to skip it
-# shadow-utils provides useradd/groupadd for other packages
-dnf5 -y install shadow-utils wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse --setopt=tsflags=noscripts
+# shadow-utils provides useradd/groupadd for packages that need it
+dnf5 -y install shadow-utils wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
 dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
