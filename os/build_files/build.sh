@@ -61,7 +61,7 @@ EOF
 dnf5 -y copr enable lionheartp/Hyprland
 dnf5 -y install hyprland hyprland-plugins \
     xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot \
-    hyprlock hyprpolkitagent pyprland waybar-git hyprland-qtutils uwsm
+    hyprlock hyprpolkitagent waybar-git uwsm
 
 ## -- Build satty from source (not available in lionheartp COPR)
 curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
