@@ -73,8 +73,8 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     libzip-devel librsvg2-devel tomlplusplus-devel
 
 ## -- Build and install hyprutils from source (required by aquamarine >= 0.13.0)
-# aquamarine 0.13.0 requires a newer hyprutils
-HYPRUTILS_VERSION="0.11.0"
+# aquamarine 0.13.0 requires hyprutils >= 0.13.1
+HYPRUTILS_VERSION="0.13.1"
 curl -L -o /tmp/hyprutils.tar.gz \
     "https://github.com/hyprwm/hyprutils/archive/refs/tags/v${HYPRUTILS_VERSION}.tar.gz"
 tar -xzf /tmp/hyprutils.tar.gz -C /tmp
