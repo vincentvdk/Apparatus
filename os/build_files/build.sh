@@ -20,6 +20,7 @@ VERSION="${APPARATUS_VERSION:-dev}"
 
 # Ensure essential versions are set
 : "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
+: "${SATTY_VERSION:?SATTY_VERSION must be defined in apparatus.env}"
 : "${HYPRDYNAMICMONITORS_VERSION:?HYPRDYNAMICMONITORS_VERSION must be defined in apparatus.env}"
 : "${WALKER_VERSION:?WALKER_VERSION must be defined in apparatus.env}"
 : "${ELEPHANT_VERSION:?ELEPHANT_VERSION must be defined in apparatus.env}"
@@ -55,12 +56,19 @@ add_drivers+=" amdgpu "
 add_drivers+=" usbhid hid_generic xhci_hcd ehci_hcd "
 EOF
 
-## -- Install Hyprland and ecosystem packages from lionheartp/Hyprland COPR
+## -- Install Hyprland from lionheartp/Hyprland COPR
 # This COPR provides Hyprland with all dependencies and ecosystem tools pre-built
 dnf5 -y copr enable lionheartp/Hyprland
 dnf5 -y install hyprland hyprland-plugins \
     xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot \
-    hyprlock hyprpolkitagent pyprland waybar-git hyprland-qtutils uwsm satty
+    hyprlock hyprpolkitagent pyprland waybar-git hyprland-qtutils uwsm
+
+## -- Build satty from source (not available in lionheartp COPR)
+curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
+  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz"
+tar -xzf /tmp/satty.tar.gz -C /tmp
+install -m 755 /tmp/satty /usr/bin/satty
+rm -f /tmp/satty.tar.gz /tmp/satty
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
