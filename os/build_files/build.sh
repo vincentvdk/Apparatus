@@ -116,7 +116,8 @@ rm -rf /tmp/hyprlang-${HYPRLANG_VERSION} /tmp/hyprlang.tar.gz
 
 ## -- Build and install hyprcursor from source (required by aquamarine >= 0.13.0)
 # aquamarine 0.13.0 requires hyprcursor >= 0.1.7
-HYPRCURSOR_VERSION="0.1.7"
+# Using 0.1.13 to avoid fstream include bug in 0.1.7
+HYPRCURSOR_VERSION="0.1.13"
 curl -L -o /tmp/hyprcursor.tar.gz \
     "https://github.com/hyprwm/hyprcursor/archive/refs/tags/v${HYPRCURSOR_VERSION}.tar.gz"
 tar -xzf /tmp/hyprcursor.tar.gz -C /tmp
