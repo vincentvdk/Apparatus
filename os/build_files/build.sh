@@ -69,7 +69,8 @@ dnf5 -y install git cmake gcc-c++ meson ninja-build pkgconf-pkg-config python3 \
     xcb-util-keysyms-devel xcb-util-renderutil-devel \
     pulseaudio-libs-devel pipewire-devel libX11-devel \
     libXext-devel libXfixes-devel libXrandr-devel libXrender-devel \
-    libXinerama-devel libXi-devel pugixml-devel libseat-devel wayland-protocols-devel
+    libXinerama-devel libXi-devel pugixml-devel libseat-devel wayland-protocols-devel \
+    libzip-devel librsvg2-devel tomlplusplus-devel
 
 ## -- Build and install hyprutils from source (required by aquamarine >= 0.13.0)
 # aquamarine 0.13.0 requires a newer hyprutils
