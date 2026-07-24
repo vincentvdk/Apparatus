@@ -316,6 +316,7 @@ mkdir -p /etc/xdg/autostart
 cp /delivery/build_files/config/autostart/apparatus-first-login.desktop /etc/xdg/autostart/
 
 # Copy wallpaper
+mkdir -p /usr/share/apparatus/wallpapers
 if [ -f /delivery/build_files/wallpapers/default.jpg ]; then
     cp /delivery/build_files/wallpapers/default.jpg /usr/share/apparatus/wallpapers/
 fi
