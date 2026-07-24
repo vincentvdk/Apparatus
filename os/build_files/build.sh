@@ -30,7 +30,7 @@ export DNF5_CACHE_TYPE=none
 : "${ELEPHANT_VERSION:?ELEPHANT_VERSION must be defined in apparatus.env}"
 
 ## -- Medium Impact Optimization: Clean temp files early to prevent accumulation
-rm -rf /tmp/* /var/tmp/* /var/cache/fontconfig/* /root/.cache/*
+rm -rf /tmp/* /var/tmp/* /var/cache/fontconfig/* /root/.cache/* || true
 
 ## -- Install dnf5 plugins (needed for COPR support)
 dnf5 -y install --nodocs dnf5-plugins
@@ -112,8 +112,8 @@ else
   echo "Error: satty binary not found in archive"
   exit 1
 fi
-rm -f /tmp/satty.tar.gz
-rm -rf /tmp/satty* /tmp/satty-*
+rm -f /tmp/satty.tar.gz || true
+rm -rf /tmp/satty* /tmp/satty-* || true
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
@@ -121,14 +121,14 @@ dnf5 -y install --nodocs swayosd
 
 tar -xzf /tmp/hyprdynamicmonitors.tar.gz -C /tmp
 install -m 755 /tmp/hyprdynamicmonitors /usr/bin/hyprdynamicmonitors
-rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors
+rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors || true
 
 ## -- walker (modern app launcher) and elephant (backend service)
 dnf5 -y install --nodocs gtk4-layer-shell
 
 tar -xzf /tmp/walker.tar.gz -C /tmp
 install -m 755 /tmp/walker /usr/bin/walker
-rm -f /tmp/walker.tar.gz /tmp/walker
+rm -f /tmp/walker.tar.gz /tmp/walker || true
 
 ## -- elephant (backend for walker - indexes apps, files, etc.)
 tar -xzf /tmp/elephant.tar.gz -C /tmp
@@ -137,7 +137,7 @@ install -m 755 /tmp/elephant-linux-amd64 /usr/bin/elephant
 # Providers are .so files, go in /usr/lib/elephant/providers
 mkdir -p /usr/lib/elephant/providers
 install -m 755 /tmp/desktopapplications-linux-amd64.so /usr/lib/elephant/providers/desktopapplications.so
-rm -f /tmp/elephant*.tar.gz /tmp/elephant-linux-amd64 /tmp/desktopapplications-linux-amd64.so
+rm -f /tmp/elephant*.tar.gz /tmp/elephant-linux-amd64 /tmp/desktopapplications-linux-amd64.so || true
 
 # Elephant systemd user service (auto-starts with graphical session)
 mkdir -p /usr/lib/systemd/user
@@ -160,8 +160,8 @@ tar -xJf /tmp/kitty.txz -C /usr/libexec/kitty
 ln -sf /usr/libexec/kitty/bin/kitty /usr/bin/kitty
 ln -sf /usr/libexec/kitty/bin/kitten /usr/bin/kitten
 cp -r /usr/libexec/kitty/share/. /usr/share/
-rm -rf /usr/libexec/kitty/share
-rm -f /tmp/kitty.txz
+rm -rf /usr/libexec/kitty/share || true
+rm -f /tmp/kitty.txz || true
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
 # shadow-utils provides useradd/groupadd for packages that need it
@@ -255,7 +255,7 @@ checkmodule -M -m -o greetd-auth.mod greetd-auth.te
 semodule_package -o greetd-auth.pp -m greetd-auth.mod
 semodule -i greetd-auth.pp
 cd /
-rm -rf /tmp/selinux-build
+rm -rf /tmp/selinux-build || true
 
 mkdir -p /etc/greetd
 cp /delivery/build_files/config/greetd/config.toml /etc/greetd/
@@ -309,7 +309,7 @@ cp -r /tmp/ioskeley-font /usr/share/fonts/
 fc-cache -f -v
 
 # Cleanup temp files
-rm -rf /tmp/*.zip /tmp/hack-font /tmp/jetbrains-font /tmp/notosans-font /tmp/ioskeley-font
+rm -rf /tmp/*.zip /tmp/hack-font /tmp/jetbrains-font /tmp/notosans-font /tmp/ioskeley-font || true
 
 # distrobox
 
@@ -330,7 +330,7 @@ cp /usr/share/apparatus/uwsm/env /etc/uwsm/env
 
 # Copy themes
 cp -r /tmp/dotfiles/themes /usr/share/apparatus/themes/
-rm -rf /tmp/dotfiles
+rm -rf /tmp/dotfiles || true
 
 # Ensure apparatus files are world-readable
 chmod -R a+rX /usr/share/apparatus
@@ -420,4 +420,4 @@ KVER=$(ls /usr/lib/modules | head -1)
 dracut --force --kver "$KVER" --no-hostonly /usr/lib/modules/"$KVER"/initramfs.img
 
 ## -- Final cleanup to reduce image size
-rm -rf /var/log/*
+rm -rf /var/log/* || true
