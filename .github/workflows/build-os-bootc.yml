@@ -143,7 +143,7 @@ jobs:
           mkdir -p ./iso-output
 
           # bootc-image-builder no longer pulls images automatically
-          sudo podman pull localhost/${{ env.MY_IMAGE_NAME }}:latest
+          sudo podman pull ${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest
 
           sudo podman run --rm --privileged \
             --security-opt label=type:unconfined_t \
@@ -153,7 +153,7 @@ jobs:
             ${{ env.BIB_IMAGE }} \
             --type anaconda-iso \
             --rootfs ext4 \
-            ${{ env.MY_IMAGE_NAME }}:latest
+            ${{ env.IMAGE_REGISTRY }}/${{ env.MY_IMAGE_NAME }}:latest
 
       - name: Upload to S3
         if: github.event_name != 'pull_request'
