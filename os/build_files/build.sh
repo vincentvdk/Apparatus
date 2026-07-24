@@ -29,13 +29,16 @@ export DNF5_CACHE_TYPE=none
 : "${WALKER_VERSION:?WALKER_VERSION must be defined in apparatus.env}"
 : "${ELEPHANT_VERSION:?ELEPHANT_VERSION must be defined in apparatus.env}"
 
+## -- Medium Impact Optimization: Clean temp files early to prevent accumulation
+rm -rf /tmp/* /var/tmp/* /var/cache/fontconfig/* /root/.cache/*
+
 ## -- Install dnf5 plugins (needed for COPR support)
-dnf5 -y install dnf5-plugins
+dnf5 -y install --nodocs dnf5-plugins
 
 ## -- Display Manager & Wayland base
 # dejavu-sans-fonts needed for plymouth password prompt (Image.Text requires fonts in initramfs)
 # Using greetd + gtkgreet instead of GDM to save ~2GB of GNOME dependencies
-dnf5 -y install greetd greetd-selinux gtkgreet cage xorg-x11-server-Xwayland \
+dnf5 -y install --nodocs greetd greetd-selinux gtkgreet cage xorg-x11-server-Xwayland \
     xdg-user-dirs xdg-utils plymouth plymouth-plugin-script plymouth-plugin-label \
     dejavu-sans-fonts
 
@@ -65,7 +68,7 @@ EOF
 ## -- Install Hyprland from lionheartp/Hyprland COPR
 # This COPR provides Hyprland with all dependencies and ecosystem tools pre-built
 dnf5 -y copr enable lionheartp/Hyprland
-dnf5 -y install hyprland hyprland-plugins hyprland-guiutils \
+dnf5 -y install --nodocs hyprland hyprland-plugins hyprland-guiutils \
     xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot \
     hyprlock hyprpolkitagent waybar-git uwsm
 
@@ -98,7 +101,7 @@ echo "All binaries downloaded."
 
 ## -- Build satty from source (not available in lionheartp COPR)
 # Install libadwaita dependency for satty
-dnf5 -y install libadwaita
+dnf5 -y install --nodocs libadwaita
 
 tar -xzf /tmp/satty.tar.gz -C /tmp
 # Find the satty binary (may be in a subdirectory)
@@ -114,14 +117,14 @@ rm -rf /tmp/satty* /tmp/satty-*
 
 ## -- swayosd
 dnf5 -y copr enable erikreider/swayosd
-dnf5 -y install swayosd
+dnf5 -y install --nodocs swayosd
 
 tar -xzf /tmp/hyprdynamicmonitors.tar.gz -C /tmp
 install -m 755 /tmp/hyprdynamicmonitors /usr/bin/hyprdynamicmonitors
 rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors
 
 ## -- walker (modern app launcher) and elephant (backend service)
-dnf5 -y install gtk4-layer-shell
+dnf5 -y install --nodocs gtk4-layer-shell
 
 tar -xzf /tmp/walker.tar.gz -C /tmp
 install -m 755 /tmp/walker /usr/bin/walker
@@ -162,7 +165,7 @@ rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
 # shadow-utils provides useradd/groupadd for packages that need it
-dnf5 -y install shadow-utils wsdd wofi mako thunar brightnessctl playerctl polkit \
+dnf5 -y install --nodocs shadow-utils wsdd wofi mako thunar brightnessctl playerctl polkit \
     wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
@@ -171,20 +174,20 @@ dnf5 -y install shadow-utils wsdd wofi mako thunar brightnessctl playerctl polki
 ## -- Hardware support (Framework AMD laptops)
 ## -- Audio
 # High Impact Optimization: Batch all remaining package installs
-dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui \
+dnf5 -y install --nodocs blueman network-manager-applet NetworkManager-wifi NetworkManager-tui \
     wireguard-tools upower tuned-ppd fprintd iio-sensor-proxy usbutils \
     pipewire pipewire-pulseaudio wireplumber pavucontrol
 
 ## -- Development & System tools
 # Note: Virtualization (libvirt/qemu/virt-manager) and docker removed to reduce image size
 # Install these in a distrobox if needed
-dnf5 -y install distrobox podman git curl unzip flatpak
+dnf5 -y install --nodocs distrobox podman git curl unzip flatpak
 
 ## -- Printing
-dnf5 -y install system-config-printer
+dnf5 -y install --nodocs system-config-printer
 
 ## -- Gum (for butler TUI)
-dnf5 -y install https://github.com/charmbracelet/gum/releases/download/v0.17.0/gum-0.17.0-1.x86_64.rpm
+dnf5 -y install --nodocs https://github.com/charmbracelet/gum/releases/download/v0.17.0/gum-0.17.0-1.x86_64.rpm
 
 ## -- Apparatus
 cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
@@ -222,7 +225,7 @@ mkdir -p /usr/lib/systemd/user/timers.target.wants
 ln -sf ../apparatus-config-check.timer /usr/lib/systemd/user/timers.target.wants/apparatus-config-check.timer
 
 # Bootc update checker (systemd timer + notify-send)
-cp /delivery/build_files/config/systemd/apparatus-bootc-check.sh /usr/libexec/apparatus/check-bootc-updates
+cp /delivery/build_files/apparatus/check-bootc-updates.sh /usr/libexec/apparatus/check-bootc-updates
 chmod 755 /usr/libexec/apparatus/check-bootc-updates
 cp /delivery/build_files/config/systemd/apparatus-bootc-check.service /usr/lib/systemd/system/
 cp /delivery/build_files/config/systemd/apparatus-bootc-check.timer /usr/lib/systemd/system/
@@ -244,7 +247,7 @@ useradd -r -M -s /bin/false greeter || true
 
 # SELinux: Make xdm_t (greetd's domain) permissive for authentication
 # greetd runs as xdm_t per greetd-selinux package file contexts
-dnf5 -y install selinux-policy-devel
+dnf5 -y install --nodocs selinux-policy-devel
 mkdir -p /tmp/selinux-build
 cp /delivery/build_files/config/selinux/greetd-auth.te /tmp/selinux-build/
 cd /tmp/selinux-build
@@ -417,7 +420,4 @@ KVER=$(ls /usr/lib/modules | head -1)
 dracut --force --kver "$KVER" --no-hostonly /usr/lib/modules/"$KVER"/initramfs.img
 
 ## -- Final cleanup to reduce image size
-rm -rf /tmp/* /var/tmp/*
 rm -rf /var/log/*
-rm -rf /var/cache/fontconfig/*
-rm -rf /root/.cache/*
