@@ -8,5 +8,5 @@ vt = 1
 # Run gtkgreet under cage (Wayland kiosk compositor)
 # cage -s: single application mode (exit when app exits)
 # gtkgreet -s: load custom CSS stylesheet
-command = "cage -s -- gtkgreet -s /etc/greetd/gtkgreet.css -c 'uwsm start hyprland'"
+command = "cage -s -- gtkgreet -s /etc/greetd/gtkgreet.css -c 'uwsm start -e -D Hyprland hyprland.desktop'"
 user = "greeter"
