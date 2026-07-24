@@ -66,6 +66,9 @@ dnf5 -y install hyprland hyprland-plugins hyprland-guiutils \
     hyprlock hyprpolkitagent waybar-git uwsm
 
 ## -- Build satty from source (not available in lionheartp COPR)
+# Install libadwaita dependency for satty
+dnf5 -y install libadwaita
+
 curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
   curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz"
 tar -xzf /tmp/satty.tar.gz -C /tmp
