@@ -18,7 +18,9 @@ load_env /delivery/build_files/apparatus.env
 RELEASE="$(rpm -E %fedora)"
 VERSION="${APPARATUS_VERSION:-dev}"
 
+# High Impact Optimization: Disable dnf5 caching for faster installs
 export DNF5_SYSTEMD_LOG_LEVEL=error
+export DNF5_CACHE_TYPE=none
 
 # Ensure essential versions are set
 : "${KITTY_VERSION:?KITTY_VERSION must be defined in apparatus.env}"
@@ -33,7 +35,9 @@ dnf5 -y install dnf5-plugins
 ## -- Display Manager & Wayland base
 # dejavu-sans-fonts needed for plymouth password prompt (Image.Text requires fonts in initramfs)
 # Using greetd + gtkgreet instead of GDM to save ~2GB of GNOME dependencies
-dnf5 -y install greetd greetd-selinux gtkgreet cage xorg-x11-server-Xwayland xdg-user-dirs xdg-utils plymouth plymouth-plugin-script plymouth-plugin-label dejavu-sans-fonts
+dnf5 -y install greetd greetd-selinux gtkgreet cage xorg-x11-server-Xwayland \
+    xdg-user-dirs xdg-utils plymouth plymouth-plugin-script plymouth-plugin-label \
+    dejavu-sans-fonts
 
 ## -- Configure Plymouth for graphical boot
 # Download connect theme from adi1090x/plymouth-themes
@@ -65,12 +69,37 @@ dnf5 -y install hyprland hyprland-plugins hyprland-guiutils \
     xdg-desktop-portal-hyprland hyprpaper hyprpicker hypridle hyprshot \
     hyprlock hyprpolkitagent waybar-git uwsm
 
+## -- High Impact Optimization: Parallel downloads for pre-built binaries
+echo "Downloading pre-built binaries in parallel..."
+
+# satty
+curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
+  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz" &
+
+# hyprdynamicmonitors
+curl -L -o /tmp/hyprdynamicmonitors.tar.gz \
+    "https://github.com/fiffeek/hyprdynamicmonitors/releases/download/v${HYPRDYNAMICMONITORS_VERSION}/hyprdynamicmonitors_Linux_x86_64.tar.gz" &
+
+# walker
+curl -L -o /tmp/walker.tar.gz \
+    "https://github.com/abenz1267/walker/releases/download/v${WALKER_VERSION}/walker-v${WALKER_VERSION}-x86_64-unknown-linux-gnu.tar.gz" &
+
+# elephant
+ELEPHANT_BASE="https://github.com/abenz1267/elephant/releases/download/v${ELEPHANT_VERSION}"
+curl -L -o /tmp/elephant.tar.gz "${ELEPHANT_BASE}/elephant-linux-amd64.tar.gz" &
+curl -L -o /tmp/elephant-desktopapplications.tar.gz "${ELEPHANT_BASE}/desktopapplications-linux-amd64.tar.gz" &
+
+# kitty
+curl -L -o /tmp/kitty.txz \
+    "https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz" &
+
+wait
+echo "All binaries downloaded."
+
 ## -- Build satty from source (not available in lionheartp COPR)
 # Install libadwaita dependency for satty
 dnf5 -y install libadwaita
 
-curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
-  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz"
 tar -xzf /tmp/satty.tar.gz -C /tmp
 # Find the satty binary (may be in a subdirectory)
 SATTY_BIN="$(find /tmp -name 'satty' -type f -executable | head -1)"
@@ -87,25 +116,18 @@ rm -rf /tmp/satty* /tmp/satty-*
 dnf5 -y copr enable erikreider/swayosd
 dnf5 -y install swayosd
 
-## -- hyprdynamicmonitors (automatic monitor profile switching for Hyprland)
-curl -L -o /tmp/hyprdynamicmonitors.tar.gz \
-    "https://github.com/fiffeek/hyprdynamicmonitors/releases/download/v${HYPRDYNAMICMONITORS_VERSION}/hyprdynamicmonitors_Linux_x86_64.tar.gz"
 tar -xzf /tmp/hyprdynamicmonitors.tar.gz -C /tmp
 install -m 755 /tmp/hyprdynamicmonitors /usr/bin/hyprdynamicmonitors
 rm -f /tmp/hyprdynamicmonitors.tar.gz /tmp/hyprdynamicmonitors
 
 ## -- walker (modern app launcher) and elephant (backend service)
 dnf5 -y install gtk4-layer-shell
-curl -L -o /tmp/walker.tar.gz \
-    "https://github.com/abenz1267/walker/releases/download/v${WALKER_VERSION}/walker-v${WALKER_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+
 tar -xzf /tmp/walker.tar.gz -C /tmp
 install -m 755 /tmp/walker /usr/bin/walker
 rm -f /tmp/walker.tar.gz /tmp/walker
 
 ## -- elephant (backend for walker - indexes apps, files, etc.)
-ELEPHANT_BASE="https://github.com/abenz1267/elephant/releases/download/v${ELEPHANT_VERSION}"
-curl -L -o /tmp/elephant.tar.gz "${ELEPHANT_BASE}/elephant-linux-amd64.tar.gz"
-curl -L -o /tmp/elephant-desktopapplications.tar.gz "${ELEPHANT_BASE}/desktopapplications-linux-amd64.tar.gz"
 tar -xzf /tmp/elephant.tar.gz -C /tmp
 tar -xzf /tmp/elephant-desktopapplications.tar.gz -C /tmp
 install -m 755 /tmp/elephant-linux-amd64 /usr/bin/elephant
@@ -130,8 +152,6 @@ ln -sf ../elephant.service /usr/lib/systemd/user/graphical-session.target.wants/
 # and dracut's ossl-files step. Keep bin/lib private under /usr/libexec and
 # only expose the binaries; share/ (icons, .desktop, terminfo, man) is just
 # data and safe to merge into the system-wide dirs.
-curl -L -o /tmp/kitty.txz \
-    "https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz"
 mkdir -p /usr/libexec/kitty
 tar -xJf /tmp/kitty.txz -C /usr/libexec/kitty
 ln -sf /usr/libexec/kitty/bin/kitty /usr/bin/kitty
@@ -142,20 +162,18 @@ rm -f /tmp/kitty.txz
 
 ## -- Hyprland essentials (launcher, notifications, file manager, etc.)
 # shadow-utils provides useradd/groupadd for packages that need it
-dnf5 -y install shadow-utils wsdd wofi mako thunar brightnessctl playerctl polkit wl-clipboard gvfs gvfs-smb gvfs-fuse
+dnf5 -y install shadow-utils wsdd wofi mako thunar brightnessctl playerctl polkit \
+    wl-clipboard gvfs gvfs-smb gvfs-fuse
 
 ## -- Bluetooth & Network
-dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui wireguard-tools
-
 ## -- Power management (needed for hyprdynamicmonitors lid/power detection)
 # tuned-ppd is Fedora 41+ replacement for power-profiles-daemon
-dnf5 -y install upower tuned-ppd
-
 ## -- Hardware support (Framework AMD laptops)
-dnf5 -y install fprintd iio-sensor-proxy usbutils
-
 ## -- Audio
-dnf5 -y install pipewire pipewire-pulseaudio wireplumber pavucontrol
+# High Impact Optimization: Batch all remaining package installs
+dnf5 -y install blueman network-manager-applet NetworkManager-wifi NetworkManager-tui \
+    wireguard-tools upower tuned-ppd fprintd iio-sensor-proxy usbutils \
+    pipewire pipewire-pulseaudio wireplumber pavucontrol
 
 ## -- Development & System tools
 # Note: Virtualization (libvirt/qemu/virt-manager) and docker removed to reduce image size
@@ -204,7 +222,7 @@ mkdir -p /usr/lib/systemd/user/timers.target.wants
 ln -sf ../apparatus-config-check.timer /usr/lib/systemd/user/timers.target.wants/apparatus-config-check.timer
 
 # Bootc update checker (systemd timer + notify-send)
-cp /delivery/build_files/apparatus/check-bootc-updates.sh /usr/libexec/apparatus/check-bootc-updates
+cp /delivery/build_files/config/systemd/apparatus-bootc-check.sh /usr/libexec/apparatus/check-bootc-updates
 chmod 755 /usr/libexec/apparatus/check-bootc-updates
 cp /delivery/build_files/config/systemd/apparatus-bootc-check.service /usr/lib/systemd/system/
 cp /delivery/build_files/config/systemd/apparatus-bootc-check.timer /usr/lib/systemd/system/
