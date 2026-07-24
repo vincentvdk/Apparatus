@@ -398,6 +398,9 @@ fi
 KVER=$(ls /usr/lib/modules | head -1)
 dracut --force --kver "$KVER" --no-hostonly /usr/lib/modules/"$KVER"/initramfs.img
 
+## -- Remove dnf5 (not usable on immutable bootc OS)
+dnf5 -y remove dnf5 dnf5-plugins
+
 ## -- Final cleanup to reduce image size
 rm -rf /tmp/* /var/tmp/*
 rm -rf /var/log/*
