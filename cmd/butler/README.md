@@ -72,7 +72,7 @@ COPY --from=builder /build/butler /usr/local/bin/butler
 
 ### OS Mode
 - **Distrobox Management**: Create, list, enter, upgrade, stop, remove containers
-- **Terminal Selection**: Switch between kitty and rio
+- **Terminal Selection**: Set default terminal to kitty
 - **Monitor Config**: View current monitors, launch hyprdynamicmonitors
 - **Audio Config**: Launch pavucontrol
 - **AI Workload**: Configure AMD VRAM allocation (pkexec)

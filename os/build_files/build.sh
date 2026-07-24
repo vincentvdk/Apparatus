@@ -308,12 +308,6 @@ cp /usr/share/apparatus/uwsm/env /etc/uwsm/env
 cp -r /tmp/dotfiles/themes /usr/share/apparatus/themes/
 rm -rf /tmp/dotfiles
 
-# Rio config and flatpaks (non-dotfiles repo configs)
-mkdir -p /usr/share/apparatus/rio
-mkdir -p /usr/share/apparatus/wallpapers
-cp /delivery/build_files/config/rio/* /usr/share/apparatus/rio/
-cp /delivery/build_files/config/flatpaks.conf /usr/share/apparatus/
-
 # Ensure apparatus files are world-readable
 chmod -R a+rX /usr/share/apparatus
 

@@ -20,7 +20,6 @@ mkdir -p "$USER_HOME"/.config/hypr
 mkdir -p "$USER_HOME"/.config/waybar
 mkdir -p "$USER_HOME"/.config/mako
 mkdir -p "$USER_HOME"/.config/kitty
-mkdir -p "$USER_HOME"/.config/rio/themes
 mkdir -p "$USER_HOME"/.config/walker
 mkdir -p "$USER_HOME"/.config/uwsm
 mkdir -p "$USER_HOME"/.config/apparatus
@@ -40,17 +39,9 @@ include theme.conf
 # User customizations below
 
 EOF
-cp /usr/share/apparatus/rio/config.toml "$USER_HOME"/.config/rio/
 cp /usr/share/apparatus/walker/* "$USER_HOME"/.config/walker/
 cp /usr/share/apparatus/uwsm/* "$USER_HOME"/.config/uwsm/
 
-# Symlink rio themes
-ln -sf /usr/share/apparatus/themes/catppuccin-mocha/rio.toml "$USER_HOME"/.config/rio/themes/catppuccin-mocha.toml
-ln -sf /usr/share/apparatus/themes/catppuccin-latte/rio.toml "$USER_HOME"/.config/rio/themes/catppuccin-latte.toml
-
-# Symlink rio config for flatpak
-mkdir -p "$USER_HOME"/.var/app/com.rioterm.Rio/config
-ln -sfn "$USER_HOME"/.config/rio "$USER_HOME"/.var/app/com.rioterm.Rio/config/rio
 
 # Apply default theme (catppuccin-mocha)
 THEME="catppuccin-mocha"

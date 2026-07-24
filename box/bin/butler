@@ -189,9 +189,6 @@ set_theme() {
       # Apply hyprland theme
       distrobox-host-exec bash -c "[ -d '$HOST_HOME/.config/hypr' ] && ln -sf '$THEMES_DIR/$THEME/hyprland.conf' '$HOST_HOME/.config/hypr/theme.conf'"
 
-      # Apply rio theme
-      distrobox-host-exec bash -c "[ -f '$HOST_HOME/.config/rio/config.toml' ] && sed -i 's/^theme = .*/theme = \"$THEME\"/' '$HOST_HOME/.config/rio/config.toml'"
-
       # Apply GTK theme
       if [[ "$THEME" == *"mocha"* ]]; then
         distrobox-host-exec gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'

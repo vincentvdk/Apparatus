@@ -348,13 +348,10 @@ EOF"
 configure_terminal() {
   echo '{{ Bold "# Select default terminal:" }}' | gum format -t template
 
-  local CHOICE=$(gum choose "kitty" "rio")
+  local CHOICE=$(gum choose "kitty")
 
   local TERM_CMD
   case "$CHOICE" in
-    rio)
-      TERM_CMD="flatpak run com.rioterm.Rio"
-      ;;
     *)
       TERM_CMD="$CHOICE"
       ;;
@@ -455,11 +452,6 @@ set_theme() {
   # Apply hyprland theme
   if [ -d "$HOME/.config/hypr" ]; then
     ln -sf "$THEMES_DIR/$THEME/hyprland.conf" "$HOME/.config/hypr/theme.conf"
-  fi
-
-  # Apply rio theme (update theme name in config.toml)
-  if [ -f "$HOME/.config/rio/config.toml" ]; then
-    sed -i "s/^theme = .*/theme = \"$THEME\"/" "$HOME/.config/rio/config.toml"
   fi
 
   # Apply GTK theme (dark/light based on theme)

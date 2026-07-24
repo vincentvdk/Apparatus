@@ -365,7 +365,7 @@ func (m *osModel) showTerminalPopup() {
 	m.showPopup = true
 	m.popupMode = popupModeOutput
 	m.popupTitle = "Terminal"
-	m.popupContent = "1. kitty\n2. rio\n\nRun: butler --os terminal <name>\n\nOr edit: ~/.config/hypr/hyprland.conf"
+	m.popupContent = "1. kitty\n\nRun: butler --os terminal <name>\n\nOr edit: ~/.config/hypr/hyprland.lua"
 }
 
 func (m *osModel) launchMonitors() {
@@ -472,7 +472,7 @@ func (m *osModel) showDistroboxMenu() {
 
 func (m *osModel) showConfigureMenu() {
 	items := []list.Item{
-		osItem{title: "Terminal", description: "Set default terminal (kitty/rio)", action: "terminal"},
+		osItem{title: "Terminal", description: "Set default terminal", action: "terminal"},
 		osItem{title: "Monitors", description: "Configure display setup", action: "monitors"},
 		osItem{title: "Audio", description: "Configure audio devices", action: "audio"},
 		osItem{title: "AI Workload", description: "GPU VRAM allocation for AI/ML", action: "ai-workload"},
@@ -898,13 +898,7 @@ func applyTheme(themeName string) {
 	os.Remove(hyprTheme)
 	os.Symlink(filepath.Join(themesDir, themeName, "hyprland.conf"), hyprTheme)
 
-	// Apply rio theme
-	rioConf := filepath.Join("$HOME", ".config", "rio", "config.toml")
-	if _, err := os.Stat(rioConf); err == nil {
-		content, _ := os.ReadFile(rioConf)
-		content = []byte(strings.Replace(string(content), `theme = "`, `theme = "`+themeName+`"`, 1))
-		os.WriteFile(rioConf, content, 0644)
-	}
+
 
 	// Apply GTK theme
 	isDark := strings.Contains(themeName, "mocha") || strings.Contains(themeName, "dark")
