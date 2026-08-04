@@ -1,14 +1,15 @@
 # Apparatus OS Keybindings
 
-Optimized for Ultimate Hacking Keyboard (UHK) and vim-style navigation.
+Optimized for vim-style navigation and productivity.
 
 ## Philosophy
 
-- **SUPER** = Window manager (Hyprland)
+- **SUPER** = Window manager (Hyprland) primary modifier
 - **Ctrl+A** = Terminal prefix (Kitty) - tmux-compatible
 - **h/j/k/l** = vim navigation everywhere
-- **SHIFT** = "move" modifier
-- **CTRL** = "resize" modifier
+- **SHIFT** = "move" modifier (window movement)
+- **CTRL** = "resize" modifier (window resizing)
+- **ALT** = Alternative modifier (window cycling)
 
 ## Hyprland
 
@@ -19,7 +20,7 @@ Optimized for Ultimate Hacking Keyboard (UHK) and vim-style navigation.
 | SUPER + J | Focus down |
 | SUPER + K | Focus up |
 | SUPER + L | Focus right |
-| SUPER + Arrow keys | Focus (alternative) |
+| SUPER + Arrow keys | Focus (alternative directional) |
 
 ### Window Move
 | Key | Action |
@@ -28,6 +29,7 @@ Optimized for Ultimate Hacking Keyboard (UHK) and vim-style navigation.
 | SUPER + SHIFT + J | Move window down |
 | SUPER + SHIFT + K | Move window up |
 | SUPER + SHIFT + L | Move window right |
+| SUPER + LMB (hold) | Drag window |
 
 ### Window Resize
 | Key | Action |
@@ -36,26 +38,44 @@ Optimized for Ultimate Hacking Keyboard (UHK) and vim-style navigation.
 | SUPER + CTRL + J | Resize down |
 | SUPER + CTRL + K | Resize up |
 | SUPER + CTRL + L | Resize right |
+| SUPER + RMB (hold) | Resize window |
 
 ### Window Actions
 | Key | Action |
 |-----|--------|
-| SUPER + W | Close window |
+| SUPER + Q | Close window |
 | SUPER + F | Fullscreen |
 | SUPER + V | Toggle floating |
+| SUPER + P | Toggle pseudo-tiling |
+| SUPER + T | Toggle layout |
+
+### Window Cycling
+| Key | Action |
+|-----|--------|
+| SUPER + Tab | Cycle to next window |
+| SUPER + SHIFT + Tab | Cycle to previous window |
+| ALT + Tab | Cycle to next window (alternative) |
+| ALT + SHIFT + Tab | Cycle to previous window (alternative) |
 
 ### Applications
 | Key | Action |
 |-----|--------|
-| SUPER + Return | Terminal |
-| SUPER + Space | Launcher (walker) |
-| SUPER + E | File manager |
+| SUPER + Return | Terminal (Kitty) |
+| SUPER + D | Launcher (walker) |
+| SUPER + Space | Launcher (walker) - alias |
+| SUPER + E | File manager (Thunar) |
 
 ### Session
 | Key | Action |
 |-----|--------|
-| SUPER + Escape | Lock screen |
-| SUPER + SHIFT + Escape | Exit Hyprland |
+| SUPER + L | Lock screen (hyprlock) |
+| SUPER + SHIFT + Q | Exit Hyprland |
+
+### Configuration
+| Key | Action |
+|-----|--------|
+| SUPER + SHIFT + C | Reload Hyprland config |
+| SUPER + F1 | Show keybinding help (butler help) |
 
 ### Workspaces
 | Key | Action |
@@ -67,8 +87,8 @@ Optimized for Ultimate Hacking Keyboard (UHK) and vim-style navigation.
 ### Scratchpad
 | Key | Action |
 |-----|--------|
-| SUPER + ` | Toggle scratchpad |
-| SUPER + SHIFT + ` | Move window to scratchpad |
+| SUPER + S | Toggle scratchpad (magic workspace) |
+| SUPER + SHIFT + S | Move window to scratchpad |
 
 ### Screenshots
 | Key | Action |

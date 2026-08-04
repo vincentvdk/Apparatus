@@ -1,0 +1,103 @@
+# Zensical configuration for Apparatus OS documentation
+
+[project]
+# Site metadata
+site_name = "Apparatus OS"
+site_description = "A Fedora-based immutable desktop OS with Hyprland"
+site_author = "Apparatus Project"
+
+# Site URL (used for sitemap and canonical URLs)
+# site_url = "https://apparatus.dev"
+
+# Output directory for built site
+output_dir = "_site"
+
+# Input directory (where markdown files are)
+# Defaults to current directory
+
+# Theme/settings
+[project.theme]
+# Use Material theme
+# variant = "classic"
+
+# Theme palette for dark/light mode toggle
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+# Include these markdown extensions
+[markdown]
+# Enable GitHub-flavored markdown
+github_flavored = true
+
+# Enable tables
+enable_tables = true
+
+# Enable task lists
+enable_task_lists = true
+
+# Enable footnotes
+enable_footnotes = true
+
+# Enable strikethrough
+enable_strikethrough = true
+
+# Enable autolink literals
+enable_autolink_literals = true
+
+# Code highlighting
+[markdown.highlight]
+# Use pygments for syntax highlighting
+use_pygments = true
+
+# Navigation
+[navigation]
+# Navigation structure (if not using auto-discovery)
+
+# Home page
+[[navigation.items]]
+name = "Home"
+url = "/"
+
+[[navigation.items]]
+name = "Installation"
+url = "/installation/"
+
+[[navigation.items]]
+name = "Getting Started"
+url = "/getting-started/"
+
+[[navigation.items]]
+name = "Usage"
+url = "/usage/"
+
+[[navigation.items]]
+name = "Butler"
+url = "/butler/"
+
+[[navigation.items]]
+name = "Distrobox"
+url = "/distrobox/"
+
+[[navigation.items]]
+name = "Configuration"
+url = "/configuration/"
+
+[[navigation.items]]
+name = "Themes"
+url = "/themes/"
+
+[[navigation.items]]
+name = "Troubleshooting"
+url = "/troubleshooting/"
+
+[[navigation.items]]
+name = "Keybindings"
+url = "/keybindings/"

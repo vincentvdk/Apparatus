@@ -2,8 +2,7 @@
 
 set -e
 
-# Path where inital config is stored
-DEFAULT_CONFIG_PATH="/usr/share/apparatus"
+# Init marker for custom home dir
 INIT_MARKER="${HOME}/.local/state/apparatus/box-init-done"
 
 # Custom home dir: check if already initialized (reused home dir)
@@ -14,7 +13,7 @@ if [[ "$APPARATUS_OS_HOME" != "1" ]]; then
     fi
 fi
 
-# Shared home dir: always run init (casual use, overwrite configs)
+# Shared home dir: always run init
 echo "Initialising.."
 
 # Set NVM_DIR based on XDG_CONFIG_HOME (already set by profile-custom.sh)
@@ -22,29 +21,18 @@ NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 
 mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
 
-
-# ZSH
-if [[ ! -f "${ZDOTDIR}/.zshrc" ]]; then
-  mkdir -p "${ZDOTDIR}"
-  cp ${DEFAULT_CONFIG_PATH}/zsh/.zshrc "${ZDOTDIR}/.zshrc"
-else
-  echo 'zsh config already exists'
-fi
-
 # ZSH plugin manager
 if [[ ! -f "${ZDOTDIR}/.antidote/antidote.zsh" ]]; then
   echo "Installing Antidote (zsh plugin manager).."
   git clone --depth=1 https://github.com/mattmc3/antidote.git "${ZDOTDIR}/.antidote"
-  cp ${DEFAULT_CONFIG_PATH}/zsh/.zsh_plugins.txt ${ZDOTDIR}/.zsh_plugins.txt
 else
   echo 'Antidote already configured. Skipping..'
 fi
 
-
 # p10k Prompt
 if [[ ! -f "${ZDOTDIR}/.p10k.zsh" ]]; then
   echo "Installing Powerlevel10k.."
-  cp ${DEFAULT_CONFIG_PATH}/zsh/.p10k.zsh "${ZDOTDIR}/.p10k.zsh"
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZDOTDIR}/.p10k"
 else
   echo 'Powerlevel10k already configured. Skipping..'
 fi
@@ -84,8 +72,6 @@ if ! command -v atuin &>/dev/null; then
   echo "Installing Atuin.."
   # Use non-interactive install to avoid hanging
   curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive >/dev/null 2>&1
-  mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/atuin"
-  cp ${DEFAULT_CONFIG_PATH}/atuin/config.toml "${XDG_CONFIG_HOME:-$HOME/.config}/atuin/config.toml"
 else
   echo 'Atuin already installed. Skipping..'
 fi
@@ -100,21 +86,9 @@ fi
 git config --global core.editor /opt/nvim-linux-x86_64/bin/nvim
 git config --global init.defaultBranch main
 
-# Neovim config
-NVIM_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
-if [[ ! -d "$NVIM_CONFIG_DIR" ]]; then
-  echo "Setting up neovim config.."
-  mkdir -p "$NVIM_CONFIG_DIR"
-  cp "${DEFAULT_CONFIG_PATH}/nvim/init.lua" "$NVIM_CONFIG_DIR/init.lua"
-  # Copy LSP server configs
-  if [[ -d "${DEFAULT_CONFIG_PATH}/nvim/lsp" ]]; then
-    cp -r "${DEFAULT_CONFIG_PATH}/nvim/lsp" "$NVIM_CONFIG_DIR/lsp"
-  fi
-else
-  echo 'Neovim config already exists. Skipping..'
-fi
+# Neovim - config must be synced manually via butler sync
 
-# Chezmoi (dotfiles manager) - init only, configs already copied above
+# Chezmoi (dotfiles manager) - init only
 CHEZMOI_REPO_DEFAULT="vincentvdk/apparatus-dotfiles"
 CHEZMOI_REPO_FILE="${HOME}/.config/apparatus/chezmoi-dotfiles"
 

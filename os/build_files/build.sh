@@ -319,7 +319,7 @@ git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles
 
 # Copy OS configs from chezmoi source (home/dot_config/) to /usr/share/apparatus/
 cd /tmp/dotfiles/home/dot_config
-for dir in hypr kitty waybar mako walker uwsm; do
+for dir in hypr kitty waybar mako walker uwsm satty; do
     [ -d "$dir" ] && cp -r "$dir" /usr/share/apparatus/
 done
 cd /

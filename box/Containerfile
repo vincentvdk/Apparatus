@@ -1,7 +1,7 @@
 # Build stage for butler (unified binary)
 FROM docker.io/golang:1.22-alpine AS builder
 WORKDIR /build
-copy ../cmd/butler/ .
+copy ../tools/cmd/butler/ .
 RUN go build -o butler .
 
 # Main image
@@ -66,7 +66,7 @@ ARG DOTFILES_REPO="https://github.com/vincentvdk/apparatus-dotfiles.git"
 RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
     mkdir -p /usr/share/apparatus && \
     cd /tmp/dotfiles/home/dot_config && \
-    for dir in zsh atuin nvim; do \
+    for dir in zsh atuin nvim hypr kitty waybar mako walker uwsm satty; do \
         [ -d "$dir" ] && cp -r "$dir" /usr/share/apparatus/; \
     done && \
     cd /usr/share/apparatus && \

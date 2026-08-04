@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 #set -x
 
+# DEPRECATED: This script is maintained for backward compatibility only.
+# Please use the golang-based butler instead: /usr/local/bin/butler
+# The golang butler provides better performance, distrobox config sync, improved TUI,
+# and a more maintainable codebase.
+
 logo='
    _____                                          __                 
   /  _  \  ______  ______ _____  _______ _____  _/  |_  __ __  ______
@@ -452,6 +457,11 @@ set_theme() {
   # Apply hyprland theme
   if [ -d "$HOME/.config/hypr" ]; then
     ln -sf "$THEMES_DIR/$THEME/hyprland.conf" "$HOME/.config/hypr/theme.conf"
+  fi
+
+  # Apply satty theme
+  if [ -d "$HOME/.config/satty" ]; then
+    ln -sf "$THEMES_DIR/$THEME/satty/overrides.css" "$HOME/.config/satty/overrides.css"
   fi
 
   # Apply GTK theme (dark/light based on theme)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -39,6 +40,8 @@ const (
 	popupModeCreateCustom
 	popupModeHelp
 	popupModeOutput
+	popupModeSync
+	popupModeSyncResults
 )
 
 // OS Mode model
@@ -88,6 +91,8 @@ func makeMainList() list.Model {
 		osItem{title: "⚙️  Configure", description: "Hyprland, terminal, monitors, audio, AI", action: "configure"},
 		osItem{title: "🎨 Theme", description: "Switch color theme (Catppuccin)", action: "theme"},
 		osItem{title: "🔤 Font", description: "Switch system font", action: "font"},
+		osItem{title: "🔄 Sync Configs", description: "Sync configs from host to all distroboxes", action: "sync-configs"},
+		osItem{title: "🚫 Skip List", description: "Manage distrobox skip list for config sync", action: "skip-list"},
 		osItem{title: "⌨️  Help", description: "Keyboard shortcuts and keybindings", action: "help"},
 	}
 
@@ -262,6 +267,10 @@ func (m *osModel) handleMainAction(item osItem) {
 		m.showThemePopup()
 	case "font":
 		m.showFontPopup()
+	case "sync-configs":
+		m.syncDistroboxConfigs()
+	case "skip-list":
+		m.showSkipList()
 	case "help":
 		m.showHelp()
 	}
@@ -535,6 +544,11 @@ func (m *osModel) handlePopupAction(item osItem) {
 		m.applyTheme(item.action)
 	case popupModeFont:
 		m.applyFontAction(item.action)
+	case popupModeSync:
+		// Skip list: toggle the selected distrobox
+		if item.action != "" && item.action != "none" {
+			m.handleSkipListToggle(item.action)
+		}
 	}
 }
 
@@ -870,6 +884,385 @@ func (m *osModel) View() string {
 	return mainView
 }
 
+// Distrobox config sync types
+type distroboxInfo struct {
+	Name    string
+	HomeDir string
+}
+
+// syncDistroboxConfigs initiates config sync to all distroboxes
+func (m *osModel) syncDistroboxConfigs() {
+	m.running = true
+	m.runningText = "Fetching distroboxes..."
+	m.pendingCmd = m.executeSyncConfigs()
+}
+
+func (m *osModel) executeSyncConfigs() tea.Cmd {
+	return func() tea.Msg {
+		output, err := syncConfigsToAllDistroboxes()
+		return commandDoneMsg{
+			output:     output,
+			err:        err,
+			showOutput: true,
+		}
+	}
+}
+
+// showSkipList displays the skip list management UI
+func (m *osModel) showSkipList() {
+	distroboxes, err := getAllDistroboxes()
+	if err != nil {
+		m.showPopup = true
+		m.popupMode = popupModeOutput
+		m.popupTitle = "Skip List"
+		m.popupContent = fmt.Sprintf("Error loading distroboxes: %v", err)
+		return
+	}
+	
+	// Load current skip list
+	skipped, _ := loadSkipList()
+	
+	// Create items with checkbox indicator
+	var items []list.Item
+	for _, db := range distroboxes {
+		skipIndicator := "[ ]"
+		if skipped[db.Name] {
+			skipIndicator = "[x]"
+		}
+		items = append(items, osItem{
+			title:       fmt.Sprintf("%s %s", skipIndicator, db.Name),
+			description: db.HomeDir,
+			action:      db.Name,
+		})
+	}
+	
+	if len(items) == 0 {
+		items = append(items, osItem{
+			title:       "(no distroboxes found)",
+			description: "Create a distrobox first",
+			action:      "none",
+		})
+	}
+	
+	delegate := list.NewDefaultDelegate()
+	delegate.SetHeight(1)
+	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList.Title = "Skip List - Select to toggle"
+	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetFilteringEnabled(true)
+	m.popupList.SetShowHelp(true)
+	m.popupList.SetSize(m.width/2, m.height/2)
+	m.popupMode = popupModeSync
+	m.showPopup = true
+}
+
+// handleSkipListToggle toggles a distrobox in the skip list
+func (m *osModel) handleSkipListToggle(name string) {
+	// Load current skip list
+	skipList, err := loadSkipList()
+	if err != nil {
+		m.showPopup = true
+		m.popupMode = popupModeOutput
+		m.popupTitle = "Error"
+		m.popupContent = fmt.Sprintf("Failed to load skip list: %v", err)
+		return
+	}
+	
+	// Toggle the skip status
+	if skipList[name] {
+		delete(skipList, name)
+	} else {
+		skipList[name] = true
+	}
+	
+	// Save the updated skip list
+	if err := saveSkipList(skipList); err != nil {
+		m.showPopup = true
+		m.popupMode = popupModeOutput
+		m.popupTitle = "Error"
+		m.popupContent = fmt.Sprintf("Failed to save skip list: %v", err)
+		return
+	}
+	
+	// Refresh the skip list display
+	m.showSkipList()
+}
+
+// saveSkipList saves the skip list to file
+func saveSkipList(skipList map[string]bool) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	
+	// Ensure directory exists
+	skipDir := filepath.Join(homeDir, ".config", "apparatus")
+	if err := os.MkdirAll(skipDir, 0755); err != nil {
+		return err
+	}
+	
+	skipFile := filepath.Join(skipDir, "skip-distroboxes")
+	
+	// Build file content
+	var content strings.Builder
+	for name := range skipList {
+		content.WriteString(name + "\n")
+	}
+	
+	return os.WriteFile(skipFile, []byte(content.String()), 0644)
+}
+
+// syncConfigsToAllDistroboxes syncs configs from /usr/share/apparatus/ to all distroboxes
+func syncConfigsToAllDistroboxes() (string, error) {
+	var output strings.Builder
+	
+	// Get all distroboxes
+	distroboxes, err := getAllDistroboxes()
+	if err != nil {
+		return "", fmt.Errorf("failed to get distroboxes: %v", err)
+	}
+	
+	if len(distroboxes) == 0 {
+		return "No distroboxes found to sync.", nil
+	}
+	
+	// Load skip list
+	skipped, err := loadSkipList()
+	if err != nil {
+		output.WriteString(fmt.Sprintf("Warning: Could not load skip list: %v\n\n", err))
+	}
+	
+	var synced []string
+	var failed []string
+	
+	// Sync to each distrobox
+	for _, db := range distroboxes {
+		if skipped[db.Name] {
+			output.WriteString(fmt.Sprintf("Skipping %s (in skip list)\n", db.Name))
+			continue
+		}
+		
+		err := syncConfigToDistrobox(db)
+		if err != nil {
+			failed = append(failed, db.Name)
+			output.WriteString(fmt.Sprintf("Failed to sync %s: %v\n", db.Name, err))
+		} else {
+			synced = append(synced, db.Name)
+			output.WriteString(fmt.Sprintf("Synced %s\n", db.Name))
+		}
+	}
+	
+	// Summary
+	output.WriteString(fmt.Sprintf("\nSummary:\n"))
+	output.WriteString(fmt.Sprintf("  Synced: %d distroboxes\n", len(synced)))
+	if len(synced) > 0 {
+		output.WriteString(fmt.Sprintf("    %s\n", strings.Join(synced, ", ")))
+	}
+	output.WriteString(fmt.Sprintf("  Failed: %d distroboxes\n", len(failed)))
+	if len(failed) > 0 {
+		output.WriteString(fmt.Sprintf("    %s\n", strings.Join(failed, ", ")))
+	}
+	
+	if len(failed) > 0 {
+		return output.String(), fmt.Errorf("%d distroboxes failed to sync", len(failed))
+	}
+	
+	return output.String(), nil
+}
+
+// getAllDistroboxes returns list of all distroboxes with their home directories
+func getAllDistroboxes() ([]distroboxInfo, error) {
+	var distroboxes []distroboxInfo
+	
+	// Get list of distroboxes
+	output, err := runCommand("distrobox", "list", "--no-color")
+	if err != nil {
+		return nil, fmt.Errorf("failed to list distroboxes: %v", err)
+	}
+	
+	// Parse output (skip header line)
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for i, line := range lines {
+		// Skip header
+		if i == 0 || strings.Contains(line, "ID") || strings.Contains(line, "NAME") {
+			continue
+		}
+		
+		// Parse line: ID | NAME | STATUS | IMAGE
+		parts := strings.Split(line, "|")
+		if len(parts) < 4 {
+			continue
+		}
+		
+		name := strings.TrimSpace(parts[1])
+		if name == "" {
+			continue
+		}
+		
+		// Get home directory
+		homeDir, err := getDistroboxHomeDir(name)
+		if err != nil {
+			// If we can't get home dir, skip this distrobox
+			continue
+		}
+		
+		distroboxes = append(distroboxes, distroboxInfo{
+			Name:    name,
+			HomeDir: homeDir,
+		})
+	}
+	
+	return distroboxes, nil
+}
+
+// getDistroboxHomeDir returns the home directory for a distrobox
+func getDistroboxHomeDir(name string) (string, error) {
+	// Try to get home directory from podman inspect
+	cmd := exec.Command("podman", "inspect", name, "--format", "{{json .Args}}")
+	output, err := cmd.Output()
+	if err != nil {
+		// If podman inspect fails, try distrobox
+		cmd := exec.Command("distrobox", "inspect", name)
+		output, err = cmd.Output()
+		if err != nil {
+			// If we can't get home dir, return empty string
+			return "", nil
+		}
+	}
+	
+	// Parse JSON output to find --home argument
+	var args []string
+	if err := json.Unmarshal(output, &args); err == nil {
+		for i, arg := range args {
+			if arg == "--home" && i+1 < len(args) {
+				return args[i+1], nil
+			}
+		}
+	}
+	
+	// If no --home argument found, return empty string (will use default)
+	return "", nil
+}
+
+// loadSkipList loads the list of distroboxes to skip
+func loadSkipList() (map[string]bool, error) {
+	skipList := make(map[string]bool)
+	
+	// Default skip list file location
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return skipList, nil
+	}
+	
+	skipFile := filepath.Join(homeDir, ".config", "apparatus", "skip-distroboxes")
+	
+	data, err := os.ReadFile(skipFile)
+	if err != nil {
+		// File doesn't exist, return empty skip list
+		if os.IsNotExist(err) {
+			return skipList, nil
+		}
+		return nil, fmt.Errorf("failed to read skip file: %v", err)
+	}
+	
+	// Parse skip file (one distrobox name per line)
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			skipList[line] = true
+		}
+	}
+	
+	return skipList, nil
+}
+
+// syncConfigToDistrobox syncs configs to a single distrobox
+func syncConfigToDistrobox(db distroboxInfo) error {
+	src := "/usr/share/apparatus"
+	
+	// Determine destination
+	dst := db.HomeDir
+	if dst == "" {
+		// No custom home, use default
+		dst = filepath.Join("/home", db.Name, ".config")
+	} else {
+		dst = filepath.Join(dst, ".config")
+	}
+	
+	// Ensure destination exists
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return fmt.Errorf("failed to create config dir: %v", err)
+	}
+	
+	// Config directories to sync
+	configs := []string{"hypr", "kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh"}
+	
+	for _, config := range configs {
+		srcPath := filepath.Join(src, config)
+		dstPath := filepath.Join(dst, config)
+		
+		// Check if source exists
+		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+			continue
+		}
+		
+		// Remove existing destination
+		os.RemoveAll(dstPath)
+		
+		// Copy directory
+		if err := copyDir(srcPath, dstPath); err != nil {
+			return fmt.Errorf("failed to copy %s: %v", config, err)
+		}
+	}
+	
+	// Sync themes
+	themesSrc := filepath.Join(src, "themes")
+	themesDst := filepath.Join(dst, "apparatus", "themes")
+	os.RemoveAll(themesDst)
+	if err := copyDir(themesSrc, themesDst); err != nil {
+		return fmt.Errorf("failed to copy themes: %v", err)
+	}
+	
+	return nil
+}
+
+// copyDir copies a directory tree from src to dst
+func copyDir(src, dst string) error {
+	// Get all files in src
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	
+	// Create destination directory
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return err
+	}
+	
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+		
+		if entry.IsDir() {
+			if err := copyDir(srcPath, dstPath); err != nil {
+				return err
+			}
+		} else {
+			// Copy file
+			data, err := os.ReadFile(srcPath)
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(dstPath, data, 0644); err != nil {
+				return err
+			}
+		}
+	}
+	
+	return nil
+}
+
 // applyTheme applies a theme across all config files
 func applyTheme(themeName string) {
 	themesDir := "/usr/share/apparatus/themes"
@@ -898,7 +1291,11 @@ func applyTheme(themeName string) {
 	os.Remove(hyprTheme)
 	os.Symlink(filepath.Join(themesDir, themeName, "hyprland.conf"), hyprTheme)
 
-
+	// Apply satty theme
+	sattyCSS := filepath.Join("$HOME", ".config", "satty", "overrides.css")
+	os.MkdirAll(filepath.Dir(sattyCSS), 0755)
+	os.Remove(sattyCSS)
+	os.Symlink(filepath.Join(themesDir, themeName, "satty", "overrides.css"), sattyCSS)
 
 	// Apply GTK theme
 	isDark := strings.Contains(themeName, "mocha") || strings.Contains(themeName, "dark")

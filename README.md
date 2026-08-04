@@ -74,6 +74,23 @@ The build system is designed for high reliability in CI/CD pipelines.
 - **Dependency-Free Parsing**: The `justfile` orchestrator extracts versions from `apparatus.env` using standard `grep`/`cut`, ensuring the build can run in any minimal container environment.
 - **Automated Validation**: Every build concludes with `bootc container lint` and `ostree container commit` to ensure image integrity.
 
+## 📚 Documentation
+
+The documentation is built using Zensical. To build and view the docs locally:
+
+```shell
+# Build the documentation site
+cp docs/zensical.toml . && \
+podman run --rm -v $(pwd):/app:z -w /app docker.io/zensical/zensical build && \
+rm zensical.toml
+
+# Or build and serve with live reload using Zensical's built-in server
+cp docs/zensical.toml . && \
+podman run --rm -v $(pwd):/app:z -w /app -p 8000:8000 docker.io/zensical/zensical serve -a 0.0.0.0:8000
+```
+
+Then open your browser to: `http://localhost:8000`
+
 ## 🔗 Links
 - [Fedora Silverblue/Bootc Documentation](https://fedoraproject.org/atomic-desktops/silverblue/)
 - [Hyprland Wiki](https://wiki.hypr.land/)

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -211,6 +213,110 @@ func applyFontCLI(fontName string) {
 	fmt.Printf("Font applied: %s\n", fontName)
 }
 
+// syncConfigsToDistroboxCLI syncs configs to a specific distrobox
+func syncConfigsToDistroboxCLI(name string) (string, error) {
+	// Get the distrobox info
+	homeDir, err := getDistroboxHomeDirCLI(name)
+	if err != nil {
+		return "", fmt.Errorf("failed to get home dir for %s: %v", name, err)
+	}
+	
+	src := "/usr/share/apparatus"
+	dst := homeDir
+	if dst == "" {
+		dst = filepath.Join("/home", name, ".config")
+	} else {
+		dst = filepath.Join(dst, ".config")
+	}
+	
+	// Ensure destination exists
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return "", fmt.Errorf("failed to create config dir: %v", err)
+	}
+	
+	// Sync configs
+	configs := []string{"hypr", "kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh"}
+	var output strings.Builder
+	
+	for _, config := range configs {
+		srcPath := filepath.Join(src, config)
+		dstPath := filepath.Join(dst, config)
+		
+		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+			continue
+		}
+		
+		os.RemoveAll(dstPath)
+		if err := copyDirCLI(srcPath, dstPath); err != nil {
+			return output.String(), fmt.Errorf("failed to copy %s: %v", config, err)
+		}
+		output.WriteString(fmt.Sprintf("Synced %s\n", config))
+	}
+	
+	// Sync themes
+	themesSrc := filepath.Join(src, "themes")
+	themesDst := filepath.Join(dst, "apparatus", "themes")
+	os.RemoveAll(themesDst)
+	if err := copyDirCLI(themesSrc, themesDst); err != nil {
+		return output.String(), fmt.Errorf("failed to copy themes: %v", err)
+	}
+	output.WriteString("Synced themes\n")
+	
+	return output.String(), nil
+}
+
+// getDistroboxHomeDirCLI returns the home directory for a distrobox
+func getDistroboxHomeDirCLI(name string) (string, error) {
+	cmd := exec.Command("podman", "inspect", name, "--format", "{{json .Args}}")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", nil
+	}
+	
+	var args []string
+	if err := json.Unmarshal(output, &args); err == nil {
+		for i, arg := range args {
+			if arg == "--home" && i+1 < len(args) {
+				return args[i+1], nil
+			}
+		}
+	}
+	return "", nil
+}
+
+// copyDirCLI copies a directory tree from src to dst
+func copyDirCLI(src, dst string) error {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return err
+	}
+	
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+		
+		if entry.IsDir() {
+			if err := copyDirCLI(srcPath, dstPath); err != nil {
+				return err
+			}
+		} else {
+			data, err := os.ReadFile(srcPath)
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(dstPath, data, 0644); err != nil {
+				return err
+			}
+		}
+	}
+	
+	return nil
+}
+
 // modeString returns a display name for the mode
 func modeString(m Mode) string {
 	switch m {
@@ -226,19 +332,26 @@ func modeString(m Mode) string {
 func printUsage() {
 	fmt.Println("Butler - Apparatus OS Configuration Tool")
 	fmt.Println()
-	fmt.Println("Usage: butler [mode]")
+	fmt.Println("Usage: butler [mode|command]")
 	fmt.Println()
 	fmt.Println("Modes:")
 	fmt.Println("  os    Run in Host OS mode (system config, distrobox management)")
 	fmt.Println("  box   Run in Distrobox mode (dev tool management)")
 	fmt.Println()
+	fmt.Println("Commands (OS mode only):")
+	fmt.Println("  theme <name>   Apply theme (catppuccin-mocha, catppuccin-latte)")
+	fmt.Println("  font <name>   Apply font (ioskeley-mono, jetbrains-mono, hack-nerd-font)")
+	fmt.Println("  sync [name]    Sync configs to all distroboxes (or specific one)")
+	fmt.Println()
 	fmt.Println("If no mode is specified, butler auto-detects the environment.")
 	fmt.Println("Override with APPARATUS_MODE=os or APPARATUS_MODE=box.")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  butler          # Auto-detect")
-	fmt.Println("  butler os       # Force OS mode")
-	fmt.Println("  butler box      # Force box mode")
+	fmt.Println("  butler          # Auto-detect, launch TUI")
+	fmt.Println("  butler os       # Force OS mode, launch TUI")
+	fmt.Println("  butler box      # Force box mode, launch TUI")
+	fmt.Println("  butler sync     # Sync configs to all distroboxes")
+	fmt.Println("  butler sync mybox  # Sync configs to specific distrobox")
 	fmt.Println("  APPARATUS_MODE=box butler  # Override via env var")
 }
 
@@ -268,6 +381,25 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Usage: butler font <name>")
 			fmt.Fprintln(os.Stderr, "Available fonts: ioskeley-mono, jetbrains-mono, hack-nerd-font")
 			os.Exit(1)
+		case "sync":
+			if len(os.Args) > 2 {
+				// Sync specific distrobox
+				output, err := syncConfigsToDistroboxCLI(os.Args[2])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n%s\n", err, output)
+					os.Exit(1)
+				}
+				fmt.Println(output)
+			} else {
+				// Sync all distroboxes
+				output, err := syncConfigsToAllDistroboxes()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n%s\n", err, output)
+					os.Exit(1)
+				}
+				fmt.Println(output)
+			}
+			os.Exit(0)
 		case "help", "--help", "-h":
 			printUsage()
 			os.Exit(0)

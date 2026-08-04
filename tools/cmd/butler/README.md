@@ -54,7 +54,7 @@ cp os/build_files/apparatus/butler.sh /usr/local/bin/butler
 ```dockerfile
 FROM docker.io/golang:1.22-alpine AS builder
 WORKDIR /build
-COPY cmd/butler/ .
+COPY tools/cmd/butler/ .
 RUN go build -o butler .
 ...
 COPY --from=builder /build/butler /usr/local/bin/butler
