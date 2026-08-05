@@ -1,4 +1,4 @@
-module apparatus/butler
+module github.com/vinintvdk/apparatus/tools/butler
 
 go 1.22
 

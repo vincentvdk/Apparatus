@@ -1,6 +1,6 @@
 # Apparatus OS
 
-An opinionated, immutable Fedora-based desktop environment engineered for SREs, DevOps, and Systems Engineers. 
+An opinionated, immutable Fedora-based desktop environment built for SREs, DevOps, and Systems Engineers. 
 
 Designed for stability, reproducibility, and minimal maintenance, Apparatus uses `bootc` and `ostree` to provide a hardened, predictable workstation that stays out of your way.
 
