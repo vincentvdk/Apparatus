@@ -194,13 +194,15 @@ dnf5 -y install --nodocs golang
 
 ## -- Apparatus
 # Build and install golang butler
-mkdir -p /tmp/butler-build
+mkdir -p /tmp/butler-build /tmp/go /tmp/go-cache
 cp -r /delivery/tools/butler /tmp/butler-build/butler
 cd /tmp/butler-build/butler
-GOPATH=/tmp/go PATH=$PATH:/usr/bin go mod download
-go build -o /usr/bin/butler ./cmd/butler
+export GOPATH=/tmp/go
+export GOCACHE=/tmp/go-cache
+PATH=$PATH:/usr/bin go mod download
+PATH=$PATH:/usr/bin go build -o /usr/bin/butler ./cmd/butler
 cd /
-rm -rf /tmp/butler-build /tmp/go
+rm -rf /tmp/butler-build /tmp/go /tmp/go-cache
 mkdir -p /etc/distrobox
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 
