@@ -246,7 +246,7 @@ RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
 | `box/bin/init.sh` | No config sync changes | High | **SKIPPED** |
 | `tools/cmd/butler/os_mode.go` | Add sync menu item, sync functions, skip list management | High | **DONE** |
 | `tools/cmd/butler/main.go` | Add `sync` CLI command | Medium | **DONE** |
-| `os/build_files/apparatus/butler.sh` | Add deprecation notice | Low | **SKIPPED** |
+| `os/build_files/apparatus/butler.sh` | **REMOVED** - Replaced by golang butler | Low | **DONE** |
 | `box/Containerfile` | Copy all configs, not just CLI tools | Medium | **DONE** |
 
 ## Remaining Work
@@ -255,7 +255,7 @@ RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
 - [x] Phase 2: Golang butler sync implementation
 - [x] Phase 3: Skip list management UI
 - [x] Phase 4: CLI command
-- [x] Phase 5: Deprecation notice in butler.sh (**SKIPPED**)
+- [x] Phase 5: Removed butler.sh (replaced by golang butler)
 - [x] Phase 6: Containerfile (already copies all configs)
 
 ### Other Tasks

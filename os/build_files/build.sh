@@ -189,8 +189,18 @@ dnf5 -y install --nodocs system-config-printer
 ## -- Gum (for butler TUI)
 dnf5 -y install --nodocs https://github.com/charmbracelet/gum/releases/download/v0.17.0/gum-0.17.0-1.x86_64.rpm
 
+## -- Go (for building butler binary)
+dnf5 -y install --nodocs golang
+
 ## -- Apparatus
-cp /delivery/build_files/apparatus/butler.sh /usr/bin/butler
+# Build and install golang butler
+mkdir -p /tmp/butler-build
+cp -r /delivery/tools/butler /tmp/butler-build/
+cd /tmp/butler-build
+GOPATH=/tmp/go PATH=$PATH:/usr/bin go mod download
+go build -o /usr/bin/butler ./cmd/butler
+cd /
+rm -rf /tmp/butler-build /tmp/go
 mkdir -p /etc/distrobox
 cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 

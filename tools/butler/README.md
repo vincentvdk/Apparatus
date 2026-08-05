@@ -45,17 +45,22 @@ APPARATUS_MODE=box butler
 
 ## Deployment
 
-### Host OS (os/Containerfile.bootc)
+### Host OS (os/build_files/build.sh)
 ```bash
-cp os/build_files/apparatus/butler.sh /usr/local/bin/butler
+# Install Go and build butler
+dnf5 -y install --nodocs golang
+cp -r /delivery/tools/butler /tmp/butler-build/
+cd /tmp/butler-build
+GOPATH=/tmp/go go mod download
+go build -o /usr/bin/butler ./cmd/butler
 ```
 
 ### Distrobox Container (box/Containerfile)
 ```dockerfile
 FROM docker.io/golang:1.22-alpine AS builder
 WORKDIR /build
-COPY tools/cmd/butler/ .
-RUN go build -o butler .
+COPY tools/butler/ .
+RUN go mod download && go build -o butler ./cmd/butler
 ...
 COPY --from=builder /build/butler /usr/local/bin/butler
 ```

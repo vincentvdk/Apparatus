@@ -1,8 +1,8 @@
 # Build stage for butler (unified binary)
 FROM docker.io/golang:1.22-alpine AS builder
 WORKDIR /build
-copy ../tools/cmd/butler/ .
-RUN go build -o butler .
+copy ../tools/butler/ .
+RUN go mod download && go build -o butler ./cmd/butler
 
 # Main image
 FROM docker.io/fedora:43
