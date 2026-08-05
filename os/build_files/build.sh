@@ -195,8 +195,8 @@ dnf5 -y install --nodocs golang
 ## -- Apparatus
 # Build and install golang butler
 mkdir -p /tmp/butler-build
-cp -r /delivery/tools/butler /tmp/butler-build/
-cd /tmp/butler-build
+cp -r /delivery/tools/butler /tmp/butler-build/butler
+cd /tmp/butler-build/butler
 GOPATH=/tmp/go PATH=$PATH:/usr/bin go mod download
 go build -o /usr/bin/butler ./cmd/butler
 cd /
