@@ -1223,6 +1223,39 @@ func syncConfigToDistrobox(db distroboxInfo) error {
 	if err := copyDir(themesSrc, themesDst); err != nil {
 		return fmt.Errorf("failed to copy themes: %v", err)
 	}
+
+	// Create theme.css symlink for waybar
+	// The style.css uses @import "theme.css", so we need to create this symlink
+	waybarDir := filepath.Join(dst, "waybar")
+	if _, err := os.Stat(waybarDir); err == nil {
+		themeCSS := filepath.Join(waybarDir, "theme.css")
+		os.Remove(themeCSS)
+
+		// Get available themes
+		themes, err := os.ReadDir(themesDst)
+		if err != nil {
+			return fmt.Errorf("failed to read themes directory: %v", err)
+		}
+
+		// Use first available theme, or default to catppuccin-mocha
+		defaultTheme := "catppuccin-mocha"
+		if len(themes) > 0 && themes[0].IsDir() {
+			defaultTheme = themes[0].Name()
+		}
+
+		// Try to read current theme from host
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			if data, err := os.ReadFile(filepath.Join(homeDir, ".config", "apparatus", "current-theme")); err == nil {
+				defaultTheme = strings.TrimSpace(string(data))
+			}
+		}
+
+		// Create symlink relative to waybar directory
+		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "waybar.css")
+		if err := os.Symlink(relPath, themeCSS); err != nil {
+			return fmt.Errorf("failed to create waybar theme.css symlink: %v", err)
+		}
+	}
 	
 	return nil
 }
@@ -1263,9 +1296,16 @@ func copyDir(src, dst string) error {
 	return nil
 }
 
+
 // applyTheme applies a theme across all config files
 func applyTheme(themeName string) {
 	themesDir := "/usr/share/apparatus/themes"
+	
+	// Check if running in a distrobox (themes in ~/.config/apparatus/themes)
+	localThemesDir := filepath.Join(os.Getenv("HOME"), ".config", "apparatus", "themes")
+	if _, err := os.Stat(localThemesDir); err == nil {
+		themesDir = localThemesDir
+	}
 
 	// Apply kitty theme
 	kittyTheme := filepath.Join("$HOME", ".config", "kitty", "theme.conf")
