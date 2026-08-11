@@ -339,7 +339,8 @@ func printUsage() {
 	fmt.Println("  box   Run in Distrobox mode (dev tool management)")
 	fmt.Println()
 	fmt.Println("Commands (OS mode only):")
-	fmt.Println("  theme <name>   Apply theme (catppuccin-mocha, catppuccin-latte)")
+	fmt.Println("  theme <name>   Apply theme (catppuccin-mocha, catppuccin-latte,")
+	fmt.Println("                  tokyonight-night, tokyonight-storm, tokyonight-moon, tokyonight-day)")
 	fmt.Println("  font <name>   Apply font (ioskeley-mono, jetbrains-mono, hack-nerd-font)")
 	fmt.Println("  sync [name]    Sync configs to all distroboxes (or specific one)")
 	fmt.Println()
@@ -371,7 +372,8 @@ func main() {
 				os.Exit(0)
 			}
 			fmt.Fprintln(os.Stderr, "Usage: butler theme <name>")
-			fmt.Fprintln(os.Stderr, "Available themes: catppuccin-mocha, catppuccin-latte")
+			fmt.Fprintln(os.Stderr, "Available themes: catppuccin-mocha, catppuccin-latte,")
+			fmt.Fprintln(os.Stderr, "                  tokyonight-night, tokyonight-storm, tokyonight-moon, tokyonight-day")
 			os.Exit(1)
 		case "font":
 			if len(os.Args) > 2 {

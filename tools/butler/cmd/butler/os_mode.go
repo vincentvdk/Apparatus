@@ -321,7 +321,8 @@ func (m *osModel) showThemePopup() {
 		if entry.IsDir() {
 			label := entry.Name()
 			desc := "light"
-			if strings.Contains(label, "mocha") {
+			// Dark themes: mocha, night, storm, moon
+			if strings.Contains(label, "mocha") || strings.Contains(label, "night") || strings.Contains(label, "storm") || strings.Contains(label, "moon") {
 				desc = "dark"
 			}
 			items = append(items, osItem{
@@ -1307,6 +1308,18 @@ func syncConfigToDistrobox(db distroboxInfo) error {
 		}
 	}
 
+	// Apply nvim theme
+	nvimThemeDir := filepath.Join(dst, "nvim", "lua", "config")
+	if _, err := os.Stat(nvimThemeDir); err == nil {
+		nvimTheme := filepath.Join(nvimThemeDir, "theme.lua")
+		themeFile := filepath.Join(themesDst, defaultTheme, "nvim.lua")
+		if _, err := os.Stat(themeFile); err == nil {
+			if data, err := os.ReadFile(themeFile); err == nil {
+				os.WriteFile(nvimTheme, data, 0644)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -1349,66 +1362,101 @@ func copyDir(src, dst string) error {
 
 // applyTheme applies a theme across all config files
 func applyTheme(themeName string) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
+		return
+	}
+
 	themesDir := "/usr/share/apparatus/themes"
-	
+
 	// Check if running in a distrobox (themes in ~/.config/apparatus/themes)
-	localThemesDir := filepath.Join(os.Getenv("HOME"), ".config", "apparatus", "themes")
-	if _, err := os.Stat(localThemesDir); err == nil {
-		themesDir = localThemesDir
+	// Only use local themes if we're actually in a container
+	if _, err := os.Stat("/run/.containerenv"); err == nil {
+		localThemesDir := filepath.Join(homeDir, ".config", "apparatus", "themes")
+		if _, err := os.Stat(localThemesDir); err == nil {
+			themesDir = localThemesDir
+		}
 	}
 
 	// Apply kitty theme
-	kittyTheme := filepath.Join("$HOME", ".config", "kitty", "theme.conf")
+	kittyTheme := filepath.Join(homeDir, ".config", "kitty", "theme.conf")
 	os.MkdirAll(filepath.Dir(kittyTheme), 0755)
 	os.Remove(kittyTheme)
 	os.Symlink(filepath.Join(themesDir, themeName, "kitty.conf"), kittyTheme)
 
 	// Apply waybar theme
-	waybarCSS := filepath.Join("$HOME", ".config", "waybar", "theme.css")
+	waybarCSS := filepath.Join(homeDir, ".config", "waybar", "theme.css")
 	os.MkdirAll(filepath.Dir(waybarCSS), 0755)
 	os.Remove(waybarCSS)
 	os.Symlink(filepath.Join(themesDir, themeName, "waybar.css"), waybarCSS)
 
 	// Apply mako theme
-	makoConf := filepath.Join("$HOME", ".config", "mako", "config")
+	makoConf := filepath.Join(homeDir, ".config", "mako", "config")
 	os.MkdirAll(filepath.Dir(makoConf), 0755)
 	os.Remove(makoConf)
 	os.Symlink(filepath.Join(themesDir, themeName, "mako.conf"), makoConf)
 
 	// Apply hyprland theme
-	hyprTheme := filepath.Join("$HOME", ".config", "hypr", "theme.conf")
+	hyprTheme := filepath.Join(homeDir, ".config", "hypr", "theme.conf")
 	os.MkdirAll(filepath.Dir(hyprTheme), 0755)
 	os.Remove(hyprTheme)
 	os.Symlink(filepath.Join(themesDir, themeName, "hyprland.conf"), hyprTheme)
 
 	// Apply satty theme
-	sattyCSS := filepath.Join("$HOME", ".config", "satty", "overrides.css")
+	sattyCSS := filepath.Join(homeDir, ".config", "satty", "overrides.css")
 	os.MkdirAll(filepath.Dir(sattyCSS), 0755)
 	os.Remove(sattyCSS)
 	os.Symlink(filepath.Join(themesDir, themeName, "satty", "overrides.css"), sattyCSS)
+
+	// Apply nvim theme
+	nvimTheme := filepath.Join(homeDir, ".config", "nvim", "lua", "config", "theme.lua")
+	os.MkdirAll(filepath.Dir(nvimTheme), 0755)
+	themeFile := filepath.Join(themesDir, themeName, "nvim.lua")
+	if _, err := os.Stat(themeFile); err == nil {
+		// Write the theme content directly (better for syncing to distroboxes)
+		if data, err := os.ReadFile(themeFile); err == nil {
+			os.WriteFile(nvimTheme, data, 0644)
+		}
+	}
 
 	// Apply GTK theme
 	isDark := strings.Contains(themeName, "mocha") || strings.Contains(themeName, "dark")
 	if isDark {
 		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark").Run()
+		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Adwaita-dark").Run()
 	} else {
 		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-light").Run()
+		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Adwaita").Run()
 	}
 
 	// Save current theme
-	os.MkdirAll(filepath.Join("$HOME", ".config", "apparatus"), 0755)
-	os.WriteFile(filepath.Join("$HOME", ".config", "apparatus", "current-theme"), []byte(themeName), 0644)
+	appConfigDir := filepath.Join(homeDir, ".config", "apparatus")
+	os.MkdirAll(appConfigDir, 0755)
+	os.WriteFile(filepath.Join(appConfigDir, "current-theme"), []byte(themeName), 0644)
 
 	// Reload services
 	exec.Command("hyprctl", "reload").Run()
 	exec.Command("pkill", "-SIGUSR1", "kitty").Run()
 	exec.Command("makoctl", "reload").Run()
+	
+	// Reload waybar CSS by sending SIGUSR2 (standard way to reload config)
+	exec.Command("pkill", "-SIGUSR2", "waybar").Run()
+	
+	// Reload satty (must be restarted as it doesn't support signal-based reload)
+	exec.Command("pkill", "satty").Run()
 }
 
 // applyFont applies a font across all config files
 func applyFont(fontFamily, fontName string) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
+		return
+	}
+
 	// Update kitty font
-	kittyConf := filepath.Join("$HOME", ".config", "kitty", "kitty.conf")
+	kittyConf := filepath.Join(homeDir, ".config", "kitty", "kitty.conf")
 	if data, err := os.ReadFile(kittyConf); err == nil {
 		content := string(data)
 		content = strings.ReplaceAll(content, "font_family      "+"IoskeleyMono Nerd Font", "font_family      "+fontFamily)
@@ -1418,7 +1466,7 @@ func applyFont(fontFamily, fontName string) {
 	}
 
 	// Update waybar font
-	waybarCSS := filepath.Join("$HOME", ".config", "waybar", "style.css")
+	waybarCSS := filepath.Join(homeDir, ".config", "waybar", "style.css")
 	if data, err := os.ReadFile(waybarCSS); err == nil {
 		content := string(data)
 		content = strings.ReplaceAll(content, "\"Hack Nerd Font\"", "\""+fontFamily+"\"")
@@ -1428,7 +1476,7 @@ func applyFont(fontFamily, fontName string) {
 	}
 
 	// Update mako font
-	makoConf := filepath.Join("$HOME", ".config", "mako", "config")
+	makoConf := filepath.Join(homeDir, ".config", "mako", "config")
 	if data, err := os.ReadFile(makoConf); err == nil {
 		content := string(data)
 		content = strings.ReplaceAll(content, "Hack Nerd Font", fontFamily)
@@ -1438,8 +1486,9 @@ func applyFont(fontFamily, fontName string) {
 	}
 
 	// Save current font
-	os.MkdirAll(filepath.Join("$HOME", ".config", "apparatus"), 0755)
-	os.WriteFile(filepath.Join("$HOME", ".config", "apparatus", "current-font"), []byte(fontName), 0644)
+	appConfigDir := filepath.Join(homeDir, ".config", "apparatus")
+	os.MkdirAll(appConfigDir, 0755)
+	os.WriteFile(filepath.Join(appConfigDir, "current-font"), []byte(fontName), 0644)
 
 	// Reload services
 	exec.Command("pkill", "-SIGUSR1", "kitty").Run()
