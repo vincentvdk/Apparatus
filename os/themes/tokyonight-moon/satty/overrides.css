@@ -1,0 +1,36 @@
+/* Tokyo Night tokyonight-moon theme for Satty */
+
+.satty-main {
+    background-color: #222436;
+}
+
+.satty-button {
+    background-color: #7aa2f733;
+    color: #c0caf5;
+    border-color: #7aa2f766;
+}
+
+.satty-button:hover {
+    background-color: #7aa2f744;
+}
+
+.satty-button.primary {
+    background-color: #7aa2f7;
+    color: #222436;
+}
+
+.satty-button.primary:hover {
+    background-color: #7aa2f7;
+    opacity: 0.9;
+}
+
+.satty-button.danger {
+    background-color: #f7768e;
+    color: #222436;
+}
+
+.text-input {
+    background-color: #222436;
+    color: #c0caf5;
+    border-color: #7aa2f766;
+}

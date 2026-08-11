@@ -1,0 +1,141 @@
+/* Tokyo Night tokyonight-storm theme for Waybar */
+
+/* Background */
+#workspaces {
+    background-color: #24283b;
+}
+
+/* Active workspace */
+#workspaces button.active {
+    background-color: #7aa2f7;
+    color: #24283b;
+}
+
+/* Inactive workspace */
+#workspaces button:not(.active) {
+    color: #c0caf5;
+}
+
+/* Clock */
+#clock {
+    color: #c0caf5;
+}
+
+/* Tray icons */
+#tray {
+    color: #c0caf5;
+}
+
+/* Window title */
+#window-title {
+    color: #c0caf5;
+    background-color: #24283b;
+}
+
+/* Menu */
+#menu {
+    background-color: #24283b;
+    color: #c0caf5;
+    border-color: #7aa2f7;
+}
+
+/* Menu items */
+#menu item {
+    color: #c0caf5;
+}
+
+#menu item.active {
+    background-color: #7aa2f7;
+    color: #24283b;
+}
+
+/* Battery */
+#battery {
+    color: #c0caf5;
+}
+
+/* Battery icons */
+#battery icon.charging {
+    color: ;
+}
+
+#battery icon.discharging {
+    color: ;
+}
+
+#battery icon.critical {
+    color: ;
+}
+
+/* Network */
+#network {
+    color: #c0caf5;
+}
+
+/* Bluetooth */
+#bluetooth {
+    color: #c0caf5;
+}
+
+/* Pulseaudio */
+#pulseaudio {
+    color: #c0caf5;
+}
+
+/* Memory */
+#memory {
+    color: #c0caf5;
+}
+
+/* CPU */
+#cpu {
+    color: #c0caf5;
+}
+
+/* Temperature */
+#temperature {
+    color: #c0caf5;
+}
+
+/* Backlight */
+#backlight {
+    color: #c0caf5;
+}
+
+/* Notification */
+#notifications {
+    color: #c0caf5;
+}
+
+/* Custom modules */
+#custom-company {
+    color: #c0caf5;
+    background-color: #24283b;
+}
+
+/* Power */
+#power {
+    color: #c0caf5;
+}
+
+/* System */
+#system {
+    color: #c0caf5;
+}
+
+/* Idle inhibitor */
+#idle_inhibitor {
+    color: #c0caf5;
+}
+
+/* Systray */
+#systray {
+    color: #c0caf5;
+}
+
+/* Alt tab */
+#alttab {
+    background-color: #24283b;
+    color: #c0caf5;
+    border-color: #7aa2f7;
+}

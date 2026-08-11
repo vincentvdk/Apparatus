@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'os/**'
+      - 'tools/butler/**'
       - 'cmd/butler/**'
       - 'apparatus.env'
       - '.github/workflows/build-os-bootc.yml'
@@ -16,6 +17,7 @@ on:
       - main
     paths:
       - 'os/**'
+      - 'tools/butler/**'
       - 'cmd/butler/**'
       - 'apparatus.env'
       - '.github/workflows/build-os-bootc.yml'

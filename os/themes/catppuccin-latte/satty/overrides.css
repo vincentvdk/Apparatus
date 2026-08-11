@@ -1,0 +1,147 @@
+/* Satty CSS Overrides - Catppuccin Latte Theme */
+/* Light theme variant */
+
+/* ===== Base Window ==== */
+window,
+.inner_box,
+.outer_box {
+    background-color: transparent;
+}
+
+/* ===== Toolbar ==== */
+.toolbar {
+    color: #4c4f69;  /* text */
+    background-color: #ccd0dacc;  /* surface0 with transparency */
+    border-radius: 8px;
+    padding: 4px;
+    margin: 8px;
+    border: 1px solid #bcc0cc;  /* surface1 */
+}
+
+/* ===== Toolbar Buttons ==== */
+.toolbar button {
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 6px;
+    margin: 2px;
+    color: #4c4f69;
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+.toolbar button:hover {
+    background-color: #bcc0cc;  /* surface1 */
+    border-color: #9ca0b0;  /* overlay0 */
+}
+
+.toolbar button:checked {
+    background-color: #bcc0cc;  /* surface1 */
+    border-color: #1e66f5;  /* blue */
+    color: #dc8a78;  /* rosewater */
+}
+
+/* ===== Color Palette Buttons ==== */
+.color-button {
+    border-radius: 4px;
+    border: 1px solid #bcc0cc;
+}
+
+.color-button:hover {
+    border-color: #9ca0b0;
+}
+
+.color-button:checked {
+    border-color: #1e66f5;
+    box-shadow: 0 0 0 2px #1e66f5;
+}
+
+/* ===== Size Controls ==== */
+.spinbutton,
+.scale {
+    background-color: #ccd0da;  /* surface0 */
+    color: #4c4f69;  /* text */
+    border-color: #bcc0cc;  /* surface1 */
+    border-radius: 4px;
+}
+
+.spinbutton button,
+.scale button {
+    background-color: #ccd0da;
+    color: #4c4f69;
+    border-color: #bcc0cc;
+}
+
+.spinbutton button:hover,
+.scale button:hover {
+    background-color: #bcc0cc;
+    color: #dc8a78;
+}
+
+/* ===== Text Input ==== */
+.text-input {
+    background-color: #ccd0da;  /* surface0 */
+    color: #4c4f69;  /* text */
+    border-color: #bcc0cc;  /* surface1 */
+    border-radius: 4px;
+}
+
+/* ===== Canvas Area ==== */
+.canvas-area {
+    background-color: transparent;
+}
+
+/* ===== Status Bar ==== */
+.status-bar {
+    color: #4c4f69;  /* text */
+    background-color: #ccd0dacc;  /* surface0 with transparency */
+    border-radius: 8px;
+    padding: 4px 8px;
+    margin: 8px;
+    border: 1px solid #bcc0cc;
+}
+
+/* ===== Tooltip ==== */
+.tooltip {
+    background-color: #ccd0da;  /* surface0 */
+    color: #4c4f69;  /* text */
+    border-color: #bcc0cc;  /* surface1 */
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+/* ===== Menu ==== */
+.menu {
+    background-color: #ccd0da;  /* surface0 */
+    color: #4c4f69;  /* text */
+    border-color: #bcc0cc;  /* surface1 */
+    border-radius: 8px;
+}
+
+.menu item {
+    color: #4c4f69;
+    padding: 4px 12px;
+}
+
+.menu item:hover {
+    background-color: #bcc0cc;  /* surface1 */
+    color: #dc8a78;  /* rosewater */
+}
+
+.menu item:checked {
+    background-color: #bcc0cc;
+    border-color: #1e66f5;  /* blue */
+}
+
+/* ===== Scrollbar ==== */
+.text-input scrollbar {
+    background-color: #ccd0da;
+}
+
+.text-input scrollbar slider {
+    background-color: #9ca0b0;  /* overlay0 */
+    border-radius: 4px;
+}
+
+.text-input scrollbar slider:hover {
+    background-color: #8c8fa1;  /* overlay1 */
+}

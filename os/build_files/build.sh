@@ -341,7 +341,15 @@ mkdir -p /etc/uwsm
 cp /usr/share/apparatus/uwsm/env /etc/uwsm/env
 
 # Copy themes
-cp -r /tmp/dotfiles/themes /usr/share/apparatus/themes/
+# First copy themes from delivery repo (this repo)
+mkdir -p /usr/share/apparatus/themes
+if [ -d /delivery/themes ]; then
+    cp -r /delivery/themes/* /usr/share/apparatus/themes/
+fi
+# Then copy themes from dotfiles repo (user configs)
+if [ -d /tmp/dotfiles/themes ]; then
+    cp -r /tmp/dotfiles/themes/* /usr/share/apparatus/themes/
+fi
 rm -rf /tmp/dotfiles || true
 
 # Ensure apparatus files are world-readable

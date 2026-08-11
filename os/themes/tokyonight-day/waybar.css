@@ -1,0 +1,141 @@
+/* Tokyo Night tokyonight-day theme for Waybar */
+
+/* Background */
+#workspaces {
+    background-color: #e6e7ed;
+}
+
+/* Active workspace */
+#workspaces button.active {
+    background-color: #3760bf;
+    color: #e6e7ed;
+}
+
+/* Inactive workspace */
+#workspaces button:not(.active) {
+    color: #3760bf;
+}
+
+/* Clock */
+#clock {
+    color: #3760bf;
+}
+
+/* Tray icons */
+#tray {
+    color: #3760bf;
+}
+
+/* Window title */
+#window-title {
+    color: #3760bf;
+    background-color: #e6e7ed;
+}
+
+/* Menu */
+#menu {
+    background-color: #e6e7ed;
+    color: #3760bf;
+    border-color: #3760bf;
+}
+
+/* Menu items */
+#menu item {
+    color: #3760bf;
+}
+
+#menu item.active {
+    background-color: #3760bf;
+    color: #e6e7ed;
+}
+
+/* Battery */
+#battery {
+    color: #3760bf;
+}
+
+/* Battery icons */
+#battery icon.charging {
+    color: ;
+}
+
+#battery icon.discharging {
+    color: ;
+}
+
+#battery icon.critical {
+    color: ;
+}
+
+/* Network */
+#network {
+    color: #3760bf;
+}
+
+/* Bluetooth */
+#bluetooth {
+    color: #3760bf;
+}
+
+/* Pulseaudio */
+#pulseaudio {
+    color: #3760bf;
+}
+
+/* Memory */
+#memory {
+    color: #3760bf;
+}
+
+/* CPU */
+#cpu {
+    color: #3760bf;
+}
+
+/* Temperature */
+#temperature {
+    color: #3760bf;
+}
+
+/* Backlight */
+#backlight {
+    color: #3760bf;
+}
+
+/* Notification */
+#notifications {
+    color: #3760bf;
+}
+
+/* Custom modules */
+#custom-company {
+    color: #3760bf;
+    background-color: #e6e7ed;
+}
+
+/* Power */
+#power {
+    color: #3760bf;
+}
+
+/* System */
+#system {
+    color: #3760bf;
+}
+
+/* Idle inhibitor */
+#idle_inhibitor {
+    color: #3760bf;
+}
+
+/* Systray */
+#systray {
+    color: #3760bf;
+}
+
+/* Alt tab */
+#alttab {
+    background-color: #e6e7ed;
+    color: #3760bf;
+    border-color: #3760bf;
+}

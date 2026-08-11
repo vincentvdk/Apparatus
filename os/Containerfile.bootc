@@ -11,6 +11,7 @@ ARG SILVERBLUE_VERSION="43"
 # == Delivery stage for build files
 FROM ${BASE_IMAGE}:${FEDORA_VERSION} AS delivery
 COPY os/build_files /build_files
+COPY os/themes /themes
 COPY tools/butler /tools/butler
 COPY apparatus.env /build_files/apparatus.env
 
