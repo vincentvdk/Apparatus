@@ -1224,39 +1224,89 @@ func syncConfigToDistrobox(db distroboxInfo) error {
 		return fmt.Errorf("failed to copy themes: %v", err)
 	}
 
-	// Create theme.css symlink for waybar
-	// The style.css uses @import "theme.css", so we need to create this symlink
-	waybarDir := filepath.Join(dst, "waybar")
-	if _, err := os.Stat(waybarDir); err == nil {
-		themeCSS := filepath.Join(waybarDir, "theme.css")
-		os.Remove(themeCSS)
 
-		// Get available themes
-		themes, err := os.ReadDir(themesDst)
-		if err != nil {
-			return fmt.Errorf("failed to read themes directory: %v", err)
-		}
+	// Get available themes and default theme name
+	themes, err := os.ReadDir(themesDst)
+	if err != nil {
+		return fmt.Errorf("failed to read themes directory: %v", err)
+	}
 
-		// Use first available theme, or default to catppuccin-mocha
-		defaultTheme := "catppuccin-mocha"
-		if len(themes) > 0 && themes[0].IsDir() {
-			defaultTheme = themes[0].Name()
-		}
+	// Use first available theme, or default to catppuccin-mocha
+	defaultTheme := "catppuccin-mocha"
+	if len(themes) > 0 && themes[0].IsDir() {
+		defaultTheme = themes[0].Name()
+	}
 
-		// Try to read current theme from host
+	// Try to read current theme from distrobox's apparatus config
+	// First check the destination (distrobox) for current-theme
+	currentThemeFile := filepath.Join(dst, "..", "apparatus", "current-theme")
+	if data, err := os.ReadFile(currentThemeFile); err == nil {
+		defaultTheme = strings.TrimSpace(string(data))
+	} else {
+		// Fall back to host's current theme
 		if homeDir, err := os.UserHomeDir(); err == nil {
 			if data, err := os.ReadFile(filepath.Join(homeDir, ".config", "apparatus", "current-theme")); err == nil {
 				defaultTheme = strings.TrimSpace(string(data))
 			}
 		}
+	}
 
-		// Create symlink relative to waybar directory
+	// Apply kitty theme symlink
+	kittyDir := filepath.Join(dst, "kitty")
+	if _, err := os.Stat(kittyDir); err == nil {
+		kittyTheme := filepath.Join(kittyDir, "theme.conf")
+		os.Remove(kittyTheme)
+		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "kitty.conf")
+		if err := os.Symlink(relPath, kittyTheme); err != nil {
+			return fmt.Errorf("failed to create kitty theme.conf symlink: %v", err)
+		}
+	}
+
+	// Apply waybar theme symlink
+	// The style.css uses @import "theme.css", so we need to create this symlink
+	waybarDir := filepath.Join(dst, "waybar")
+	if _, err := os.Stat(waybarDir); err == nil {
+		themeCSS := filepath.Join(waybarDir, "theme.css")
+		os.Remove(themeCSS)
 		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "waybar.css")
 		if err := os.Symlink(relPath, themeCSS); err != nil {
 			return fmt.Errorf("failed to create waybar theme.css symlink: %v", err)
 		}
 	}
-	
+
+	// Apply mako theme symlink (mako uses config file directly, not a separate theme file)
+	makoDir := filepath.Join(dst, "mako")
+	if _, err := os.Stat(makoDir); err == nil {
+		makoConf := filepath.Join(makoDir, "config")
+		os.Remove(makoConf)
+		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "mako.conf")
+		if err := os.Symlink(relPath, makoConf); err != nil {
+			return fmt.Errorf("failed to create mako config symlink: %v", err)
+		}
+	}
+
+	// Apply hyprland theme symlink
+	hyprDir := filepath.Join(dst, "hypr")
+	if _, err := os.Stat(hyprDir); err == nil {
+		hyprTheme := filepath.Join(hyprDir, "theme.conf")
+		os.Remove(hyprTheme)
+		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "hyprland.conf")
+		if err := os.Symlink(relPath, hyprTheme); err != nil {
+			return fmt.Errorf("failed to create hyprland theme.conf symlink: %v", err)
+		}
+	}
+
+	// Apply satty theme symlink
+	sattyDir := filepath.Join(dst, "satty")
+	if _, err := os.Stat(sattyDir); err == nil {
+		sattyCSS := filepath.Join(sattyDir, "overrides.css")
+		os.Remove(sattyCSS)
+		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "satty", "overrides.css")
+		if err := os.Symlink(relPath, sattyCSS); err != nil {
+			return fmt.Errorf("failed to create satty overrides.css symlink: %v", err)
+		}
+	}
+
 	return nil
 }
 
