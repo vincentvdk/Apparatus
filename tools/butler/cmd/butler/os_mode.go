@@ -281,7 +281,7 @@ func (m *osModel) applyTheme(themeName string) {
 	m.showPopup = true
 	m.popupMode = popupModeOutput
 	m.popupTitle = "Theme Applied"
-	m.popupContent = fmt.Sprintf("Theme applied: %s\n\nReloaded: hyprctl, kitty, mako", themeName)
+	m.popupContent = fmt.Sprintf("Theme applied: %s\n\nReloaded: hyprctl, kitty, mako, waybar, satty", themeName)
 }
 
 func (m *osModel) applyFontAction(fontName string) {
@@ -1440,8 +1440,9 @@ func applyTheme(themeName string) {
 	exec.Command("pkill", "-SIGUSR1", "kitty").Run()
 	exec.Command("makoctl", "reload").Run()
 	
-	// Reload waybar CSS by sending SIGUSR2 (standard way to reload config)
-	exec.Command("pkill", "-SIGUSR2", "waybar").Run()
+	// Reload waybar (must be restarted as it doesn't support signal-based reload)
+	exec.Command("pkill", "waybar").Run()
+	exec.Command("waybar", "&").Run()
 	
 	// Reload satty (must be restarted as it doesn't support signal-based reload)
 	exec.Command("pkill", "satty").Run()
@@ -1494,4 +1495,8 @@ func applyFont(fontFamily, fontName string) {
 	exec.Command("pkill", "-SIGUSR1", "kitty").Run()
 	exec.Command("hyprctl", "reload").Run()
 	exec.Command("makoctl", "reload").Run()
+
+	// Reload waybar (must be restarted as it doesn't support signal-based reload)
+	exec.Command("pkill", "waybar").Run()
+	exec.Command("waybar", "&").Run()
 }
