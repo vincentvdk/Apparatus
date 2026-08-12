@@ -56,15 +56,15 @@
 
 /* Battery icons */
 #battery icon.charging {
-    color: ;
+    color: #c0caf5;
 }
 
 #battery icon.discharging {
-    color: ;
+    color: #c0caf5;
 }
 
 #battery icon.critical {
-    color: ;
+    color: #eba0ac;
 }
 
 /* Network */
