@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -21,106 +22,215 @@ const (
 	ModeBox
 )
 
+// Butler renders itself using the terminal's own ANSI 16-color palette
+// (indices 0-15) rather than literal hex values. lipgloss/termenv pass an
+// ANSI index straight through as a raw SGR code; the terminal resolves it
+// against whatever palette it currently has loaded. There is no querying
+// and nothing to cache, so this can never go stale after a theme switch --
+// the very next repaint uses whatever the terminal has live at that moment.
+//
+// Two approaches were tried and discarded before this one:
+//  1. A hardcoded dark/light palette guessed from the theme name -- wrong
+//     whenever a theme didn't fit the guess (e.g. tokyonight-moon is dark
+//     but matched the "light" bucket).
+//  2. Parsing the real hex values out of the active theme's kitty.conf and
+//     caching them, plus forcing lipgloss.SetHasDarkBackground() to match.
+//     This still went stale in-session because it duplicated state that
+//     already lives in the terminal, and fighting lipgloss's own cached
+//     termenv.HasDarkBackground() (queried once via OSC 11 and never
+//     re-checked) caused other elements to lose their color entirely.
+//
+// color4 (blue/accent) and color2 (green/success) are valid hex in every
+// theme file this project ships. color8 (bright black, the conventional
+// "muted" slot) is NOT -- it's an unresolved template placeholder in all
+// four Tokyo Night variants' kitty.conf (a separate bug in the theme
+// generator, worth fixing there). So muted text uses Faint(true) instead
+// of a color: it dims whatever the terminal's real foreground is, which
+// works correctly regardless of that bug.
+func getAccentColor() lipgloss.Color {
+	return lipgloss.Color("4")
+}
+
+func getSuccessColor() lipgloss.Color {
+	return lipgloss.Color("2")
+}
+
+func getErrorColor() lipgloss.Color {
+	return lipgloss.Color("1")
+}
+
+// currentThemeName reads the theme name butler last wrote via applyTheme(),
+// for display only (e.g. an orientation/status line) -- not used for any
+// color decision, see the comment above getAccentColor().
+func currentThemeName() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(filepath.Join(homeDir, ".config", "apparatus", "current-theme"))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+// currentFontName reads the font name butler last wrote via applyFont(), for
+// display only.
+func currentFontName() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(filepath.Join(homeDir, ".config", "apparatus", "current-font"))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
 // Styles
-var (
-	appStyle = lipgloss.NewStyle().Padding(1, 2)
+//
+// Foreground is deliberately left unset almost everywhere below: an unset
+// Foreground/Background means "use the terminal's real default text/background
+// color," which is exactly the theme's `foreground`/`background` value from
+// kitty.conf, applied by the terminal itself. There is no ANSI index for
+// "the terminal's actual default fg/bg" (that's a distinct OSC 10/11 concept
+// from the 16-color table), so the only correct way to get it is to not set
+// a color at all and let it inherit through.
+var appStyle = lipgloss.NewStyle().Padding(1, 2)
 
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFDF5")).
-			Background(lipgloss.Color("#6C50FF")).
-			Padding(0, 2).
-			Bold(true)
+func getTitleStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(getAccentColor()).
+		Padding(0, 2).
+		Bold(true)
+}
 
-	modeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#04B575")).
-			Italic(true).
-			Bold(true)
+func getModeStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(getSuccessColor()).
+		Italic(true).
+		Bold(true)
+}
 
-	panelStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#6C50FF")).
-			Padding(0, 1)
+func getPanelStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(getAccentColor()).
+		Padding(0, 1)
+}
 
-	activePanelStyle = panelStyle.Copy().
-				BorderForeground(lipgloss.Color("#04B575"))
+func getActivePanelStyle() lipgloss.Style {
+	return getPanelStyle().Copy().
+		BorderForeground(getSuccessColor())
+}
 
-	statusStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFDF5")).
-			Background(lipgloss.Color("#333333")).
-			Padding(0, 1)
+func getStatusStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Faint(true).
+		Padding(0, 1)
+}
 
-	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#04B575"))
+func getSpinnerStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(getSuccessColor())
+}
 
-	popupStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#04B575")).
-			Padding(1, 2)
+// getPopupStyle returns the popup border style. isError switches the border
+// to the error color (ANSI red) instead of success (ANSI green) -- popups
+// showing a failed command should not look identical to ones showing normal
+// output.
+func getPopupStyle(isError bool) lipgloss.Style {
+	color := getSuccessColor()
+	if isError {
+		color = getErrorColor()
+	}
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(color).
+		Padding(1, 2)
+}
 
-	popupTitleStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#04B575")).
-				Bold(true)
-)
+func getPopupTitleStyle(isError bool) lipgloss.Style {
+	color := getSuccessColor()
+	if isError {
+		color = getErrorColor()
+	}
+	return lipgloss.NewStyle().
+		Foreground(color).
+		Bold(true)
+}
+
+// getListDelegate creates a theme-aware list delegate
+func getListDelegate() list.DefaultDelegate {
+	delegate := list.NewDefaultDelegate()
+	// Deliberately NOT calling delegate.SetSpacing(0) here: it changes the
+	// list's rendered line count between the first (pre-WindowSizeMsg,
+	// zero-sized) frame and the real sized frame, which corrupts
+	// bubbletea's incremental line-diffing renderer and drops the app
+	// title bar above the list entirely. Confirmed by bisecting against
+	// this session's changes -- removing this one line was the fix.
+	delegate.Styles.NormalTitle = lipgloss.NewStyle()
+	delegate.Styles.NormalDesc = lipgloss.NewStyle().Faint(true)
+	delegate.Styles.SelectedTitle = lipgloss.NewStyle().Foreground(getAccentColor()).Bold(true)
+	delegate.Styles.SelectedDesc = lipgloss.NewStyle().Foreground(getAccentColor())
+	delegate.Styles.DimmedTitle = lipgloss.NewStyle().Faint(true)
+	delegate.Styles.DimmedDesc = lipgloss.NewStyle().Faint(true)
+	delegate.Styles.FilterMatch = lipgloss.NewStyle().Foreground(getSuccessColor())
+	return delegate
+}
+
+// getListStyles builds the list chrome (title badge, filter prompt/cursor,
+// status bar, pagination dots, help/no-items text) from the same ANSI
+// colors as the rest of butler, instead of list.DefaultStyles()'s baked-in
+// lipgloss.AdaptiveColor values (see the comment above getAccentColor()).
+func getListStyles() list.Styles {
+	s := list.DefaultStyles()
+	s.Title = lipgloss.NewStyle().
+		Background(getAccentColor()).
+		Padding(0, 1)
+	s.Spinner = lipgloss.NewStyle().Faint(true)
+	s.FilterPrompt = lipgloss.NewStyle().Foreground(getSuccessColor())
+	s.FilterCursor = lipgloss.NewStyle().Foreground(getAccentColor())
+	s.StatusBar = lipgloss.NewStyle().Faint(true).Padding(0, 0, 1, 2)
+	s.StatusEmpty = lipgloss.NewStyle().Faint(true)
+	s.StatusBarActiveFilter = lipgloss.NewStyle().Bold(true)
+	s.StatusBarFilterCount = lipgloss.NewStyle().Faint(true)
+	s.NoItems = lipgloss.NewStyle().Faint(true)
+	s.ArabicPagination = lipgloss.NewStyle().Faint(true)
+	s.ActivePaginationDot = lipgloss.NewStyle().Foreground(getAccentColor()).SetString("•")
+	s.InactivePaginationDot = lipgloss.NewStyle().Faint(true).SetString("•")
+	s.DividerDot = lipgloss.NewStyle().Faint(true).SetString(" • ")
+	return s
+}
+
+// newList creates a list.Model with butler's theme-aware chrome applied.
+// Use this instead of list.New() everywhere so every list -- main menu and
+// every popup -- stays in sync with the active theme.
+func newList(items []list.Item, delegate list.ItemDelegate, width, height int) list.Model {
+	l := list.New(items, delegate, width, height)
+	l.Styles = getListStyles()
+
+	// list.Model embeds its own help.Model for the keybinding line
+	// ("↑/k up • ↓/j down • ..."), which has a *separate* Styles struct
+	// that list.Styles above does not touch. help.New() defaults it to
+	// lipgloss.AdaptiveColor grays too, so left alone it renders the same
+	// unthemed, hardcoded color regardless of anything above.
+	l.Help.Styles.ShortKey = lipgloss.NewStyle().Faint(true)
+	l.Help.Styles.ShortDesc = lipgloss.NewStyle().Faint(true)
+	l.Help.Styles.ShortSeparator = lipgloss.NewStyle().Faint(true)
+	l.Help.Styles.FullKey = lipgloss.NewStyle().Faint(true)
+	l.Help.Styles.FullDesc = lipgloss.NewStyle().Faint(true)
+	l.Help.Styles.FullSeparator = lipgloss.NewStyle().Faint(true)
+	l.Help.Styles.Ellipsis = lipgloss.NewStyle().Faint(true)
+
+	return l
+}
 
 // Command completion message
 type commandDoneMsg struct {
 	output     string
 	err        error
 	showOutput bool
-}
-
-// Popup model
-type popupModel struct {
-	title    string
-	content  string
-	quitting bool
-	width    int
-	height   int
-}
-
-func (m popupModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m popupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc", "q", "enter":
-			m.quitting = true
-			return m, tea.Quit
-		}
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-	}
-	return m, nil
-}
-
-func (m popupModel) View() string {
-	if m.quitting {
-		return ""
-	}
-
-	popupWidth := m.width / 3
-	popupHeight := m.height / 3
-	if popupWidth < 40 {
-		popupWidth = 40
-	}
-	if popupHeight < 10 {
-		popupHeight = 10
-	}
-
-	popupHeader := popupTitleStyle.Render(m.title)
-	popupFooter := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#666666")).
-		Render("\n[esc/enter • q to close]")
-
-	popupBody := popupStyle.
-		Width(popupWidth).
-		Height(popupHeight).
-		Render(lipgloss.JoinVertical(lipgloss.Left, popupHeader, "\n", m.content, popupFooter))
-
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, popupBody)
 }
 
 // runCommand executes a shell command and returns combined output
@@ -191,7 +301,10 @@ func applyThemeCLI(themeName string) {
 		os.Exit(1)
 	}
 
-	applyTheme(themeName)
+	if err := applyTheme(themeName); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to apply theme '%s': %v\n", themeName, err)
+		os.Exit(1)
+	}
 	fmt.Printf("Theme applied: %s\n", themeName)
 }
 
@@ -235,7 +348,7 @@ func syncConfigsToDistroboxCLI(name string) (string, error) {
 	}
 	
 	// Sync configs
-	configs := []string{"hypr", "kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh"}
+	configs := syncConfigDirs()
 	var output strings.Builder
 	
 	for _, config := range configs {

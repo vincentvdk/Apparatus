@@ -52,6 +52,7 @@ type osModel struct {
 	popupMode     int
 	popupTitle    string
 	popupContent  string
+	popupIsError  bool
 	popupList     list.Model
 
 	// Distrobox state
@@ -62,25 +63,29 @@ type osModel struct {
 	// Text input for create flow
 	textInput textinput.Model
 
-	// Pending command
-	pendingCmd tea.Cmd
-
-	running       bool
-	spinner       spinner.Model
-	runningText   string
+	running     bool
+	spinner     spinner.Model
+	runningText string
 
 	// Main list
 	mainList list.Model
+
+	// Current theme/font, for the status line -- read once at startup and
+	// refreshed whenever applyTheme()/applyFontAction() succeed.
+	currentTheme string
+	currentFont  string
 }
 
 func newOSModel() *osModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = spinnerStyle
+	s.Style = getSpinnerStyle()
 
 	m := &osModel{
-		mainList: makeMainList(),
-		spinner:  s,
+		mainList:     makeMainList(),
+		spinner:      s,
+		currentTheme: currentThemeName(),
+		currentFont:  currentFontName(),
 	}
 	return m
 }
@@ -96,10 +101,10 @@ func makeMainList() list.Model {
 		osItem{title: "⌨️  Help", description: "Keyboard shortcuts and keybindings", action: "help"},
 	}
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
 
-	l := list.New(items, delegate, 0, 0)
+	l := newList(items, delegate, 0, 0)
 	l.Title = "Butler Menu"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
@@ -113,26 +118,6 @@ func (m *osModel) Init() tea.Cmd {
 }
 
 func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// Handle pending command
-	if m.pendingCmd != nil {
-		cmd := m.pendingCmd
-		m.pendingCmd = nil
-		// Execute the command and show result
-		result := cmd()
-		if cmdMsg, ok := result.(commandDoneMsg); ok {
-			m.showPopup = true
-			m.popupMode = popupModeOutput
-			if cmdMsg.err != nil {
-				m.popupTitle = "Error"
-				m.popupContent = fmt.Sprintf("Error: %v\n\n%s", cmdMsg.err, cmdMsg.output)
-			} else {
-				m.popupTitle = "Output"
-				m.popupContent = cmdMsg.output
-			}
-		}
-		return m, nil
-	}
-
 	// Handle popup mode
 	if m.showPopup {
 		switch msg := msg.(type) {
@@ -141,10 +126,14 @@ func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.popupMode == popupModeDistrobox || m.popupMode == popupModeConfigure || m.popupMode == popupModeDistroboxActions || m.popupMode == popupModeUpgrade || m.popupMode == popupModeTheme || m.popupMode == popupModeFont {
 				switch msg.String() {
 				case "enter":
-					if item, ok := m.popupList.SelectedItem().(osItem); ok {
-						m.handlePopupAction(item)
-						return m, nil
+					if m.popupList.SelectedItem() != nil {
+						if item, ok := m.popupList.SelectedItem().(osItem); ok {
+							return m, m.handlePopupAction(item)
+						}
 					}
+					// Fallback: close popup if no valid item selected
+					m.closePopup()
+					return m, nil
 				case "esc", "q":
 					m.closePopup()
 					return m, nil
@@ -167,9 +156,7 @@ func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							m.createCustomHome = m.createName
 						}
 						m.textInput.Blur()
-						m.showPopup = false
-						m.pendingCmd = m.executeCreateDistrobox("custom")
-						return m, nil
+						return m, m.startCommand(fmt.Sprintf("creating distrobox: %s", m.createName), m.executeCreateDistrobox("custom"))
 					} else if m.popupMode == popupModeCreateName {
 						m.createName = m.textInput.Value()
 						if m.createName == "" {
@@ -195,9 +182,7 @@ func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.popupMode == popupModeCreateHome {
 				switch msg.String() {
 				case "1":
-					m.showPopup = false
-					m.pendingCmd = m.executeCreateDistrobox("default")
-					return m, nil
+					return m, m.startCommand(fmt.Sprintf("creating distrobox: %s", m.createName), m.executeCreateDistrobox("default"))
 				case "2":
 					m.showCreateCustomPopup()
 					return m, nil
@@ -223,6 +208,19 @@ func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// Handle command completion (see startCommand -- commands run as real
+	// tea.Cmd values so the spinner keeps animating and the UI never blocks)
+	if msg, ok := msg.(commandDoneMsg); ok {
+		m.running = false
+		m.runningText = ""
+		if msg.err != nil {
+			m.showErrorPopup("Error", fmt.Sprintf("Error: %v\n\n%s", msg.err, msg.output))
+		} else {
+			m.showInfoPopup("Output", msg.output)
+		}
+		return m, nil
+	}
+
 	// If running a command, handle spinner only
 	if m.running {
 		var cmd tea.Cmd
@@ -242,8 +240,7 @@ func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			if item, ok := m.mainList.SelectedItem().(osItem); ok {
-				m.handleMainAction(item)
-				return m, nil
+				return m, m.handleMainAction(item)
 			}
 		}
 	case tea.WindowSizeMsg:
@@ -257,7 +254,41 @@ func (m *osModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *osModel) handleMainAction(item osItem) {
+// showInfoPopup and showErrorPopup are the two ways to display an output
+// popup. Keeping them as separate, named entry points (rather than a raw
+// m.showPopup/m.popupTitle/... assignment at each call site) makes the
+// error/success intent explicit everywhere and drives the popup border
+// color (see getPopupStyle).
+func (m *osModel) showInfoPopup(title, content string) {
+	m.closePopup()
+	m.showPopup = true
+	m.popupMode = popupModeOutput
+	m.popupTitle = title
+	m.popupContent = content
+	m.popupIsError = false
+}
+
+func (m *osModel) showErrorPopup(title, content string) {
+	m.closePopup()
+	m.showPopup = true
+	m.popupMode = popupModeOutput
+	m.popupTitle = title
+	m.popupContent = content
+	m.popupIsError = true
+}
+
+// startCommand closes any open popup, switches to the running/spinner state,
+// and returns cmd batched with the spinner tick so bubbletea executes it as
+// a real background command instead of blocking Update(). Completion is
+// picked up by the commandDoneMsg case in Update().
+func (m *osModel) startCommand(label string, cmd tea.Cmd) tea.Cmd {
+	m.closePopup()
+	m.running = true
+	m.runningText = label
+	return tea.Batch(cmd, m.spinner.Tick)
+}
+
+func (m *osModel) handleMainAction(item osItem) tea.Cmd {
 	switch item.action {
 	case "distrobox":
 		m.showDistroboxMenu()
@@ -268,20 +299,29 @@ func (m *osModel) handleMainAction(item osItem) {
 	case "font":
 		m.showFontPopup()
 	case "sync-configs":
-		m.syncDistroboxConfigs()
+		return m.syncDistroboxConfigs()
 	case "skip-list":
 		m.showSkipList()
 	case "help":
 		m.showHelp()
 	}
+	return nil
 }
 
 func (m *osModel) applyTheme(themeName string) {
-	applyTheme(themeName)
-	m.showPopup = true
-	m.popupMode = popupModeOutput
-	m.popupTitle = "Theme Applied"
-	m.popupContent = fmt.Sprintf("Theme applied: %s\n\nReloaded: hyprctl, kitty, mako, waybar, satty", themeName)
+	// Apply the theme first
+	err := applyTheme(themeName)
+
+	// Close the theme selection popup
+	m.showPopup = false
+	m.popupMode = popupModeNone
+	m.popupList = newList([]list.Item{}, getListDelegate(), 0, 0)
+
+	if err != nil {
+		m.showErrorPopup("Theme", fmt.Sprintf("Failed to apply theme '%s': %v", themeName, err))
+		return
+	}
+	m.currentTheme = themeName
 }
 
 func (m *osModel) applyFontAction(fontName string) {
@@ -292,27 +332,25 @@ func (m *osModel) applyFontAction(fontName string) {
 	}
 	fontFamily, ok := fontMap[fontName]
 	if !ok {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Font Error"
-		m.popupContent = fmt.Sprintf("Unknown font: %s", fontName)
+		// Close font selection popup
+		m.showPopup = false
+		m.popupMode = popupModeNone
+		m.popupList = newList([]list.Item{}, getListDelegate(), 0, 0)
 		return
 	}
 	applyFont(fontFamily, fontName)
-	m.showPopup = true
-	m.popupMode = popupModeOutput
-	m.popupTitle = "Font Applied"
-	m.popupContent = fmt.Sprintf("Font applied: %s\n\nReloaded: kitty, waybar, mako", fontName)
+	m.currentFont = fontName
+	// Close the font selection popup
+	m.showPopup = false
+	m.popupMode = popupModeNone
+	m.popupList = newList([]list.Item{}, getListDelegate(), 0, 0)
 }
 
 func (m *osModel) showThemePopup() {
 	themesDir := "/usr/share/apparatus/themes"
 	entries, err := os.ReadDir(themesDir)
 	if err != nil {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Theme Selection"
-		m.popupContent = fmt.Sprintf("Could not read themes directory: %v", err)
+		m.showErrorPopup("Theme Selection", fmt.Sprintf("Could not read themes directory: %v", err))
 		return
 	}
 
@@ -334,18 +372,15 @@ func (m *osModel) showThemePopup() {
 	}
 
 	if len(items) == 0 {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Theme Selection"
-		m.popupContent = "No themes found in " + themesDir
+		m.showErrorPopup("Theme Selection", "No themes found in "+themesDir)
 		return
 	}
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList = newList(items, delegate, 0, 0)
 	m.popupList.Title = "Themes"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -359,11 +394,11 @@ func (m *osModel) showFontPopup() {
 	fontItems = append(fontItems, osItem{title: "🔤 JetBrains Mono", description: "Default font", action: "jetbrains-mono"})
 	fontItems = append(fontItems, osItem{title: "🔤 Hack Nerd Font", description: "Classic monospace", action: "hack-nerd-font"})
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(fontItems, delegate, 0, 0)
+	m.popupList = newList(fontItems, delegate, 0, 0)
 	m.popupList.Title = "Fonts"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -372,19 +407,14 @@ func (m *osModel) showFontPopup() {
 }
 
 func (m *osModel) showTerminalPopup() {
-	m.showPopup = true
-	m.popupMode = popupModeOutput
-	m.popupTitle = "Terminal"
-	m.popupContent = "1. kitty\n\nRun: butler --os terminal <name>\n\nOr edit: ~/.config/hypr/hyprland.lua"
+	m.showInfoPopup("Terminal", "1. kitty\n\nRun: butler --os terminal <name>\n\nOr edit: ~/.config/hypr/hyprland.lua")
 }
 
 func (m *osModel) launchMonitors() {
+	m.closePopup()
 	_, err := exec.LookPath("hyprdynamicmonitors")
 	if err != nil {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Monitors"
-		m.popupContent = "hyprdynamicmonitors not found.\n\nInstall it first, then run:\n  hyprdynamicmonitors tui"
+		m.showErrorPopup("Monitors", "hyprdynamicmonitors not found.\n\nInstall it first, then run:\n  hyprdynamicmonitors tui")
 		return
 	}
 	// Launch TUI directly - takes over terminal
@@ -393,40 +423,16 @@ func (m *osModel) launchMonitors() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if runErr := cmd.Run(); runErr != nil {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Monitors"
-		m.popupContent = fmt.Sprintf("hyprdynamicmonitors exited with error:\n%v", runErr)
+		m.showErrorPopup("Monitors", fmt.Sprintf("hyprdynamicmonitors exited with error:\n%v", runErr))
 	}
 }
 
 func (m *osModel) showAudioPopup() {
-	m.showPopup = true
-	m.popupMode = popupModeOutput
-	m.popupTitle = "Audio"
-	m.popupContent = "Run pavucontrol to configure audio devices.\n\nThis will launch in the background."
+	m.showInfoPopup("Audio", "Run pavucontrol to configure audio devices.\n\nThis will launch in the background.")
 }
 
 func (m *osModel) showAIWorkloadPopup() {
-	m.showPopup = true
-	m.popupMode = popupModeOutput
-	m.popupTitle = "AI Workload"
-	m.popupContent = "VRAM Allocation\n\nSelect from the menu:\n  16 GB, 32 GB, 64 GB, 96 GB (max stable)\n  Reset to default\n\nConfigures amdttm.kernel_cmdline for AMD Ryzen AI APUs.\nRequires reboot to take effect."
-}
-
-func (m *osModel) showDistroboxResult(cmd tea.Cmd) {
-	result := cmd()
-	if cmdMsg, ok := result.(commandDoneMsg); ok {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		if cmdMsg.err != nil {
-			m.popupTitle = "Error"
-			m.popupContent = fmt.Sprintf("Error: %v\n\n%s", cmdMsg.err, cmdMsg.output)
-		} else {
-			m.popupTitle = "Output"
-			m.popupContent = cmdMsg.output
-		}
-	}
+	m.showInfoPopup("AI Workload", "VRAM Allocation\n\nSelect from the menu:\n  16 GB, 32 GB, 64 GB, 96 GB (max stable)\n  Reset to default\n\nConfigures amdttm.kernel_cmdline for AMD Ryzen AI APUs.\nRequires reboot to take effect.")
 }
 
 func (m *osModel) showDistroboxMenu() {
@@ -468,11 +474,11 @@ func (m *osModel) showDistroboxMenu() {
 		}
 	}
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList = newList(items, delegate, 0, 0)
 	m.popupList.Title = "Distroboxes"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -488,11 +494,11 @@ func (m *osModel) showConfigureMenu() {
 		osItem{title: "AI Workload", description: "GPU VRAM allocation for AI/ML", action: "ai-workload"},
 	}
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList = newList(items, delegate, 0, 0)
 	m.popupList.Title = "Configure"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -500,7 +506,7 @@ func (m *osModel) showConfigureMenu() {
 	m.showPopup = true
 }
 
-func (m *osModel) handlePopupAction(item osItem) {
+func (m *osModel) handlePopupAction(item osItem) tea.Cmd {
 	switch m.popupMode {
 	case popupModeDistrobox:
 		switch item.action {
@@ -524,33 +530,29 @@ func (m *osModel) handlePopupAction(item osItem) {
 			m.showAIWorkloadPopup()
 		}
 	case popupModeDistroboxActions:
-		switch item.action {
-		case "enter":
-			m.showDistroboxResult(m.executeDistroboxAction("enter"))
-		case "upgrade":
-			m.showDistroboxResult(m.executeDistroboxAction("upgrade"))
-		case "stop":
-			m.showDistroboxResult(m.executeDistroboxAction("stop"))
-		case "remove":
-			m.showDistroboxResult(m.executeDistroboxAction("remove"))
-		}
+		// item.action is one of "enter"/"upgrade"/"stop"/"remove", which is
+		// exactly what executeDistroboxAction expects.
+		return m.startCommand(fmt.Sprintf("%s: %s", item.action, m.selectedDistrobox), m.executeDistroboxAction(item.action))
 	case popupModeUpgrade:
-		switch item.action {
-		case "upgrade-packages":
-			m.showDistroboxResult(m.executeUpgradeDistrobox("upgrade-packages"))
-		case "upgrade-image":
-			m.showDistroboxResult(m.executeUpgradeDistrobox("upgrade-image"))
-		}
+		// item.action is "upgrade-packages" or "upgrade-image".
+		return m.startCommand(fmt.Sprintf("%s: %s", item.action, m.selectedDistrobox), m.executeUpgradeDistrobox(item.action))
 	case popupModeTheme:
 		m.applyTheme(item.action)
+		// Ensure popup is closed
+		m.showPopup = false
+		m.popupMode = popupModeNone
 	case popupModeFont:
 		m.applyFontAction(item.action)
+		// Ensure popup is closed
+		m.showPopup = false
+		m.popupMode = popupModeNone
 	case popupModeSync:
 		// Skip list: toggle the selected distrobox
 		if item.action != "" && item.action != "none" {
 			m.handleSkipListToggle(item.action)
 		}
 	}
+	return nil
 }
 
 func (m *osModel) showUpgradeMenu() {
@@ -559,11 +561,11 @@ func (m *osModel) showUpgradeMenu() {
 		osItem{title: "image", description: "Recreate with latest image (keeps home dir)", action: "upgrade-image"},
 	}
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList = newList(items, delegate, 0, 0)
 	m.popupList.Title = "Upgrade Type"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -578,11 +580,11 @@ func (m *osModel) showDistroboxActions() {
 		osItem{title: "remove", description: "Remove the distrobox", action: "remove"},
 	}
 
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList = newList(items, delegate, 0, 0)
 	m.popupList.Title = "Actions"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -661,7 +663,7 @@ Press q/esc/enter to close
 func (m *osModel) closePopup() {
 	m.showPopup = false
 	m.popupMode = popupModeNone
-	m.popupList = list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	m.popupList = newList([]list.Item{}, getListDelegate(), 0, 0)
 	m.textInput.Blur()
 }
 
@@ -837,14 +839,27 @@ func (m *osModel) View() string {
 		Width(m.width - 4).
 		Height(m.height - 8).
 		BorderStyle(lipgloss.ThickBorder()).
-		BorderForeground(lipgloss.Color("626262")).
+		BorderForeground(getAccentColor()).
 		Padding(0, 1)
+
+	var statusText string
+	if m.running {
+		statusText = fmt.Sprintf("%s %s", m.spinner.View(), m.runningText)
+	} else {
+		statusText = "enter: select • q: quit"
+		if m.currentTheme != "" {
+			statusText += "   theme: " + m.currentTheme
+		}
+		if m.currentFont != "" {
+			statusText += "   font: " + m.currentFont
+		}
+	}
 
 	mainView := appStyle.Render(
 		lipgloss.JoinVertical(lipgloss.Center,
-			titleStyle.Render("🔧 Butler") + "  " + modeStyle.Render(modeString(ModeOS)),
+			getTitleStyle().Render("🔧 Butler") + "  " + getModeStyle().Render(modeString(ModeOS)),
 			mainListStyle.Render(m.mainList.View()),
-			statusStyle.Width(m.width-4).Render("enter: select • q: quit"),
+			getStatusStyle().Width(m.width-4).Render(statusText),
 		),
 	)
 
@@ -859,7 +874,7 @@ func (m *osModel) View() string {
 			popupHeight = 10
 		}
 
-		popupHeader := popupTitleStyle.Render(m.popupTitle)
+		popupHeader := getPopupTitleStyle(m.popupIsError).Render(m.popupTitle)
 		var popupBody string
 
 		// Render list if in popup list mode
@@ -869,12 +884,12 @@ func (m *osModel) View() string {
 			popupBody = lipgloss.JoinVertical(lipgloss.Left, popupHeader, m.popupContent, "\n", m.textInput.View(), "\n[enter to confirm • esc to cancel]")
 		} else {
 			popupFooter := lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#666666")).
+				Faint(true).
 				Render("\n[esc/enter • q to close]")
 			popupBody = lipgloss.JoinVertical(lipgloss.Left, popupHeader, m.popupContent, popupFooter)
 		}
 
-		popupContent := popupStyle.
+		popupContent := getPopupStyle(m.popupIsError).
 			Width(popupWidth).
 			Height(popupHeight).
 			Render(popupBody)
@@ -892,10 +907,8 @@ type distroboxInfo struct {
 }
 
 // syncDistroboxConfigs initiates config sync to all distroboxes
-func (m *osModel) syncDistroboxConfigs() {
-	m.running = true
-	m.runningText = "Fetching distroboxes..."
-	m.pendingCmd = m.executeSyncConfigs()
+func (m *osModel) syncDistroboxConfigs() tea.Cmd {
+	return m.startCommand("Fetching distroboxes...", m.executeSyncConfigs())
 }
 
 func (m *osModel) executeSyncConfigs() tea.Cmd {
@@ -913,10 +926,7 @@ func (m *osModel) executeSyncConfigs() tea.Cmd {
 func (m *osModel) showSkipList() {
 	distroboxes, err := getAllDistroboxes()
 	if err != nil {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Skip List"
-		m.popupContent = fmt.Sprintf("Error loading distroboxes: %v", err)
+		m.showErrorPopup("Skip List", fmt.Sprintf("Error loading distroboxes: %v", err))
 		return
 	}
 	
@@ -945,11 +955,11 @@ func (m *osModel) showSkipList() {
 		})
 	}
 	
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
-	m.popupList = list.New(items, delegate, 0, 0)
+	m.popupList = newList(items, delegate, 0, 0)
 	m.popupList.Title = "Skip List - Select to toggle"
-	m.popupList.SetShowStatusBar(true)
+	m.popupList.SetShowStatusBar(false)
 	m.popupList.SetFilteringEnabled(true)
 	m.popupList.SetShowHelp(true)
 	m.popupList.SetSize(m.width/2, m.height/2)
@@ -962,10 +972,7 @@ func (m *osModel) handleSkipListToggle(name string) {
 	// Load current skip list
 	skipList, err := loadSkipList()
 	if err != nil {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Error"
-		m.popupContent = fmt.Sprintf("Failed to load skip list: %v", err)
+		m.showErrorPopup("Error", fmt.Sprintf("Failed to load skip list: %v", err))
 		return
 	}
 	
@@ -978,10 +985,7 @@ func (m *osModel) handleSkipListToggle(name string) {
 	
 	// Save the updated skip list
 	if err := saveSkipList(skipList); err != nil {
-		m.showPopup = true
-		m.popupMode = popupModeOutput
-		m.popupTitle = "Error"
-		m.popupContent = fmt.Sprintf("Failed to save skip list: %v", err)
+		m.showErrorPopup("Error", fmt.Sprintf("Failed to save skip list: %v", err))
 		return
 	}
 	
@@ -1178,6 +1182,43 @@ func loadSkipList() (map[string]bool, error) {
 	return skipList, nil
 }
 
+// defaultSyncConfigs is the config directories synced into distrobox homes
+// by default. "hypr" is deliberately excluded: Hyprland is the host
+// compositor and never runs inside a distrobox, so syncing it there only
+// leaves behind a broken, unusable hyprland.lua that other tooling inside
+// the box can trip over.
+var defaultSyncConfigs = []string{"kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh"}
+
+// syncConfigDirs returns the list of config directories to sync into
+// distrobox homes. If ~/.config/apparatus/sync-configs exists, its lines
+// (one directory name per line, '#' comments allowed, same format as
+// skip-distroboxes) replace the default list entirely -- this is the
+// escape hatch for anyone who deliberately wants different sync behavior
+// (a custom dotfiles setup, testing, etc.) without patching butler itself.
+func syncConfigDirs() []string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return defaultSyncConfigs
+	}
+
+	data, err := os.ReadFile(filepath.Join(homeDir, ".config", "apparatus", "sync-configs"))
+	if err != nil {
+		return defaultSyncConfigs
+	}
+
+	var dirs []string
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			dirs = append(dirs, line)
+		}
+	}
+	if len(dirs) == 0 {
+		return defaultSyncConfigs
+	}
+	return dirs
+}
+
 // syncConfigToDistrobox syncs configs to a single distrobox
 func syncConfigToDistrobox(db distroboxInfo) error {
 	src := "/usr/share/apparatus"
@@ -1197,8 +1238,8 @@ func syncConfigToDistrobox(db distroboxInfo) error {
 	}
 	
 	// Config directories to sync
-	configs := []string{"hypr", "kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh"}
-	
+	configs := syncConfigDirs()
+
 	for _, config := range configs {
 		srcPath := filepath.Join(src, config)
 		dstPath := filepath.Join(dst, config)
@@ -1360,12 +1401,61 @@ func copyDir(src, dst string) error {
 }
 
 
-// applyTheme applies a theme across all config files
-func applyTheme(themeName string) {
+// stagedSwap is a config target whose replacement has been written to a
+// sibling ".new" path, ready to be committed with a single atomic rename.
+type stagedSwap struct {
+	staged string // the ".new" path holding the new content
+	target string // the real path it will replace
+}
+
+// stageSymlink prepares target's replacement as a symlink to source at a
+// ".new" sibling path, without touching target itself. Returns the staged
+// swap to commit later, or an error if the source is missing or the
+// symlink couldn't be created.
+func stageSymlink(source, target string) (stagedSwap, error) {
+	if _, err := os.Stat(source); err != nil {
+		return stagedSwap{}, fmt.Errorf("%s: %w", filepath.Base(target), err)
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		return stagedSwap{}, fmt.Errorf("%s: %w", filepath.Base(target), err)
+	}
+	staged := target + ".new"
+	os.Remove(staged) // clean up any leftover from a prior failed apply
+	if err := os.Symlink(source, staged); err != nil {
+		return stagedSwap{}, fmt.Errorf("%s: %w", filepath.Base(target), err)
+	}
+	return stagedSwap{staged: staged, target: target}, nil
+}
+
+// stageFile is like stageSymlink but copies source's content instead of
+// symlinking to it (used for nvim.lua, which is written directly rather
+// than symlinked so it survives being synced into a distrobox).
+func stageFile(source, target string) (stagedSwap, error) {
+	data, err := os.ReadFile(source)
+	if err != nil {
+		return stagedSwap{}, fmt.Errorf("%s: %w", filepath.Base(target), err)
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		return stagedSwap{}, fmt.Errorf("%s: %w", filepath.Base(target), err)
+	}
+	staged := target + ".new"
+	if err := os.WriteFile(staged, data, 0644); err != nil {
+		return stagedSwap{}, fmt.Errorf("%s: %w", filepath.Base(target), err)
+	}
+	return stagedSwap{staged: staged, target: target}, nil
+}
+
+// applyTheme applies a theme across all config files. Every app's new
+// config is staged as a sibling ".new" file first; only once every app has
+// staged successfully do we commit by renaming each one over its live
+// target (an atomic operation on the same filesystem). If staging fails
+// partway through, everything staged so far is rolled back and the old
+// theme's config is left completely untouched -- so a failure never leaves
+// some apps on the new theme and others broken or stuck on the old one.
+func applyTheme(themeName string) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
-		return
+		return fmt.Errorf("getting home directory: %w", err)
 	}
 
 	themesDir := "/usr/share/apparatus/themes"
@@ -1378,49 +1468,61 @@ func applyTheme(themeName string) {
 			themesDir = localThemesDir
 		}
 	}
+	themeDir := filepath.Join(themesDir, themeName)
 
-	// Apply kitty theme
-	kittyTheme := filepath.Join(homeDir, ".config", "kitty", "theme.conf")
-	os.MkdirAll(filepath.Dir(kittyTheme), 0755)
-	os.Remove(kittyTheme)
-	os.Symlink(filepath.Join(themesDir, themeName, "kitty.conf"), kittyTheme)
-
-	// Apply waybar theme
-	waybarCSS := filepath.Join(homeDir, ".config", "waybar", "theme.css")
-	os.MkdirAll(filepath.Dir(waybarCSS), 0755)
-	os.Remove(waybarCSS)
-	os.Symlink(filepath.Join(themesDir, themeName, "waybar.css"), waybarCSS)
-
-	// Apply mako theme
-	makoConf := filepath.Join(homeDir, ".config", "mako", "config")
-	os.MkdirAll(filepath.Dir(makoConf), 0755)
-	os.Remove(makoConf)
-	os.Symlink(filepath.Join(themesDir, themeName, "mako.conf"), makoConf)
-
-	// Apply hyprland theme
-	hyprTheme := filepath.Join(homeDir, ".config", "hypr", "theme.conf")
-	os.MkdirAll(filepath.Dir(hyprTheme), 0755)
-	os.Remove(hyprTheme)
-	os.Symlink(filepath.Join(themesDir, themeName, "hyprland.conf"), hyprTheme)
-
-	// Apply satty theme
-	sattyCSS := filepath.Join(homeDir, ".config", "satty", "overrides.css")
-	os.MkdirAll(filepath.Dir(sattyCSS), 0755)
-	os.Remove(sattyCSS)
-	os.Symlink(filepath.Join(themesDir, themeName, "satty", "overrides.css"), sattyCSS)
-
-	// Apply nvim theme
-	nvimTheme := filepath.Join(homeDir, ".config", "nvim", "lua", "config", "theme.lua")
-	os.MkdirAll(filepath.Dir(nvimTheme), 0755)
-	themeFile := filepath.Join(themesDir, themeName, "nvim.lua")
-	if _, err := os.Stat(themeFile); err == nil {
-		// Write the theme content directly (better for syncing to distroboxes)
-		if data, err := os.ReadFile(themeFile); err == nil {
-			os.WriteFile(nvimTheme, data, 0644)
+	var pending []stagedSwap
+	rollback := func() {
+		for _, s := range pending {
+			os.Remove(s.staged)
 		}
 	}
 
-	// Apply GTK theme
+	stage := func(source, target string) error {
+		s, err := stageSymlink(source, target)
+		if err != nil {
+			rollback()
+			return err
+		}
+		pending = append(pending, s)
+		return nil
+	}
+
+	if err := stage(filepath.Join(themeDir, "kitty.conf"), filepath.Join(homeDir, ".config", "kitty", "theme.conf")); err != nil {
+		return err
+	}
+	if err := stage(filepath.Join(themeDir, "waybar.css"), filepath.Join(homeDir, ".config", "waybar", "theme.css")); err != nil {
+		return err
+	}
+	if err := stage(filepath.Join(themeDir, "mako.conf"), filepath.Join(homeDir, ".config", "mako", "config")); err != nil {
+		return err
+	}
+	if err := stage(filepath.Join(themeDir, "hyprland.conf"), filepath.Join(homeDir, ".config", "hypr", "theme.conf")); err != nil {
+		return err
+	}
+	if err := stage(filepath.Join(themeDir, "satty", "overrides.css"), filepath.Join(homeDir, ".config", "satty", "overrides.css")); err != nil {
+		return err
+	}
+
+	// nvim.lua is optional -- not every theme ships one
+	nvimSource := filepath.Join(themeDir, "nvim.lua")
+	if _, err := os.Stat(nvimSource); err == nil {
+		nvimTarget := filepath.Join(homeDir, ".config", "nvim", "lua", "config", "theme.lua")
+		s, err := stageFile(nvimSource, nvimTarget)
+		if err != nil {
+			rollback()
+			return err
+		}
+		pending = append(pending, s)
+	}
+
+	// Commit: atomically rename every staged file over its live target.
+	for _, s := range pending {
+		if err := os.Rename(s.staged, s.target); err != nil {
+			return fmt.Errorf("committing %s: %w", filepath.Base(s.target), err)
+		}
+	}
+
+	// Apply GTK theme (best-effort, outside the atomic config swap)
 	isDark := strings.Contains(themeName, "mocha") || strings.Contains(themeName, "dark")
 	if isDark {
 		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark").Run()
@@ -1430,21 +1532,28 @@ func applyTheme(themeName string) {
 		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Adwaita").Run()
 	}
 
-	// Save current theme
+	// Save current theme marker -- only after every app's config has been
+	// committed, so it can never claim a theme that isn't actually applied.
 	appConfigDir := filepath.Join(homeDir, ".config", "apparatus")
 	os.MkdirAll(appConfigDir, 0755)
-	os.WriteFile(filepath.Join(appConfigDir, "current-theme"), []byte(themeName), 0644)
+	currentThemeFile := filepath.Join(appConfigDir, "current-theme")
+	tmpThemeFile := currentThemeFile + ".new"
+	if err := os.WriteFile(tmpThemeFile, []byte(themeName), 0644); err == nil {
+		os.Rename(tmpThemeFile, currentThemeFile)
+	}
 
 	// Reload services
 	exec.Command("hyprctl", "reload").Run()
 	exec.Command("pkill", "-SIGUSR1", "kitty").Run()
 	exec.Command("makoctl", "reload").Run()
-	
+
 	// Reload waybar using SIGUSR2 signal
 	exec.Command("killall", "-SIGUSR2", "waybar").Run()
-	
+
 	// Reload satty (must be restarted as it doesn't support signal-based reload)
 	exec.Command("pkill", "satty").Run()
+
+	return nil
 }
 
 // applyFont applies a font across all config files

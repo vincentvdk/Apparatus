@@ -84,6 +84,7 @@ type boxModel struct {
 	runningText   string
 	showPopup     bool
 	popupTitle    string
+	popupIsError  bool
 	popupContent  viewport.Model
 
 	// Paths
@@ -93,12 +94,16 @@ type boxModel struct {
 
 	// Pre-computed category items (includes "All")
 	categoriesItems []list.Item
+
+	// Current theme/font, for the status line
+	currentTheme string
+	currentFont  string
 }
 
 func newBoxModel() *boxModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = spinnerStyle
+	s.Style = getSpinnerStyle()
 
 	vp := viewport.New(80, 20)
 
@@ -122,6 +127,8 @@ func newBoxModel() *boxModel {
 		lspTemplatesDir:   lspTemplatesDir,
 		spinner:           s,
 		popupContent:      vp,
+		currentTheme:      currentThemeName(),
+		currentFont:       currentFontName(),
 	}
 
 	m.loadTools()
@@ -191,11 +198,11 @@ func (m *boxModel) categoriesFromConfig() map[string]categoryConfig {
 }
 
 func (m *boxModel) initLists() {
-	delegate := list.NewDefaultDelegate()
+	delegate := getListDelegate()
 	delegate.SetHeight(1)
 
 	// Category list
-	catList := list.New(m.categoriesItems, delegate, 0, 0)
+	catList := newList(m.categoriesItems, delegate, 0, 0)
 	catList.Title = "Categories"
 	catList.SetShowStatusBar(false)
 	catList.SetFilteringEnabled(false)
@@ -207,7 +214,7 @@ func (m *boxModel) initLists() {
 	for _, t := range m.allTools {
 		toolItems = append(toolItems, t)
 	}
-	toolList := list.New(toolItems, delegate, 0, 0)
+	toolList := newList(toolItems, delegate, 0, 0)
 	toolList.Title = "Tools"
 	toolList.SetShowStatusBar(false)
 	toolList.SetFilteringEnabled(true)
@@ -221,7 +228,7 @@ func (m *boxModel) initLists() {
 		boxTool{Name: "show available", Desc: "Show available versions", Category: "action"},
 		boxTool{Name: "set version", Desc: "Set active version", Category: "action"},
 	}
-	actionList := list.New(actionItems, delegate, 0, 0)
+	actionList := newList(actionItems, delegate, 0, 0)
 	actionList.Title = "Actions"
 	actionList.SetShowStatusBar(false)
 	actionList.SetFilteringEnabled(false)
@@ -262,6 +269,7 @@ func (m *boxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.runningText = ""
 		if msg.showOutput {
 			m.showPopup = true
+			m.popupIsError = msg.err != nil
 			if msg.err != nil {
 				m.popupTitle = "Error"
 				m.popupContent.SetContent(fmt.Sprintf("Error: %v\n\n%s", msg.err, msg.output))
@@ -470,20 +478,20 @@ func (m boxModel) View() string {
 	panelHeight := m.height - 8
 
 	// Title
-	title := titleStyle.Render("🔧 Butler") + "  " + modeStyle.Render(modeString(ModeBox))
+	title := getTitleStyle().Render("🔧 Butler") + "  " + getModeStyle().Render(modeString(ModeBox))
 
 	// Panel styles
-	catStyle := panelStyle.Copy()
-	toolStyle := panelStyle.Copy()
-	actStyle := panelStyle.Copy()
+	catStyle := getPanelStyle().Copy()
+	toolStyle := getPanelStyle().Copy()
+	actStyle := getPanelStyle().Copy()
 
 	switch m.activePanel {
 	case boxCategoryPanel:
-		catStyle = activePanelStyle.Copy()
+		catStyle = getActivePanelStyle().Copy()
 	case boxToolPanel:
-		toolStyle = activePanelStyle.Copy()
+		toolStyle = getActivePanelStyle().Copy()
 	case boxActionPanel:
-		actStyle = activePanelStyle.Copy()
+		actStyle = getActivePanelStyle().Copy()
 	}
 
 	// Render panels
@@ -495,10 +503,10 @@ func (m boxModel) View() string {
 		actPanel = actStyle.Width(panelWidth).Height(panelHeight).Render(m.actions.View())
 	} else {
 		placeholder := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#666666")).
+			Faint(true).
 			Padding(2).
 			Render("Select a tool\nto see actions")
-		actPanel = panelStyle.Copy().Width(panelWidth).Height(panelHeight).Render(placeholder)
+		actPanel = getPanelStyle().Copy().Width(panelWidth).Height(panelHeight).Render(placeholder)
 	}
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, catPanel, toolPanel, actPanel)
@@ -509,8 +517,14 @@ func (m boxModel) View() string {
 		statusText = fmt.Sprintf("%s %s", m.spinner.View(), m.runningText)
 	} else {
 		statusText = "tab: switch panel • enter: select • esc: back • q: quit"
+		if m.currentTheme != "" {
+			statusText += "   theme: " + m.currentTheme
+		}
+		if m.currentFont != "" {
+			statusText += "   font: " + m.currentFont
+		}
 	}
-	status := statusStyle.Width(m.width - 4).Render(statusText)
+	status := getStatusStyle().Width(m.width - 4).Render(statusText)
 
 	// Main view
 	mainView := appStyle.Render(
@@ -528,12 +542,12 @@ func (m boxModel) View() string {
 			popupHeight = 10
 		}
 
-		popupHeader := popupTitleStyle.Render(m.popupTitle)
+		popupHeader := getPopupTitleStyle(m.popupIsError).Render(m.popupTitle)
 		popupFooter := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#666666")).
+			Faint(true).
 			Render("\n[esc/enter • ↑↓ scroll • q to close]")
 
-		popupBody := popupStyle.
+		popupBody := getPopupStyle(m.popupIsError).
 			Width(popupWidth).
 			Height(popupHeight).
 			Render(lipgloss.JoinVertical(lipgloss.Left, popupHeader, m.popupContent.View(), popupFooter))
