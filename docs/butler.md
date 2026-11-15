@@ -48,6 +48,12 @@ When running in OS mode, Butler provides these menu options:
 | 🚫 Skip List | Manage which distroboxes to skip during config sync |
 | ⌨️ Help | View keyboard shortcuts |
 
+The **Configure** menu provides access to:
+- **Terminal**: Set default terminal emulator
+- **Monitors**: Configure display setup with hyprdynamicmonitors
+- **Audio**: Launch `soundctl` TUI for managing audio devices and volume
+- **AI Workload**: Configure GPU VRAM allocation
+
 ## Box Mode Features
 
 When running inside a distrobox container, Butler provides:
@@ -252,7 +258,7 @@ Butler allows configuration of various system aspects:
 |--------|-------------|
 | Terminal | Set default terminal emulator |
 | Monitors | Configure multi-monitor setup via hyprdynamicmonitors |
-| Audio | Launch PulseAudio Volume Control (pavucontrol) |
+| Audio | Launch soundctl TUI for managing audio devices |
 | AI Workload | Configure GPU VRAM allocation for AI/ML workloads |
 
 ## Help / Keyboard Shortcuts

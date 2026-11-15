@@ -414,6 +414,45 @@ butler
 hyprdynamicmonitors tui
 ```
 
+### Audio Configuration
+
+Apparatus OS provides a TUI for managing audio devices called `soundctl`:
+
+```bash
+# Launch sound control TUI
+soundctl
+```
+
+The soundctl tool allows you to:
+- View all available input and output audio devices
+- Switch between devices by setting them as default
+- Adjust volume levels for each device
+- Toggle mute on/off for devices
+- Refresh device list
+
+**Keyboard Shortcuts in soundctl:**
+
+| Key | Action |
+|-----|--------|
+| `tab` / `shift+tab` | Switch between panels |
+| `↑` / `↓` | Navigate device list |
+| `enter` | Select device / adjust volume |
+| `+` / `=` | Increase volume by 5% |
+| `-` | Decrease volume by 5% |
+| `m` | Toggle mute |
+| `d` | Set as default device |
+| `r` | Refresh device list |
+| `esc` | Return to main menu |
+| `q` | Quit |
+
+You can also access soundctl through Butler:
+```bash
+butler
+# Select "Configure" > "Audio"
+```
+
+**Note:** soundctl uses PulseAudio/pipewire (`pactl`) under the hood. Ensure you have either PulseAudio or PipeWire installed.
+
 ### Hyprland Window Rules
 
 Add window-specific rules in `~/.config/hypr/hyprland.lua`:

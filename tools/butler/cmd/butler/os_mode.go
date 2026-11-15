@@ -427,8 +427,16 @@ func (m *osModel) launchMonitors() {
 	}
 }
 
-func (m *osModel) showAudioPopup() {
-	m.showInfoPopup("Audio", "Run pavucontrol to configure audio devices.\n\nThis will launch in the background.")
+func (m *osModel) launchSoundctl() {
+	m.closePopup()
+	// Launch soundctl TUI directly
+	cmd := exec.Command("soundctl")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if runErr := cmd.Run(); runErr != nil {
+		m.showErrorPopup("Sound Control", fmt.Sprintf("soundctl exited with error:\n%v", runErr))
+	}
 }
 
 func (m *osModel) showAIWorkloadPopup() {
@@ -525,7 +533,7 @@ func (m *osModel) handlePopupAction(item osItem) tea.Cmd {
 		case "monitors":
 			m.launchMonitors()
 		case "audio":
-			m.showAudioPopup()
+			m.launchSoundctl()
 		case "ai-workload":
 			m.showAIWorkloadPopup()
 		}
