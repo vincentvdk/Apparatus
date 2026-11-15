@@ -70,17 +70,9 @@ main() {
   done
 }
 
-# -- Manage tools TUI (Bubbletea)
+# -- Manage tools TUI (handled by the Go butler in box mode)
 manage_tools_tui() {
-  if command -v butler-tools &>/dev/null; then
-    butler-tools
-  else
-    echo '{{ Color "1" "butler-tools not installed" }}' | gum format -t template
-    echo "The enhanced TUI requires the butler-tools binary."
-    echo ""
-    echo "Press any key to continue..."
-    read -k 1
-  fi
+  butler box
 }
 
 # -- Run init script

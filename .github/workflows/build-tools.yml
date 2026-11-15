@@ -1,0 +1,48 @@
+---
+name: build-go-tools
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tools/**'
+      - '.github/workflows/build-tools.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/**'
+      - '.github/workflows/build-tools.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - tools/butler
+          - tools/soundctl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          # reads the `go` directive from the module's go.mod (currently 1.26)
+          go-version-file: ${{ matrix.module }}/go.mod
+
+      - name: Build
+        working-directory: ${{ matrix.module }}
+        run: go build ./...
+
+      - name: Vet
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
+
+      - name: Test
+        working-directory: ${{ matrix.module }}
+        run: go test ./...

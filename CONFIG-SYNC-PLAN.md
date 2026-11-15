@@ -29,9 +29,8 @@ Implement a unified configuration management system that allows the host OS to m
    - `.chezmoiignore`: Conditional ignore rules based on environment
 
 3. **Distrobox Containerfile** (`box/Containerfile`):
-   - Currently only copies: zsh, atuin, nvim configs
-   - Does NOT copy UI configs (hypr, kitty, waybar, etc.)
-   - Runs `init.sh` on first login
+   - Copies all configs (zsh, atuin, nvim, hypr, kitty, waybar, mako, walker, uwsm, satty) plus themes into `/usr/share/apparatus/` in the image
+   - `init.sh` runs on login via `/etc/profile.d/99-custom.sh` (installed from `box/system/profile-custom.sh`)
 
 4. **Distrobox init.sh** (`box/bin/init.sh`):
    - Runs on first login (or always for shared home)
@@ -42,7 +41,7 @@ Implement a unified configuration management system that allows the host OS to m
    - Has theme switching with symlinks (lines 418-479)
    - Only manages host OS configs
 
-6. **golang butler** (`tools/cmd/butler/`):
+6. **golang butler** (`tools/butler/cmd/butler/`):
    - Has theme switching in `os_mode.go` (lines 874-923)
    - Only manages host OS configs
    - No distrobox config sync capability
@@ -67,7 +66,7 @@ The `init.sh` script does NOT perform config sync - it only sets up zsh, antidot
 
 ### Phase 2: Add Config Sync to Golang Butler (High Priority - DONE)
 
-**Status**: Already implemented in `tools/cmd/butler/os_mode.go` and `tools/cmd/butler/main.go`
+**Status**: Already implemented in `tools/butler/cmd/butler/os_mode.go` and `tools/butler/cmd/butler/main.go`
 
 **Implemented**:
 - Menu items: "Sync Configs" and "Skip List" 
@@ -82,7 +81,7 @@ The `init.sh` script does NOT perform config sync - it only sets up zsh, antidot
 
 ### Phase 3: Skip List Management UI (High Priority - DONE)
 
-**Status**: Already implemented in `tools/cmd/butler/os_mode.go`
+**Status**: Already implemented in `tools/butler/cmd/butler/os_mode.go`
 
 **Implemented**:
 - `showSkipList()` - displays list of distroboxes with skip checkbox indicators
@@ -95,7 +94,7 @@ The `init.sh` script does NOT perform config sync - it only sets up zsh, antidot
 
 ### Phase 2: Add Config Sync to Golang Butler (High Priority)
 
-**File**: `tools/cmd/butler/os_mode.go`
+**File**: `tools/butler/cmd/butler/os_mode.go`
 
 **New menu item** (add to `makeMainList()` around line 86-92):
 ```go
@@ -170,15 +169,16 @@ func copyConfigToDistrobox(distrobox distroboxInfo) error {
 }
 ```
 
-**Note on cross-container copying**:
-For custom home directories, copy directly to host path.
-For shared home, use `distrobox enter` or `podman cp`.
+**Note on destinations** (implemented):
+Sync writes to host paths directly — no `podman cp`/`distrobox enter` needed:
+- Custom-home boxes → `<box home>/.config/`
+- Shared-home boxes (no `--home` arg) → `~/.config/apparatus-box/` on the host home (matches `APPARATUS_CONFIG_HOME` in `box/system/profile-custom.sh`)
 
 ---
 
 ### Phase 3: Skip List Management UI (High Priority)
 
-**File**: `tools/cmd/butler/os_mode.go`
+**File**: `tools/butler/cmd/butler/os_mode.go`
 
 **New menu item**:
 ```go
@@ -198,12 +198,11 @@ popupModeSkipList
 
 ### Phase 4: CLI Command (Medium Priority - DONE)
 
-**Status**: Already implemented in `tools/cmd/butler/main.go` (lines 384-402)
+**Status**: Already implemented in `tools/butler/cmd/butler/main.go`
 
 **Implemented**:
 - `butler sync` - syncs configs to all distroboxes
-- `butler sync <name>` - syncs configs to specific distrobox
-- Uses existing `syncConfigsToAllDistroboxes()` and `syncConfigsToDistroboxCLI()` functions
+- `butler sync <name>` - syncs configs to a specific distrobox via the same `syncConfigToDistrobox()` code path as the TUI (theme links included)
 
 ---
 
@@ -244,8 +243,8 @@ RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
 | File | Changes | Priority | Status |
 |------|---------|----------|--------|
 | `box/bin/init.sh` | No config sync changes | High | **SKIPPED** |
-| `tools/cmd/butler/os_mode.go` | Add sync menu item, sync functions, skip list management | High | **DONE** |
-| `tools/cmd/butler/main.go` | Add `sync` CLI command | Medium | **DONE** |
+| `tools/butler/cmd/butler/os_mode.go` | Add sync menu item, sync functions, skip list management | High | **DONE** |
+| `tools/butler/cmd/butler/main.go` | Add `sync` CLI command | Medium | **DONE** |
 | `os/build_files/apparatus/butler.sh` | **REMOVED** - Replaced by golang butler | Low | **DONE** |
 | `box/Containerfile` | Copy all configs, not just CLI tools | Medium | **DONE** |
 
@@ -334,7 +333,7 @@ $HOME/.config/
 - Ensure correct ownership for copied files
 
 ### Performance
-- Use `rsync` for efficient transfers
+- Config dirs are synced with `rsync -a --delete` (implemented) — preserves file modes and symlinks, full sync
 - Parallelize where possible
 - Show progress in TUI
 
@@ -350,4 +349,4 @@ $HOME/.config/
 1. **Sync everything**: All configs from apparatus-dotfiles
 2. **No process reloads**: Just copy files, services auto-pickup
 3. **Create directories**: Parent dirs created automatically
-4. **Copy files, not symlinks**: Symlinks won't work across container filesystems
+4. **Configs copied via rsync, themes symlinked**: Config dirs are rsync'd into each box home. Themes stay in `/usr/share/apparatus/themes/` (single source of truth) — `<box config>/apparatus/themes` is a symlink to it, and every themed tool (kitty, waybar, mako, hypr, satty, nvim) is symlinked to the host's active theme. The path `/usr/share/apparatus/themes` exists both on the host and inside the box image, so the links resolve in both. Theme links are staged as `.new` files and committed with atomic renames.

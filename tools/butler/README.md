@@ -70,7 +70,6 @@ COPY --from=builder /build/butler /usr/local/bin/butler
 | Old | New |
 |-----|-----|
 | `butler.sh` (host OS menu) | `butler` (auto-detects OS mode) |
-| `butler-tools` (box TUI) | `butler` (auto-detects box mode) |
 | `box/bin/tool-manager.sh` | Still used by box mode |
 
 ## Features
@@ -117,7 +116,7 @@ categories:
 | `BUTLER_LSP_TEMPLATES` | `/usr/share/apparatus/lsp` | LSP config templates dir |
 
 ## Tech Stack
-- **Language**: Go 1.22
+- **Language**: Go 1.26
 - **TUI Framework**: Charm Bubbletea + Bubbles + Lipgloss
 - **Config Parsing**: YAML (gopkg.in/yaml.v3)
 - **External Tools**: mise, distrobox, hyprctl, pkexec

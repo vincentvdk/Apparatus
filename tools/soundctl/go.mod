@@ -1,6 +1,6 @@
-module github.com/vinintvdk/apparatus/tools/soundctl
+module github.com/vincentvdk/apparatus/tools/soundctl
 
-go 1.22
+go 1.26
 
 require (
 	github.com/charmbracelet/bubbles v0.20.0

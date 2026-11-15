@@ -34,7 +34,7 @@ cp soundctl ~/.local/bin/
 ### Dependencies
 
 Soundctl requires:
-- **Go 1.22** or higher
+- **Go 1.26** or higher
 - **PulseAudio** or **PipeWire** with `pactl` command
 - A terminal emulator that supports ANSI colors
 

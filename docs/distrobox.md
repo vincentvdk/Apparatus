@@ -45,8 +45,8 @@ distrobox create -n isolated-dev -i ghcr.io/vincentvdk/apparatus-box:latest --ho
 | Image | Description |
 |-------|-------------|
 | `ghcr.io/vincentvdk/apparatus-box:latest` | Default Apparatus distrobox image with development tools |
-| `docker.io/fedora:43` | Vanilla Fedora 43 |
-| `docker.io/ublue-os/fedora:43` | UBlue Fedora base |
+| `docker.io/fedora:45` | Vanilla Fedora 45 |
+| `docker.io/ublue-os/fedora:45` | UBlue Fedora base |
 | Any OCI-compatible image | Use any Podman-compatible image |
 
 ## Entering a Distrobox
@@ -135,13 +135,18 @@ butler sync mybox
 
 ### What Gets Synced
 
-- Terminal configurations (Kitty, Alacritty)
-- Window manager configurations (Hyprland)
+Configs are synced with `rsync -a --delete` (full sync, file modes and symlinks preserved) to each box's config dir: `~/.config/apparatus-box/` for shared-home boxes, `<box home>/.config/` for custom-home boxes.
+
+- Terminal configurations (Kitty)
 - Status bar configurations (Waybar)
 - Notification configurations (Mako)
-- Theme configurations
+- Walker, UWSM, Satty, Atuin configurations
 - Shell configurations (Zsh)
 - Editor configurations (Neovim)
+
+Hyprland is host-only and is **not** synced into distroboxes.
+
+Themes are never copied: `/usr/share/apparatus/themes/` stays the single source of truth and every themed tool inside the box (kitty, waybar, mako, satty, nvim) is symlinked to the host's active theme.
 
 ### Skip List
 

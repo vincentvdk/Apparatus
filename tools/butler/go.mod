@@ -1,6 +1,6 @@
-module github.com/vinintvdk/apparatus/tools/butler
+module github.com/vincentvdk/apparatus/tools/butler
 
-go 1.22
+go 1.26
 
 require (
 	github.com/charmbracelet/bubbles v0.20.0

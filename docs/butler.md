@@ -153,7 +153,6 @@ Butler syncs these configurations from the host to distroboxes:
 
 | Configuration | Description |
 |--------------|-------------|
-| hypr/ | Hyprland window manager configuration |
 | kitty/ | Kitty terminal configuration |
 | waybar/ | Waybar status bar configuration |
 | mako/ | Mako notification configuration |
@@ -163,14 +162,19 @@ Butler syncs these configurations from the host to distroboxes:
 | atuin/ | Atuin shell history configuration |
 | nvim/ | Neovim editor configuration |
 | zsh/ | Zsh shell configuration |
-| themes/ | Color theme configurations |
+| themes/ | Symlinked to `/usr/share/apparatus/themes/` — never copied |
+
+`hypr/` is host-only (Hyprland never runs inside a distrobox) and is not synced.
 
 ### How Sync Works
 
 1. **Source**: Configurations are sourced from `/usr/share/apparatus/` on the host
-2. **Destination**: Configurations are copied to each distrobox's `~/.config/` directory
-3. **Skip List**: Distroboxes in the skip list are not synced
-4. **No Overwrite**: Existing files are replaced (full sync, not merge)
+2. **Destination**: Synced with `rsync -a --delete` to `~/.config/apparatus-box/` for shared-home boxes, or `<box home>/.config/` for custom-home boxes
+3. **Themes**: Every themed tool in the box (kitty, waybar, mako, satty, nvim) is symlinked to the host's active theme in `/usr/share/apparatus/themes/<theme>/`; `<config>/apparatus/themes` itself is a symlink to `/usr/share/apparatus/themes`
+4. **Skip List**: Distroboxes in the skip list are not synced
+5. **No Overwrite**: Existing files are replaced (full sync, not merge)
+
+`butler sync` and `butler sync <name>` use the same code path, including theme links.
 
 ### Managing the Skip List
 

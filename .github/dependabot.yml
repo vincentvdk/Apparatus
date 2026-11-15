@@ -9,3 +9,11 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/tools/butler"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/tools/soundctl"
+    schedule:
+      interval: "weekly"

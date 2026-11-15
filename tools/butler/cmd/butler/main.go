@@ -326,108 +326,35 @@ func applyFontCLI(fontName string) {
 	fmt.Printf("Font applied: %s\n", fontName)
 }
 
-// syncConfigsToDistroboxCLI syncs configs to a specific distrobox
+// syncConfigsToDistroboxCLI syncs configs to a specific distrobox, using the
+// same code path as the TUI sync (theme links included)
 func syncConfigsToDistroboxCLI(name string) (string, error) {
-	// Get the distrobox info
 	homeDir, err := getDistroboxHomeDirCLI(name)
 	if err != nil {
-		return "", fmt.Errorf("failed to get home dir for %s: %v", name, err)
+		return "", err
 	}
-	
-	src := "/usr/share/apparatus"
-	dst := homeDir
-	if dst == "" {
-		dst = filepath.Join("/home", name, ".config")
-	} else {
-		dst = filepath.Join(dst, ".config")
-	}
-	
-	// Ensure destination exists
-	if err := os.MkdirAll(dst, 0755); err != nil {
-		return "", fmt.Errorf("failed to create config dir: %v", err)
-	}
-	
-	// Sync configs
-	configs := syncConfigDirs()
-	var output strings.Builder
-	
-	for _, config := range configs {
-		srcPath := filepath.Join(src, config)
-		dstPath := filepath.Join(dst, config)
-		
-		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
-			continue
-		}
-		
-		os.RemoveAll(dstPath)
-		if err := copyDirCLI(srcPath, dstPath); err != nil {
-			return output.String(), fmt.Errorf("failed to copy %s: %v", config, err)
-		}
-		output.WriteString(fmt.Sprintf("Synced %s\n", config))
-	}
-	
-	// Sync themes
-	themesSrc := filepath.Join(src, "themes")
-	themesDst := filepath.Join(dst, "apparatus", "themes")
-	os.RemoveAll(themesDst)
-	if err := copyDirCLI(themesSrc, themesDst); err != nil {
-		return output.String(), fmt.Errorf("failed to copy themes: %v", err)
-	}
-	output.WriteString("Synced themes\n")
-	
-	return output.String(), nil
+	return syncConfigToDistrobox(distroboxInfo{Name: name, HomeDir: homeDir})
 }
 
-// getDistroboxHomeDirCLI returns the home directory for a distrobox
+// getDistroboxHomeDirCLI returns the home directory for a distrobox.
+// Empty string with nil error means the box shares the host home.
 func getDistroboxHomeDirCLI(name string) (string, error) {
 	cmd := exec.Command("podman", "inspect", name, "--format", "{{json .Args}}")
 	output, err := cmd.Output()
 	if err != nil {
-		return "", nil
+		return "", fmt.Errorf("podman inspect %s: %v", name, err)
 	}
-	
+
 	var args []string
-	if err := json.Unmarshal(output, &args); err == nil {
-		for i, arg := range args {
-			if arg == "--home" && i+1 < len(args) {
-				return args[i+1], nil
-			}
+	if err := json.Unmarshal(output, &args); err != nil {
+		return "", fmt.Errorf("parsing podman inspect output for %s: %v", name, err)
+	}
+	for i, arg := range args {
+		if arg == "--home" && i+1 < len(args) {
+			return args[i+1], nil
 		}
 	}
 	return "", nil
-}
-
-// copyDirCLI copies a directory tree from src to dst
-func copyDirCLI(src, dst string) error {
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-	
-	if err := os.MkdirAll(dst, 0755); err != nil {
-		return err
-	}
-	
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
-		
-		if entry.IsDir() {
-			if err := copyDirCLI(srcPath, dstPath); err != nil {
-				return err
-			}
-		} else {
-			data, err := os.ReadFile(srcPath)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(dstPath, data, 0644); err != nil {
-				return err
-			}
-		}
-	}
-	
-	return nil
 }
 
 // modeString returns a display name for the mode

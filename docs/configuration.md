@@ -323,10 +323,10 @@ cp -r /usr/share/apparatus/hypr ~/.config/
    butler sync
    ```
 
-2. Or edit directly in the distrobox:
+2. Or edit directly in the distrobox (note: `hypr/` is host-only and is not synced into boxes):
    ```bash
    distrobox enter mybox
-   nvim ~/.config/hypr/hyprland.lua
+   nvim ~/.config/kitty/kitty.conf
    ```
 
 3. Add to skip list if you want to maintain custom configs:

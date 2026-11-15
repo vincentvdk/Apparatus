@@ -724,9 +724,9 @@ func (m *osModel) executeCreateDistrobox(homeMode string) tea.Cmd {
 				customHome = name
 			}
 			homeDir := fmt.Sprintf("%s/distrobox-homes/%s", os.Getenv("HOME"), customHome)
-			output, err = runCommand("distrobox", "create", "-i", "ghcr.io/vinintvdk/apparatus-box:latest", "-n", name, "--home", homeDir)
+			output, err = runCommand("distrobox", "create", "-i", "ghcr.io/vincentvdk/apparatus-box:latest", "-n", name, "--home", homeDir)
 		} else {
-			output, err = runCommand("distrobox", "create", "-i", "ghcr.io/vinintvdk/apparatus-box:latest", "-n", name)
+			output, err = runCommand("distrobox", "create", "-i", "ghcr.io/vincentvdk/apparatus-box:latest", "-n", name)
 		}
 
 		if err != nil {
@@ -770,7 +770,7 @@ func (m *osModel) executeUpgradeDistrobox(action string) tea.Cmd {
 				}
 			}
 
-			image := "ghcr.io/vinintvdk/apparatus-box:latest"
+			image := "ghcr.io/vincentvdk/apparatus-box:latest"
 			var homeArg string
 			if homeDir != "" {
 				homeArg = "--home " + homeDir
@@ -1055,13 +1055,13 @@ func syncConfigsToAllDistroboxes() (string, error) {
 			continue
 		}
 		
-		err := syncConfigToDistrobox(db)
+		detail, err := syncConfigToDistrobox(db)
 		if err != nil {
 			failed = append(failed, db.Name)
 			output.WriteString(fmt.Sprintf("Failed to sync %s: %v\n", db.Name, err))
 		} else {
 			synced = append(synced, db.Name)
-			output.WriteString(fmt.Sprintf("Synced %s\n", db.Name))
+			output.WriteString(fmt.Sprintf("Synced %s\n%s", db.Name, detail))
 		}
 	}
 	
@@ -1128,32 +1128,28 @@ func getAllDistroboxes() ([]distroboxInfo, error) {
 	return distroboxes, nil
 }
 
-// getDistroboxHomeDir returns the home directory for a distrobox
+// getDistroboxHomeDir returns the home directory for a distrobox.
+// An empty home dir with a nil error means the box shares the host home
+// (no --home argument was passed to distrobox create).
 func getDistroboxHomeDir(name string) (string, error) {
-	// Try to get home directory from podman inspect
 	cmd := exec.Command("podman", "inspect", name, "--format", "{{json .Args}}")
 	output, err := cmd.Output()
 	if err != nil {
-		// If podman inspect fails, try distrobox
-		cmd := exec.Command("distrobox", "inspect", name)
-		output, err = cmd.Output()
-		if err != nil {
-			// If we can't get home dir, return empty string
-			return "", nil
-		}
+		return "", fmt.Errorf("podman inspect %s: %v", name, err)
 	}
-	
+
 	// Parse JSON output to find --home argument
 	var args []string
-	if err := json.Unmarshal(output, &args); err == nil {
-		for i, arg := range args {
-			if arg == "--home" && i+1 < len(args) {
-				return args[i+1], nil
-			}
+	if err := json.Unmarshal(output, &args); err != nil {
+		return "", fmt.Errorf("parsing podman inspect output for %s: %v", name, err)
+	}
+	for i, arg := range args {
+		if arg == "--home" && i+1 < len(args) {
+			return args[i+1], nil
 		}
 	}
-	
-	// If no --home argument found, return empty string (will use default)
+
+	// No --home argument: shared home with the host
 	return "", nil
 }
 
@@ -1227,187 +1223,117 @@ func syncConfigDirs() []string {
 	return dirs
 }
 
-// syncConfigToDistrobox syncs configs to a single distrobox
-func syncConfigToDistrobox(db distroboxInfo) error {
+// syncConfigToDistrobox syncs configs to a single distrobox. Config dirs are
+// rsync'd (preserving modes and symlinks); themes are never copied -- the box
+// gets a symlink to /usr/share/apparatus/themes and every themed tool is
+// linked to the host's currently active theme.
+func syncConfigToDistrobox(db distroboxInfo) (string, error) {
 	src := "/usr/share/apparatus"
-	
-	// Determine destination
-	dst := db.HomeDir
-	if dst == "" {
-		// No custom home, use default
-		dst = filepath.Join("/home", db.Name, ".config")
-	} else {
-		dst = filepath.Join(dst, ".config")
-	}
-	
-	// Ensure destination exists
-	if err := os.MkdirAll(dst, 0755); err != nil {
-		return fmt.Errorf("failed to create config dir: %v", err)
-	}
-	
-	// Config directories to sync
-	configs := syncConfigDirs()
 
-	for _, config := range configs {
+	// Destination: custom-home boxes have their own home dir; shared-home
+	// boxes keep configs in ~/.config/apparatus-box on the host home (see
+	// box/system/profile-custom.sh).
+	var dst string
+	if db.HomeDir == "" {
+		hostHome, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to get host home dir: %v", err)
+		}
+		dst = filepath.Join(hostHome, ".config", "apparatus-box")
+	} else {
+		dst = filepath.Join(db.HomeDir, ".config")
+	}
+
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		return "", fmt.Errorf("failed to create config dir: %v", err)
+	}
+
+	var output strings.Builder
+
+	for _, config := range syncConfigDirs() {
 		srcPath := filepath.Join(src, config)
-		dstPath := filepath.Join(dst, config)
-		
-		// Check if source exists
 		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
 			continue
 		}
-		
-		// Remove existing destination
-		os.RemoveAll(dstPath)
-		
-		// Copy directory
-		if err := copyDir(srcPath, dstPath); err != nil {
-			return fmt.Errorf("failed to copy %s: %v", config, err)
+		dstPath := filepath.Join(dst, config)
+		if out, err := runCommand("rsync", "-a", "--delete", srcPath+"/", dstPath); err != nil {
+			return output.String(), fmt.Errorf("failed to sync %s: %v: %s", config, err, out)
 		}
+		output.WriteString(fmt.Sprintf("Synced %s\n", config))
 	}
-	
-	// Sync themes
+
+	// Themes: single source of truth, linked not copied. The target
+	// /usr/share/apparatus/themes exists both on the host and inside the
+	// box image, so the link resolves correctly in both.
 	themesSrc := filepath.Join(src, "themes")
-	themesDst := filepath.Join(dst, "apparatus", "themes")
-	os.RemoveAll(themesDst)
-	if err := copyDir(themesSrc, themesDst); err != nil {
-		return fmt.Errorf("failed to copy themes: %v", err)
+	themesLink := filepath.Join(dst, "apparatus", "themes")
+	if err := os.MkdirAll(filepath.Dir(themesLink), 0755); err != nil {
+		return output.String(), fmt.Errorf("failed to create apparatus config dir: %v", err)
+	}
+	os.RemoveAll(themesLink) // drop a real dir left behind by older syncs
+	if err := os.Symlink(themesSrc, themesLink); err != nil {
+		return output.String(), fmt.Errorf("failed to link themes dir: %v", err)
 	}
 
-
-	// Get available themes and default theme name
-	themes, err := os.ReadDir(themesDst)
-	if err != nil {
-		return fmt.Errorf("failed to read themes directory: %v", err)
+	// Link every themed tool to the host's active theme. Links are staged as
+	// ".new" siblings and committed with atomic renames, so a failure never
+	// leaves the box half on the old theme.
+	themeName := currentThemeName()
+	if themeName == "" {
+		entries, err := os.ReadDir(themesSrc)
+		if err != nil || len(entries) == 0 {
+			return output.String(), fmt.Errorf("no active theme and no themes in %s", themesSrc)
+		}
+		themeName = entries[0].Name()
+	}
+	themeDir := filepath.Join(themesSrc, themeName)
+	if _, err := os.Stat(themeDir); err != nil {
+		return output.String(), fmt.Errorf("active theme %s not found in %s", themeName, themesSrc)
 	}
 
-	// Use first available theme, or default to catppuccin-mocha
-	defaultTheme := "catppuccin-mocha"
-	if len(themes) > 0 && themes[0].IsDir() {
-		defaultTheme = themes[0].Name()
+	// box config path -> theme file within the theme dir
+	themeLinks := []struct{ target, file string }{
+		{filepath.Join(dst, "kitty", "theme.conf"), "kitty.conf"},
+		{filepath.Join(dst, "waybar", "theme.css"), "waybar.css"},
+		{filepath.Join(dst, "mako", "config"), "mako.conf"},
+		{filepath.Join(dst, "hypr", "theme.conf"), "hyprland.conf"},
+		{filepath.Join(dst, "satty", "overrides.css"), filepath.Join("satty", "overrides.css")},
+		{filepath.Join(dst, "nvim", "lua", "config", "theme.lua"), "nvim.lua"},
 	}
 
-	// Try to read current theme from distrobox's apparatus config
-	// First check the destination (distrobox) for current-theme
-	currentThemeFile := filepath.Join(dst, "..", "apparatus", "current-theme")
-	if data, err := os.ReadFile(currentThemeFile); err == nil {
-		defaultTheme = strings.TrimSpace(string(data))
-	} else {
-		// Fall back to host's current theme
-		if homeDir, err := os.UserHomeDir(); err == nil {
-			if data, err := os.ReadFile(filepath.Join(homeDir, ".config", "apparatus", "current-theme")); err == nil {
-				defaultTheme = strings.TrimSpace(string(data))
-			}
+	var pending []stagedSwap
+	rollback := func() {
+		for _, s := range pending {
+			os.Remove(s.staged)
 		}
 	}
-
-	// Apply kitty theme symlink
-	kittyDir := filepath.Join(dst, "kitty")
-	if _, err := os.Stat(kittyDir); err == nil {
-		kittyTheme := filepath.Join(kittyDir, "theme.conf")
-		os.Remove(kittyTheme)
-		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "kitty.conf")
-		if err := os.Symlink(relPath, kittyTheme); err != nil {
-			return fmt.Errorf("failed to create kitty theme.conf symlink: %v", err)
+	for _, l := range themeLinks {
+		source := filepath.Join(themeDir, l.file)
+		// skip tools whose config dir is not synced into this box (hypr is
+		// host-only by default) or whose theme file does not exist
+		if _, err := os.Stat(filepath.Dir(l.target)); err != nil {
+			continue
+		}
+		if _, err := os.Stat(source); err != nil {
+			continue
+		}
+		s, err := stageSymlink(source, l.target)
+		if err != nil {
+			rollback()
+			return output.String(), err
+		}
+		pending = append(pending, s)
+	}
+	for _, s := range pending {
+		if err := os.Rename(s.staged, s.target); err != nil {
+			rollback()
+			return output.String(), fmt.Errorf("committing %s: %v", filepath.Base(s.target), err)
 		}
 	}
+	output.WriteString(fmt.Sprintf("Linked theme %s\n", themeName))
 
-	// Apply waybar theme symlink
-	// The style.css uses @import "theme.css", so we need to create this symlink
-	waybarDir := filepath.Join(dst, "waybar")
-	if _, err := os.Stat(waybarDir); err == nil {
-		themeCSS := filepath.Join(waybarDir, "theme.css")
-		os.Remove(themeCSS)
-		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "waybar.css")
-		if err := os.Symlink(relPath, themeCSS); err != nil {
-			return fmt.Errorf("failed to create waybar theme.css symlink: %v", err)
-		}
-	}
-
-	// Apply mako theme symlink (mako uses config file directly, not a separate theme file)
-	makoDir := filepath.Join(dst, "mako")
-	if _, err := os.Stat(makoDir); err == nil {
-		makoConf := filepath.Join(makoDir, "config")
-		os.Remove(makoConf)
-		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "mako.conf")
-		if err := os.Symlink(relPath, makoConf); err != nil {
-			return fmt.Errorf("failed to create mako config symlink: %v", err)
-		}
-	}
-
-	// Apply hyprland theme symlink
-	hyprDir := filepath.Join(dst, "hypr")
-	if _, err := os.Stat(hyprDir); err == nil {
-		hyprTheme := filepath.Join(hyprDir, "theme.conf")
-		os.Remove(hyprTheme)
-		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "hyprland.conf")
-		if err := os.Symlink(relPath, hyprTheme); err != nil {
-			return fmt.Errorf("failed to create hyprland theme.conf symlink: %v", err)
-		}
-	}
-
-	// Apply satty theme symlink
-	sattyDir := filepath.Join(dst, "satty")
-	if _, err := os.Stat(sattyDir); err == nil {
-		sattyCSS := filepath.Join(sattyDir, "overrides.css")
-		os.Remove(sattyCSS)
-		relPath := filepath.Join("..", "apparatus", "themes", defaultTheme, "satty", "overrides.css")
-		if err := os.Symlink(relPath, sattyCSS); err != nil {
-			return fmt.Errorf("failed to create satty overrides.css symlink: %v", err)
-		}
-	}
-
-	// Apply nvim theme
-	nvimThemeDir := filepath.Join(dst, "nvim", "lua", "config")
-	if _, err := os.Stat(nvimThemeDir); err == nil {
-		nvimTheme := filepath.Join(nvimThemeDir, "theme.lua")
-		themeFile := filepath.Join(themesDst, defaultTheme, "nvim.lua")
-		if _, err := os.Stat(themeFile); err == nil {
-			if data, err := os.ReadFile(themeFile); err == nil {
-				os.WriteFile(nvimTheme, data, 0644)
-			}
-		}
-	}
-
-	return nil
+	return output.String(), nil
 }
-
-// copyDir copies a directory tree from src to dst
-func copyDir(src, dst string) error {
-	// Get all files in src
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-	
-	// Create destination directory
-	if err := os.MkdirAll(dst, 0755); err != nil {
-		return err
-	}
-	
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
-		
-		if entry.IsDir() {
-			if err := copyDir(srcPath, dstPath); err != nil {
-				return err
-			}
-		} else {
-			// Copy file
-			data, err := os.ReadFile(srcPath)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(dstPath, data, 0644); err != nil {
-				return err
-			}
-		}
-	}
-	
-	return nil
-}
-
 
 // stagedSwap is a config target whose replacement has been written to a
 // sibling ".new" path, ready to be committed with a single atomic rename.

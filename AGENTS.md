@@ -39,16 +39,18 @@ Apparatus OS implements a unified configuration management system that allows th
 
 ### Implementation Details
 - **Source of truth**: `/usr/share/apparatus/` on the host contains all system configs
-- **Sync mechanism**: `butler sync` command copies configs to all distroboxes
+- **Sync mechanism**: `butler sync` rsyncs (`rsync -a --delete`) configs to all distroboxes; `butler sync <name>` uses the same code path for one box
+- **Destinations**: shared-home boxes → `~/.config/apparatus-box/`; custom-home boxes → `<box home>/.config/`
+- **Themes**: stored once in `/usr/share/apparatus/themes/`; tools inside boxes are symlinked to the host's active theme, never copied
 - **Skip list**: `~/.config/apparatus/skip-distroboxes` allows excluding specific distroboxes
-- **Initial sync**: Distroboxes automatically sync on first login via `init.sh`
-- **Config locations**: `~/.config/{hypr,kitty,waybar,mako,satty,atuin,nvim,zsh,uwsm,walker}/`
+- **Config list override**: `~/.config/apparatus/sync-configs` replaces the default synced dir list
+- **Initial sync**: NOT automatic — run `butler sync` after creating a box
+- **Config locations synced**: `~/.config/{kitty,waybar,mako,satty,atuin,nvim,zsh,uwsm,walker}/` (`hypr` is host-only, not synced)
 
 ### Files Modified
-- `tools/cmd/butler/os_mode.go` - Sync functions, skip list management, TUI menu items
-- `tools/cmd/butler/main.go` - CLI sync command, helper functions
-- `box/bin/init.sh` - Initial config sync on distrobox startup
-- `box/Containerfile` - Copy all configs during container build
+- `tools/butler/cmd/butler/os_mode.go` - Sync functions, skip list management, TUI menu items
+- `tools/butler/cmd/butler/main.go` - CLI sync command
+- `box/Containerfile` - Copy all configs + themes into the image at `/usr/share/apparatus/`
 
 ### Usage
 ```bash

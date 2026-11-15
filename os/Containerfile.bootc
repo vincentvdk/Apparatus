@@ -3,10 +3,10 @@
 #
 # Build: podman build -f os/Containerfile.bootc -t apparatus-os .
 
-ARG FEDORA_VERSION="43"
+ARG FEDORA_VERSION="45"
 ARG BASE_IMAGE="quay.io/fedora/fedora-bootc"
 ARG APPARATUS_VERSION="dev"
-ARG SILVERBLUE_VERSION="43"
+ARG SILVERBLUE_VERSION="45"
 
 # == Delivery stage for build files
 FROM ${BASE_IMAGE}:${FEDORA_VERSION} AS delivery

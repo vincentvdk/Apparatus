@@ -44,7 +44,7 @@ set_version() {
     echo "${TOOL} is not installed"
     return 1
   fi
-  # Output versions for selection (butler-tools will handle the UI)
+  # Output versions for selection (butler box mode handles the UI)
   for v in "${AVAILABLE_VERSIONS[@]}"; do
     echo "$v"
   done
