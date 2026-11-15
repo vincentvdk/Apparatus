@@ -74,6 +74,39 @@ func currentThemeName() string {
 	return strings.TrimSpace(string(data))
 }
 
+// getThemesDir returns the directory holding the available themes. On the
+// host that's /usr/share/apparatus/themes. Inside a distrobox the host root
+// is mounted at /run/host, so themes come from the host's live copy there --
+// deliberately no fallback to the image's copy.
+func getThemesDir() string {
+	if _, err := os.Stat("/run/.containerenv"); err == nil {
+		return "/run/host/usr/share/apparatus/themes"
+	}
+	return "/usr/share/apparatus/themes"
+}
+
+// themeIsDark reports whether a theme is dark, derived from the background
+// color in its colors.json (perceived luminance below the midpoint = dark).
+// Falls back to a name-based guess when colors.json is missing or invalid.
+func themeIsDark(themeName string) bool {
+	data, err := os.ReadFile(filepath.Join(getThemesDir(), themeName, "colors.json"))
+	if err == nil {
+		var c struct {
+			Background string `json:"background"`
+		}
+		if json.Unmarshal(data, &c) == nil && len(c.Background) == 7 && c.Background[0] == '#' {
+			var r, g, b int
+			if _, err := fmt.Sscanf(c.Background[1:], "%02x%02x%02x", &r, &g, &b); err == nil {
+				lum := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)
+				return lum < 128
+			}
+		}
+	}
+	return strings.Contains(themeName, "mocha") || strings.Contains(themeName, "night") ||
+		strings.Contains(themeName, "storm") || strings.Contains(themeName, "moon") ||
+		strings.Contains(themeName, "dark")
+}
+
 // currentFontName reads the font name butler last wrote via applyFont(), for
 // display only.
 func currentFontName() string {
@@ -293,7 +326,7 @@ func detectMode() Mode {
 
 // applyThemeCLI applies a theme from the command line
 func applyThemeCLI(themeName string) {
-	themesDir := "/usr/share/apparatus/themes"
+	themesDir := getThemesDir()
 	themePath := fmt.Sprintf("%s/%s", themesDir, themeName)
 
 	if _, err := os.Stat(themePath); os.IsNotExist(err) {
@@ -334,6 +367,16 @@ func syncConfigsToDistroboxCLI(name string) (string, error) {
 		return "", err
 	}
 	return syncConfigToDistrobox(distroboxInfo{Name: name, HomeDir: homeDir})
+}
+
+// pushConfigsFromDistroboxCLI pushes configs from a specific distrobox back
+// to the host's ~/.config (chezmoi source of truth for upstream commits)
+func pushConfigsFromDistroboxCLI(name string) (string, error) {
+	homeDir, err := getDistroboxHomeDirCLI(name)
+	if err != nil {
+		return "", err
+	}
+	return pushConfigFromDistrobox(distroboxInfo{Name: name, HomeDir: homeDir})
 }
 
 // getDistroboxHomeDirCLI returns the home directory for a distrobox.
@@ -382,7 +425,8 @@ func printUsage() {
 	fmt.Println("  theme <name>   Apply theme (catppuccin-mocha, catppuccin-latte,")
 	fmt.Println("                  tokyonight-night, tokyonight-storm, tokyonight-moon, tokyonight-day)")
 	fmt.Println("  font <name>   Apply font (ioskeley-mono, jetbrains-mono, hack-nerd-font)")
-	fmt.Println("  sync [name]    Sync configs to all distroboxes (or specific one)")
+	fmt.Println("  sync [name]    Sync configs from host to all distroboxes (or specific one)")
+	fmt.Println("  push [name]    Push config changes from distroboxes back to host (chezmoi)")
 	fmt.Println()
 	fmt.Println("If no mode is specified, butler auto-detects the environment.")
 	fmt.Println("Override with APPARATUS_MODE=os or APPARATUS_MODE=box.")
@@ -393,6 +437,7 @@ func printUsage() {
 	fmt.Println("  butler box      # Force box mode, launch TUI")
 	fmt.Println("  butler sync     # Sync configs to all distroboxes")
 	fmt.Println("  butler sync mybox  # Sync configs to specific distrobox")
+	fmt.Println("  butler push mybox  # Push config changes from mybox back to host")
 	fmt.Println("  APPARATUS_MODE=box butler  # Override via env var")
 }
 
@@ -435,6 +480,25 @@ func main() {
 			} else {
 				// Sync all distroboxes
 				output, err := syncConfigsToAllDistroboxes()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n%s\n", err, output)
+					os.Exit(1)
+				}
+				fmt.Println(output)
+			}
+			os.Exit(0)
+		case "push":
+			if len(os.Args) > 2 {
+				// Push from a specific distrobox
+				output, err := pushConfigsFromDistroboxCLI(os.Args[2])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n%s\n", err, output)
+					os.Exit(1)
+				}
+				fmt.Println(output)
+			} else {
+				// Push from all distroboxes
+				output, err := pushConfigsFromAllDistroboxes()
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error: %v\n%s\n", err, output)
 					os.Exit(1)

@@ -27,18 +27,31 @@ Distrobox containers:
    - **Default home (~)**: Shares your user's home directory with the container
    - **Custom home folder**: Creates a dedicated home directory in `~/distrobox-homes/`
 
-### Using Command Line
+### Using distrobox-assemble (Recommended)
+
+Boxes are defined declaratively in `~/.config/distrobox/distrobox.ini` (seeded from `/usr/share/apparatus/distrobox.ini` on first boot). Creating a box adds a section to the manifest and assembles it — the box's `init_hooks` sync the host configs (including theme links) at creation time:
 
 ```bash
-# Using default image
-distrobox create -n mybox
+# Create a new box (adds [mybox] to the manifest, then assembles)
+just create-box mybox
 
-# Using specific image
-distrobox create -n python-dev -i ghcr.io/vincentvdk/apparatus-box:latest
-
-# Using custom home directory
-distrobox create -n isolated-dev -i ghcr.io/vincentvdk/apparatus-box:latest --home ~/distrobox-homes/isolated-dev
+# Create/recreate every box in the manifest
+just assemble-boxes
+# or directly:
+distrobox-assemble create --file ~/.config/distrobox/distrobox.ini
 ```
+
+To use a custom home directory, add the box to the manifest with a `home =` line:
+
+```ini
+[isolated-dev]
+image = ghcr.io/vincentvdk/apparatus-box:latest
+home = /home/YOURUSER/distrobox-homes/isolated-dev
+pull = true
+init_hooks = distrobox-host-exec butler sync isolated-dev
+```
+
+Raw `distrobox create` still works for one-off containers, but they won't get configs synced automatically — run `butler sync <name>` after creating one.
 
 ## Available Container Images
 
@@ -131,6 +144,9 @@ butler sync
 
 # Sync to specific distrobox
 butler sync mybox
+
+# Push config changes made inside a box back to the host (trickles upstream via chezmoi)
+butler push mybox
 ```
 
 ### What Gets Synced
@@ -140,7 +156,7 @@ Configs are synced with `rsync -a --delete` (full sync, file modes and symlinks 
 - Terminal configurations (Kitty)
 - Status bar configurations (Waybar)
 - Notification configurations (Mako)
-- Walker, UWSM, Satty, Atuin configurations
+- Walker, UWSM, Satty, Atuin, Rio configurations
 - Shell configurations (Zsh)
 - Editor configurations (Neovim)
 
@@ -193,21 +209,21 @@ cd ~/projects/myapp  # Same directory
 
 ### With Custom Home
 
-Home directory is separate. Use `/host` to access host filesystem:
+Home directory is separate. Use `/run/host` to access host filesystem:
 
 ```bash
 # In distrobox (custom home)
-ls /host/home/youruser/projects
+ls /run/host/home/youruser/projects
 ```
 
 ### Explicit File Copying
 
 ```bash
 # Copy from host to container
-distrobox enter mybox -- cp /host/path/to/file ./
+distrobox enter mybox -- cp /run/host/path/to/file ./
 
 # Copy from container to host
-distrobox enter mybox -- cp ./file /host/path/to/destination
+distrobox enter mybox -- cp ./file /run/host/path/to/destination
 ```
 
 ## Package Management
@@ -234,7 +250,7 @@ sudo dnf search <package>
 
 ```bash
 # Create a Python distrobox
-distrobox create -n python-dev -i ghcr.io/vincentvdk/apparatus-box:latest
+just create-box python-dev
 
 # Enter and set up
 distrobox enter python-dev
@@ -252,7 +268,7 @@ pip install -r requirements.txt
 
 ```bash
 # Create a Node.js distrobox
-distrobox create -n node-dev -i ghcr.io/vincentvdk/apparatus-box:latest
+just create-box node-dev
 
 # Enter and install Node.js
 distrobox enter node-dev
@@ -268,7 +284,7 @@ npm --version
 
 ```bash
 # Create a Rust distrobox
-distrobox create -n rust-dev -i ghcr.io/vincentvdk/apparatus-box:latest
+just create-box rust-dev
 
 # Enter and install Rust
 distrobox enter rust-dev

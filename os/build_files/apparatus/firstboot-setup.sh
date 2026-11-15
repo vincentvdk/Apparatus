@@ -26,6 +26,12 @@ mkdir -p "$USER_HOME"/.config/satty
 mkdir -p "$USER_HOME"/.config/apparatus
 mkdir -p "$USER_HOME"/.local/state/apparatus
 
+# Seed distrobox-assemble manifest (user-editable copy; do not overwrite)
+mkdir -p "$USER_HOME"/.config/distrobox
+if [ ! -f "$USER_HOME"/.config/distrobox/distrobox.ini ]; then
+    cp /usr/share/apparatus/distrobox.ini "$USER_HOME"/.config/distrobox/distrobox.ini
+fi
+
 # Copy configs
 cp /usr/share/apparatus/hypr/* "$USER_HOME"/.config/hypr/
 cp /usr/share/apparatus/waybar/* "$USER_HOME"/.config/waybar/

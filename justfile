@@ -71,6 +71,19 @@ push-box:
 # Build and push distrobox to GHCR
 build-push-box: build-box push-box
 
-# Create a new distrobox from the image (usage: just create-box mybox)
+# Create/recreate all distroboxes from the assemble manifest
+assemble-boxes:
+    distrobox-assemble create --file ~/.config/distrobox/distrobox.ini
+
+# Create a new distrobox (usage: just create-box mybox)
+# Adds the box to ~/.config/distrobox/distrobox.ini, then assembles it
 create-box name:
-    distrobox create --image ghcr.io/vincentvdk/apparatus-box:latest --name {{name}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ini="$HOME/.config/distrobox/distrobox.ini"
+    mkdir -p "$(dirname "$ini")"
+    touch "$ini"
+    if ! grep -q "^\[{{name}}\]" "$ini"; then
+        printf '\n[%s]\nimage = ghcr.io/vincentvdk/apparatus-box:latest\npull = true\ninit_hooks = distrobox-host-exec butler sync %s\n' "{{name}}" "{{name}}" >> "$ini"
+    fi
+    distrobox-assemble create --file "$ini"

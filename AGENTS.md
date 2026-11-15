@@ -38,10 +38,11 @@ docs/
 Apparatus OS implements a unified configuration management system that allows the host OS to manage and sync configs to all distroboxes. This ensures consistency across all development environments.
 
 ### Implementation Details
-- **Source of truth**: `/usr/share/apparatus/` on the host contains all system configs
-- **Sync mechanism**: `butler sync` rsyncs (`rsync -a --delete`) configs to all distroboxes; `butler sync <name>` uses the same code path for one box
+- **Source of truth**: the `apparatus-dotfiles` repo (chezmoi) is the upstream source; `/usr/share/apparatus/` on the host holds the system defaults baked at OS build; `~/.config/` holds the live chezmoi-applied config
+- **Sync mechanism**: `butler sync` rsyncs (`rsync -a --delete`) configs to all distroboxes, sourcing each dir from `~/.config/<dir>` first, falling back to `/usr/share/apparatus/<dir>`; `butler sync <name>` uses the same code path for one box
+- **Reverse sync (upstream)**: `butler push [name]` rsyncs a box's configs back to host `~/.config` (theme-link files excluded), then commit via chezmoi to `apparatus-dotfiles` and `butler sync` to distribute
 - **Destinations**: shared-home boxes → `~/.config/apparatus-box/`; custom-home boxes → `<box home>/.config/`
-- **Themes**: stored once in `/usr/share/apparatus/themes/`; tools inside boxes are symlinked to the host's active theme, never copied
+- **Themes**: stored once in `/usr/share/apparatus/themes/` on the host; tools inside boxes are symlinked to the host's active theme via `/run/host/usr/share/apparatus/themes/` (host root mounted in distrobox containers), never copied
 - **Skip list**: `~/.config/apparatus/skip-distroboxes` allows excluding specific distroboxes
 - **Config list override**: `~/.config/apparatus/sync-configs` replaces the default synced dir list
 - **Initial sync**: NOT automatic — run `butler sync` after creating a box

@@ -74,7 +74,6 @@ RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
         d=$(dirname "$f"); b=$(basename "$f"); \
         mv "$f" "$d/.${b#dot_}"; \
     done && \
-    cp -r /tmp/dotfiles/themes /usr/share/apparatus/themes && \
     rm -rf /tmp/dotfiles
 
 ## -- Butler-tools config (not in dotfiles repo)

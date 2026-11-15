@@ -125,8 +125,8 @@ Distrobox containers integrate seamlessly with the host:
 # Create a new distrobox
 butler  # Then use Distrobox menu
 
-# Or via command line
-distrobox create -n mydev -i ghcr.io/vincentvdk/apparatus-box:latest
+# Or via command line (adds to the assemble manifest, then creates)
+just create-box mydev
 
 # Enter a distrobox
 distrobox enter mydev

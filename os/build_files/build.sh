@@ -208,6 +208,8 @@ cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 
 # Image info for ISO installer (like Bluefin)
 mkdir -p /usr/share/apparatus
+# distrobox-assemble manifest, seeded to ~/.config/distrobox/ on first boot
+cp /delivery/build_files/config/distrobox.ini /usr/share/apparatus/distrobox.ini
 cat > /usr/share/apparatus/image-info.json <<EOF
 {
   "image-name": "apparatus-os",

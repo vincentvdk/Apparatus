@@ -248,6 +248,14 @@ RUN git clone --depth=1 "$DOTFILES_REPO" /tmp/dotfiles && \
 | `os/build_files/apparatus/butler.sh` | **REMOVED** - Replaced by golang butler | Low | **DONE** |
 | `box/Containerfile` | Copy all configs, not just CLI tools | Medium | **DONE** |
 
+### Phase 7: Live host config source + reverse sync (DONE)
+
+- `butler sync` sources each config dir from the host's live `~/.config/<dir>` (chezmoi-applied) when present, falling back to `/usr/share/apparatus/<dir>` — host edits reach boxes without an OS rebuild
+- `butler push [name]` (CLI + TUI "⬆ Push Configs") rsyncs a box's configs back to host `~/.config`, excluding theme-link files owned by `applyTheme`; upstream flow: `chezmoi diff` → commit/push `apparatus-dotfiles` → `butler sync`
+- Themes unchanged: single source `/usr/share/apparatus/themes`, linked into boxes via `/run/host` (host root mount in distrobox containers), never copied
+
+---
+
 ## Remaining Work
 
 ### Config Sync Feature

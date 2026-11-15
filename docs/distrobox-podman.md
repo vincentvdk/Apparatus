@@ -14,7 +14,7 @@ Available containers:
 ID           | NAME        | STATUS          | IMAGE
 abc123       | mybox       | Up 2 hours      | fedora:40
 
-To create a new container, use: distrobox create tyop
+To create a new container, use: just create-box tyop
 ```
 
 This wrapper is installed via `/etc/profile.d/distrobox-safe.sh` and only affects `distrobox enter`. All other distrobox commands (`create`, `list`, `rm`, etc.) work normally.

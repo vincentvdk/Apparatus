@@ -380,7 +380,7 @@ This guide covers common issues you might encounter with Apparatus OS and how to
 
 ### Distrobox Not Creating Containers
 
-**Symptom**: `distrobox create` fails.
+**Symptom**: `just create-box` / `distrobox-assemble create` fails.
 
 **Solutions**:
 

@@ -60,7 +60,7 @@ All development work occurs within isolated containers. This ensures that the ho
 
 ```shell
 # Create a dedicated environment for a specific stack (e.g., Go/Kubernetes)
-distrobox create -i ghcr.io/vinintvdk/apparatus-box:latest -n k8s-dev
+just create-box k8s-dev
 
 # Enter the environment to run workloads
 distrobox enter k8s-dev
