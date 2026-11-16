@@ -13,6 +13,7 @@ FROM ${BASE_IMAGE}:${FEDORA_VERSION} AS delivery
 COPY os/build_files /build_files
 COPY os/themes /themes
 COPY tools/butler /tools/butler
+COPY box/distrobox.ini /build_files/config/distrobox.ini
 COPY apparatus.env /build_files/apparatus.env
 
 # == Main image
@@ -30,6 +31,9 @@ RUN --mount=type=bind,from=delivery,source=/,target=/delivery \
     # Install default (host) packages
     dnf install -y cups cups-pdf pcsc-lite pcsc-tools pcsc-lite-ccid rsync && \
     dnf clean all && \
+    # Fedora 45+ ships repo files only in /usr/share/dnf5/repos.d; copy them into
+    # /etc/yum.repos.d so bootc-image-builder's depsolver finds them during ISO builds
+    cp -a /usr/share/dnf5/repos.d/*.repo /etc/yum.repos.d/ && \
     # Run build script (installs all packages, configs, dotfiles, etc.)
     APPARATUS_VERSION="${APPARATUS_VERSION}" /delivery/build_files/build.sh && \
     # Finalize ostree layer (generates required ostree.final-diffid annotation)

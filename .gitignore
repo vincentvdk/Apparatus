@@ -5,3 +5,4 @@ iso-output/
 site/
 /tools/soundctl/soundctl
 /tools/soundctl/cmd/soundctl/soundctl
+/tools/butler/butler

@@ -106,6 +106,9 @@ butler sync
 # Sync configs to a specific distrobox
 butler sync mybox
 
+# Push config changes made inside a distrobox back to the host (chezmoi)
+butler push mybox
+
 # Expected output
 Synced mybox
 Synced dev
@@ -159,6 +162,7 @@ Butler syncs these configurations from the host to distroboxes:
 | walker/ | Walker application launcher configuration |
 | uwsm/ | UWSM window management configuration |
 | satty/ | Satty screenshot tool configuration |
+| rio/ | Rio terminal configuration |
 | atuin/ | Atuin shell history configuration |
 | nvim/ | Neovim editor configuration |
 | zsh/ | Zsh shell configuration |
@@ -168,13 +172,34 @@ Butler syncs these configurations from the host to distroboxes:
 
 ### How Sync Works
 
-1. **Source**: Configurations are sourced from `/usr/share/apparatus/` on the host
+1. **Source**: Per config dir, the effective host config `~/.config/<dir>` (chezmoi-managed) when present, otherwise the system default `/usr/share/apparatus/<dir>` baked in at OS build
 2. **Destination**: Synced with `rsync -a --delete` to `~/.config/apparatus-box/` for shared-home boxes, or `<box home>/.config/` for custom-home boxes
-3. **Themes**: Every themed tool in the box (kitty, waybar, mako, satty, nvim) is symlinked to the host's active theme in `/usr/share/apparatus/themes/<theme>/`; `<config>/apparatus/themes` itself is a symlink to `/usr/share/apparatus/themes`
+3. **Themes**: Every themed tool in the box (kitty, waybar, mako, satty, nvim, rio) is symlinked to the host's active theme via `/run/host/usr/share/apparatus/themes/<theme>/` (the host root mounted inside the box); `<config>/apparatus/themes` itself is a symlink to `/run/host/usr/share/apparatus/themes` — themes are never copied
 4. **Skip List**: Distroboxes in the skip list are not synced
 5. **No Overwrite**: Existing files are replaced (full sync, not merge)
 
 `butler sync` and `butler sync <name>` use the same code path, including theme links.
+
+### Pushing Changes Back (Upstream)
+
+Config changes made **inside a distrobox** can trickle upstream to the central `apparatus-dotfiles` repo:
+
+```bash
+# Push config changes from one box (or all non-skipped boxes) to host ~/.config
+butler push mybox
+butler push
+
+# Or via TUI: "⬆ Push Configs"
+butler
+```
+
+Push rsyncs the box's config dir back to the host's `~/.config` (chezmoi-managed), excluding theme-link files (`theme.conf`, `theme.css`, mako `config`, `overrides.css`, nvim `theme.lua` — those are owned by `butler theme`). Then review and commit upstream:
+
+```bash
+chezmoi diff                       # review what changed
+git -C ~/.local/share/chezmoi add -A && git -C ~/.local/share/chezmoi commit -m "..." && git -C ~/.local/share/chezmoi push
+butler sync                        # distribute to all boxes
+```
 
 ### Managing the Skip List
 

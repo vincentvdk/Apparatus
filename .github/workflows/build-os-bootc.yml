@@ -32,7 +32,10 @@ env:
 jobs:
   build_push:
     name: Build and push image
-    runs-on: ubuntu-latest
+    # ubuntu-24.04 (kernel 6.17): osbuild's MountGuard fails with EACCES on the
+    # kernel 7.0 of ubuntu-26.04 runners (osbuild/osbuild#2579), breaking the
+    # bootc-image-builder ISO step. Pin until osbuild fixes the mount flags.
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: read

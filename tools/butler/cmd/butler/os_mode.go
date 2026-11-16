@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -97,6 +98,7 @@ func makeMainList() list.Model {
 		osItem{title: "🎨 Theme", description: "Switch color theme (Catppuccin)", action: "theme"},
 		osItem{title: "🔤 Font", description: "Switch system font", action: "font"},
 		osItem{title: "🔄 Sync Configs", description: "Sync configs from host to all distroboxes", action: "sync-configs"},
+		osItem{title: "⬆ Push Configs", description: "Push config changes from distroboxes back to host (chezmoi)", action: "push-configs"},
 		osItem{title: "🚫 Skip List", description: "Manage distrobox skip list for config sync", action: "skip-list"},
 		osItem{title: "⌨️  Help", description: "Keyboard shortcuts and keybindings", action: "help"},
 	}
@@ -300,6 +302,8 @@ func (m *osModel) handleMainAction(item osItem) tea.Cmd {
 		m.showFontPopup()
 	case "sync-configs":
 		return m.syncDistroboxConfigs()
+	case "push-configs":
+		return m.pushDistroboxConfigs()
 	case "skip-list":
 		m.showSkipList()
 	case "help":
@@ -347,7 +351,7 @@ func (m *osModel) applyFontAction(fontName string) {
 }
 
 func (m *osModel) showThemePopup() {
-	themesDir := "/usr/share/apparatus/themes"
+	themesDir := getThemesDir()
 	entries, err := os.ReadDir(themesDir)
 	if err != nil {
 		m.showErrorPopup("Theme Selection", fmt.Sprintf("Could not read themes directory: %v", err))
@@ -359,8 +363,7 @@ func (m *osModel) showThemePopup() {
 		if entry.IsDir() {
 			label := entry.Name()
 			desc := "light"
-			// Dark themes: mocha, night, storm, moon
-			if strings.Contains(label, "mocha") || strings.Contains(label, "night") || strings.Contains(label, "storm") || strings.Contains(label, "moon") {
+			if themeIsDark(label) {
 				desc = "dark"
 			}
 			items = append(items, osItem{
@@ -706,6 +709,42 @@ func (m *osModel) executeDistroboxAction(action string) tea.Cmd {
 	}
 }
 
+// assembleIniPath returns the user's distrobox-assemble manifest
+func assembleIniPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "distrobox.ini"
+	}
+	return filepath.Join(home, ".config", "distrobox", "distrobox.ini")
+}
+
+// assembleCreateBox adds a section for name to the user's distrobox.ini (if
+// missing) and runs distrobox-assemble to create the box. homeDir may be
+// empty for a shared-home box.
+func assembleCreateBox(name, homeDir string) (string, error) {
+	ini := assembleIniPath()
+	if err := os.MkdirAll(filepath.Dir(ini), 0755); err != nil {
+		return "", err
+	}
+	data, _ := os.ReadFile(ini)
+	if !strings.Contains(string(data), "["+name+"]") {
+		section := fmt.Sprintf("\n[%s]\nimage = ghcr.io/vincentvdk/apparatus-box:latest\npull = true\ninit_hooks = distrobox-host-exec butler sync %s\n", name, name)
+		if homeDir != "" {
+			section += "home = " + homeDir + "\n"
+		}
+		f, err := os.OpenFile(ini, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return "", err
+		}
+		if _, err := f.WriteString(section); err != nil {
+			f.Close()
+			return "", err
+		}
+		f.Close()
+	}
+	return runCommand("distrobox-assemble", "create", "--file", ini)
+}
+
 func (m *osModel) executeCreateDistrobox(homeMode string) tea.Cmd {
 	name := m.createName
 	if name == "" {
@@ -724,9 +763,9 @@ func (m *osModel) executeCreateDistrobox(homeMode string) tea.Cmd {
 				customHome = name
 			}
 			homeDir := fmt.Sprintf("%s/distrobox-homes/%s", os.Getenv("HOME"), customHome)
-			output, err = runCommand("distrobox", "create", "-i", "ghcr.io/vincentvdk/apparatus-box:latest", "-n", name, "--home", homeDir)
+			output, err = assembleCreateBox(name, homeDir)
 		} else {
-			output, err = runCommand("distrobox", "create", "-i", "ghcr.io/vincentvdk/apparatus-box:latest", "-n", name)
+			output, err = assembleCreateBox(name, "")
 		}
 
 		if err != nil {
@@ -758,45 +797,14 @@ func (m *osModel) executeUpgradeDistrobox(action string) tea.Cmd {
 				output = fmt.Sprintf("Package upgrade complete for '%s'.", name)
 			}
 		case "upgrade-image":
-			homeDir := ""
-			homeOutput, homeErr := runCommand("podman", "inspect", name, "--format", "{{json .Args}}")
-			if homeErr == nil {
-				lines := strings.Split(strings.TrimSpace(homeOutput), "\n")
-				for i, line := range lines {
-					if strings.Contains(line, "--home") && i+1 < len(lines) {
-						homeDir = strings.TrimSpace(strings.Trim(lines[i+1], `"`))
-						break
-					}
-				}
-			}
-
-			image := "ghcr.io/vincentvdk/apparatus-box:latest"
-			var homeArg string
-			if homeDir != "" {
-				homeArg = "--home " + homeDir
-			}
-
-			pullOutput, pullErr := runCommand("podman", "pull", image)
-			if pullErr != nil {
-				return commandDoneMsg{
-					output: fmt.Sprintf("Failed to pull latest image:\n%s\nError: %v", pullOutput, pullErr),
-					err:    pullErr,
-					showOutput: true,
-				}
-			}
+			homeDir, _ := getDistroboxHomeDir(name)
 
 			_, _ = runCommand("distrobox", "stop", name, "--yes")
 			_, _ = runCommand("distrobox", "rm", name, "--force")
 
-			createArgs := []string{"distrobox", "create", "-n", name, "-i", image}
-			if homeArg != "" {
-				homeParts := strings.Fields(homeArg)
-				createArgs = append(createArgs, homeParts...)
-			}
-			createCmd := exec.Command(createArgs[0], createArgs[1:]...)
-			createOutput, createErr := createCmd.CombinedOutput()
-			output = string(createOutput)
-			err = createErr
+			// Recreate from the assemble manifest (pull = true fetches the
+			// latest image; the init hook re-syncs configs)
+			output, err = assembleCreateBox(name, homeDir)
 
 			if err == nil {
 				output = fmt.Sprintf("Image upgrade complete for '%s'.\n\nEnter with: distrobox enter %s", name, name)
@@ -922,6 +930,22 @@ func (m *osModel) syncDistroboxConfigs() tea.Cmd {
 func (m *osModel) executeSyncConfigs() tea.Cmd {
 	return func() tea.Msg {
 		output, err := syncConfigsToAllDistroboxes()
+		return commandDoneMsg{
+			output:     output,
+			err:        err,
+			showOutput: true,
+		}
+	}
+}
+
+// pushDistroboxConfigs initiates pushing configs from all distroboxes
+func (m *osModel) pushDistroboxConfigs() tea.Cmd {
+	return m.startCommand("Fetching distroboxes...", m.executePushConfigs())
+}
+
+func (m *osModel) executePushConfigs() tea.Cmd {
+	return func() tea.Msg {
+		output, err := pushConfigsFromAllDistroboxes()
 		return commandDoneMsg{
 			output:     output,
 			err:        err,
@@ -1191,7 +1215,7 @@ func loadSkipList() (map[string]bool, error) {
 // compositor and never runs inside a distrobox, so syncing it there only
 // leaves behind a broken, unusable hyprland.lua that other tooling inside
 // the box can trip over.
-var defaultSyncConfigs = []string{"kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh"}
+var defaultSyncConfigs = []string{"kitty", "waybar", "mako", "walker", "uwsm", "satty", "atuin", "nvim", "zsh", "rio"}
 
 // syncConfigDirs returns the list of config directories to sync into
 // distrobox homes. If ~/.config/apparatus/sync-configs exists, its lines
@@ -1228,17 +1252,27 @@ func syncConfigDirs() []string {
 // gets a symlink to /usr/share/apparatus/themes and every themed tool is
 // linked to the host's currently active theme.
 func syncConfigToDistrobox(db distroboxInfo) (string, error) {
-	src := "/usr/share/apparatus"
+	hostHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get host home dir: %v", err)
+	}
+
+	// Source per config dir: the effective host config (~/.config/<dir>,
+	// chezmoi-managed) when present, otherwise the system default baked into
+	// /usr/share/apparatus at OS build time.
+	srcFor := func(config string) string {
+		hostPath := filepath.Join(hostHome, ".config", config)
+		if _, err := os.Stat(hostPath); err == nil {
+			return hostPath
+		}
+		return filepath.Join("/usr/share/apparatus", config)
+	}
 
 	// Destination: custom-home boxes have their own home dir; shared-home
 	// boxes keep configs in ~/.config/apparatus-box on the host home (see
 	// box/system/profile-custom.sh).
 	var dst string
 	if db.HomeDir == "" {
-		hostHome, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("failed to get host home dir: %v", err)
-		}
 		dst = filepath.Join(hostHome, ".config", "apparatus-box")
 	} else {
 		dst = filepath.Join(db.HomeDir, ".config")
@@ -1251,7 +1285,7 @@ func syncConfigToDistrobox(db distroboxInfo) (string, error) {
 	var output strings.Builder
 
 	for _, config := range syncConfigDirs() {
-		srcPath := filepath.Join(src, config)
+		srcPath := srcFor(config)
 		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
 			continue
 		}
@@ -1262,16 +1296,19 @@ func syncConfigToDistrobox(db distroboxInfo) (string, error) {
 		output.WriteString(fmt.Sprintf("Synced %s\n", config))
 	}
 
-	// Themes: single source of truth, linked not copied. The target
-	// /usr/share/apparatus/themes exists both on the host and inside the
-	// box image, so the link resolves correctly in both.
-	themesSrc := filepath.Join(src, "themes")
+	// Themes: single source of truth, linked not copied. Inside a distrobox
+	// the host root is mounted at /run/host, so links point at
+	// /run/host/usr/share/apparatus/themes and resolve to the host's live
+	// theme files. (They dangle if the box home is viewed from the host --
+	// only the container reads these configs.)
+	themesSrc := "/usr/share/apparatus/themes" // host-side path, used for validation
 	themesLink := filepath.Join(dst, "apparatus", "themes")
+	themesLinkTarget := "/run/host" + themesSrc
 	if err := os.MkdirAll(filepath.Dir(themesLink), 0755); err != nil {
 		return output.String(), fmt.Errorf("failed to create apparatus config dir: %v", err)
 	}
 	os.RemoveAll(themesLink) // drop a real dir left behind by older syncs
-	if err := os.Symlink(themesSrc, themesLink); err != nil {
+	if err := os.Symlink(themesLinkTarget, themesLink); err != nil {
 		return output.String(), fmt.Errorf("failed to link themes dir: %v", err)
 	}
 
@@ -1299,6 +1336,7 @@ func syncConfigToDistrobox(db distroboxInfo) (string, error) {
 		{filepath.Join(dst, "hypr", "theme.conf"), "hyprland.conf"},
 		{filepath.Join(dst, "satty", "overrides.css"), filepath.Join("satty", "overrides.css")},
 		{filepath.Join(dst, "nvim", "lua", "config", "theme.lua"), "nvim.lua"},
+		{filepath.Join(dst, "rio", "themes", themeName+".toml"), "rio.toml"},
 	}
 
 	var pending []stagedSwap
@@ -1308,21 +1346,22 @@ func syncConfigToDistrobox(db distroboxInfo) (string, error) {
 		}
 	}
 	for _, l := range themeLinks {
-		source := filepath.Join(themeDir, l.file)
 		// skip tools whose config dir is not synced into this box (hypr is
 		// host-only by default) or whose theme file does not exist
 		if _, err := os.Stat(filepath.Dir(l.target)); err != nil {
 			continue
 		}
-		if _, err := os.Stat(source); err != nil {
+		if _, err := os.Stat(filepath.Join(themeDir, l.file)); err != nil {
 			continue
 		}
-		s, err := stageSymlink(source, l.target)
-		if err != nil {
+		staged := l.target + ".new"
+		os.Remove(staged) // clean up any leftover from a prior failed sync
+		linkTarget := filepath.Join(themesLinkTarget, themeName, l.file)
+		if err := os.Symlink(linkTarget, staged); err != nil {
 			rollback()
-			return output.String(), err
+			return output.String(), fmt.Errorf("%s: %v", filepath.Base(l.target), err)
 		}
-		pending = append(pending, s)
+		pending = append(pending, stagedSwap{staged: staged, target: l.target})
 	}
 	for _, s := range pending {
 		if err := os.Rename(s.staged, s.target); err != nil {
@@ -1332,6 +1371,111 @@ func syncConfigToDistrobox(db distroboxInfo) (string, error) {
 	}
 	output.WriteString(fmt.Sprintf("Linked theme %s\n", themeName))
 
+	return output.String(), nil
+}
+
+// pushExcludes lists theme-link files per config dir that are owned by
+// applyTheme and must never be pushed back from a box -- they are symlinks
+// into the host's theme dir and would corrupt the chezmoi source if committed.
+var pushExcludes = map[string][]string{
+	"kitty":  {"theme.conf"},
+	"waybar": {"theme.css"},
+	"mako":   {"config"},
+	"hypr":   {"theme.conf"},
+	"satty":  {"overrides.css"},
+	"nvim":   {"lua/config/theme.lua"},
+	"rio":    {"themes/*.toml"},
+}
+
+// pushConfigFromDistrobox copies configs from a box back to the host's
+// ~/.config (the chezmoi-managed dir), so changes made inside the box can
+// trickle upstream: review with `chezmoi diff`, commit and push the
+// apparatus-dotfiles repo, then `butler sync` distributes to all boxes.
+func pushConfigFromDistrobox(db distroboxInfo) (string, error) {
+	hostHome, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get host home dir: %v", err)
+	}
+
+	// Source: shared-home boxes keep configs in ~/.config/apparatus-box on
+	// the host home; custom-home boxes in <box home>/.config.
+	var src string
+	if db.HomeDir == "" {
+		src = filepath.Join(hostHome, ".config", "apparatus-box")
+	} else {
+		src = filepath.Join(db.HomeDir, ".config")
+	}
+	dst := filepath.Join(hostHome, ".config")
+
+	var output strings.Builder
+	for _, config := range syncConfigDirs() {
+		srcPath := filepath.Join(src, config)
+		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+			continue
+		}
+		args := []string{"-a"}
+		for _, ex := range pushExcludes[config] {
+			args = append(args, "--exclude", ex)
+		}
+		args = append(args, srcPath+"/", filepath.Join(dst, config))
+		if out, err := runCommand("rsync", args...); err != nil {
+			return output.String(), fmt.Errorf("failed to push %s: %v: %s", config, err, out)
+		}
+		output.WriteString(fmt.Sprintf("Pushed %s\n", config))
+	}
+	output.WriteString("\nReview upstream changes with: chezmoi diff\n")
+	return output.String(), nil
+}
+
+// pushConfigsFromAllDistroboxes pushes configs from all non-skipped
+// distroboxes back to the host
+func pushConfigsFromAllDistroboxes() (string, error) {
+	var output strings.Builder
+
+	distroboxes, err := getAllDistroboxes()
+	if err != nil {
+		return "", fmt.Errorf("failed to get distroboxes: %v", err)
+	}
+	if len(distroboxes) == 0 {
+		return "No distroboxes found to push from.", nil
+	}
+
+	skipped, err := loadSkipList()
+	if err != nil {
+		output.WriteString(fmt.Sprintf("Warning: Could not load skip list: %v\n\n", err))
+	}
+
+	var pushed []string
+	var failed []string
+
+	for _, db := range distroboxes {
+		if skipped[db.Name] {
+			output.WriteString(fmt.Sprintf("Skipping %s (in skip list)\n", db.Name))
+			continue
+		}
+		detail, err := pushConfigFromDistrobox(db)
+		if err != nil {
+			failed = append(failed, db.Name)
+			output.WriteString(fmt.Sprintf("Failed to push from %s: %v\n", db.Name, err))
+		} else {
+			pushed = append(pushed, db.Name)
+			output.WriteString(fmt.Sprintf("Pushed from %s\n%s", db.Name, detail))
+		}
+	}
+
+	output.WriteString(fmt.Sprintf("\nSummary:\n"))
+	output.WriteString(fmt.Sprintf("  Pushed: %d distroboxes\n", len(pushed)))
+	if len(pushed) > 0 {
+		output.WriteString(fmt.Sprintf("    %s\n", strings.Join(pushed, ", ")))
+	}
+	output.WriteString(fmt.Sprintf("  Failed: %d distroboxes\n", len(failed)))
+	if len(failed) > 0 {
+		output.WriteString(fmt.Sprintf("    %s\n", strings.Join(failed, ", ")))
+	}
+
+	if len(failed) > 0 {
+		return output.String(), fmt.Errorf("%d distroboxes failed to push", len(failed))
+	}
 	return output.String(), nil
 }
 
@@ -1392,15 +1536,9 @@ func applyTheme(themeName string) error {
 		return fmt.Errorf("getting home directory: %w", err)
 	}
 
-	themesDir := "/usr/share/apparatus/themes"
-
-	// Check if running in a distrobox (themes in ~/.config/apparatus/themes)
-	// Only use local themes if we're actually in a container
-	if _, err := os.Stat("/run/.containerenv"); err == nil {
-		localThemesDir := filepath.Join(homeDir, ".config", "apparatus", "themes")
-		if _, err := os.Stat(localThemesDir); err == nil {
-			themesDir = localThemesDir
-		}
+	themesDir := getThemesDir()
+	if _, err := os.Stat(themesDir); err != nil {
+		return fmt.Errorf("themes directory not available: %s (inside a distrobox this should be the host's /run/host mount)", themesDir)
 	}
 	themeDir := filepath.Join(themesDir, themeName)
 
@@ -1437,6 +1575,14 @@ func applyTheme(themeName string) error {
 		return err
 	}
 
+	// rio theme (optional -- only themed when the theme ships rio.toml)
+	rioSource := filepath.Join(themeDir, "rio.toml")
+	if _, err := os.Stat(rioSource); err == nil {
+		if err := stage(rioSource, filepath.Join(homeDir, ".config", "rio", "themes", themeName+".toml")); err != nil {
+			return err
+		}
+	}
+
 	// nvim.lua is optional -- not every theme ships one
 	nvimSource := filepath.Join(themeDir, "nvim.lua")
 	if _, err := os.Stat(nvimSource); err == nil {
@@ -1456,8 +1602,11 @@ func applyTheme(themeName string) error {
 		}
 	}
 
+	// Point Rio at the new theme (best-effort, outside the atomic swap)
+	setRioTheme(homeDir, themeName)
+
 	// Apply GTK theme (best-effort, outside the atomic config swap)
-	isDark := strings.Contains(themeName, "mocha") || strings.Contains(themeName, "dark")
+	isDark := themeIsDark(themeName)
 	if isDark {
 		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark").Run()
 		exec.Command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Adwaita-dark").Run()
@@ -1488,6 +1637,24 @@ func applyTheme(themeName string) error {
 	exec.Command("pkill", "satty").Run()
 
 	return nil
+}
+
+// setRioTheme points Rio's config.toml at the given theme (best-effort;
+// no-op when Rio isn't configured)
+func setRioTheme(homeDir, themeName string) {
+	cfg := filepath.Join(homeDir, ".config", "rio", "config.toml")
+	data, err := os.ReadFile(cfg)
+	if err != nil {
+		return
+	}
+	content := string(data)
+	re := regexp.MustCompile(`(?m)^theme\s*=.*$`)
+	if re.MatchString(content) {
+		content = re.ReplaceAllString(content, `theme = "`+themeName+`"`)
+	} else {
+		content += "\ntheme = \"" + themeName + "\"\n"
+	}
+	os.WriteFile(cfg, []byte(content), 0644)
 }
 
 // applyFont applies a font across all config files

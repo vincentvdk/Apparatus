@@ -11,7 +11,7 @@ distrobox() {
             echo "Available containers:" >&2
             command distrobox list 2>/dev/null
             echo "" >&2
-            echo "To create a new container, use: distrobox create $container_name" >&2
+            echo "To create a new container, use: just create-box $container_name" >&2
             return 1
         fi
     fi
