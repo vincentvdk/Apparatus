@@ -5,12 +5,17 @@
 default:
     @just --list
 
-version := `git rev-parse --short HEAD 2>/dev/null || echo "dev"`
+# Version for local builds: git describe (semver tag if present), see docs/releases.md
+version := `git describe --tags --always --dirty 2>/dev/null || echo "dev"`
+
+# Show the version local builds will be stamped with
+show-version:
+    @echo {{version}}
 
 # Build the container image
 build-container:
     @SILVERBLUE_VERSION=$(grep 'SILVERBLUE_VERSION=' apparatus.env | cut -d'=' -f2) && \
-    podman build --build-arg SILVERBLUE_VERSION=$$SILVERBLUE_VERSION -f ./os/Containerfile.bootc -t apparatus-os .
+    podman build --build-arg SILVERBLUE_VERSION=$$SILVERBLUE_VERSION --build-arg APPARATUS_VERSION={{version}} -f ./os/Containerfile.bootc -t apparatus-os:latest -t apparatus-os:{{version}} .
 
 
 
@@ -62,7 +67,7 @@ build-push: build-container push
 
 # Build the distrobox image
 build-box:
-    podman build -f ./box/Containerfile -t ghcr.io/vincentvdk/apparatus-box:latest .
+    podman build --build-arg APPARATUS_VERSION={{version}} -f ./box/Containerfile -t ghcr.io/vincentvdk/apparatus-box:latest -t ghcr.io/vincentvdk/apparatus-box:{{version}} .
 
 # Push distrobox to GHCR
 push-box:

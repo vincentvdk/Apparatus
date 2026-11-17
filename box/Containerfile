@@ -1,12 +1,17 @@
+ARG APPARATUS_VERSION="dev"
+
 # Build stage for butler (unified binary)
 FROM docker.io/golang:1.26-alpine AS builder
+ARG APPARATUS_VERSION
 WORKDIR /build
 copy ../tools/butler/ .
-RUN go mod download && go build -o butler ./cmd/butler
+RUN go mod download && go build -ldflags "-X main.appVersion=${APPARATUS_VERSION}" -o butler ./cmd/butler
 
 # Main image
 FROM docker.io/fedora:45
+ARG APPARATUS_VERSION
 LABEL com.github.containers.toolbox="true"
+LABEL org.opencontainers.image.version="${APPARATUS_VERSION}"
 
 ARG VERSION_GUM="0.14.5"
 ARG VERSION_NEOVIM="0.11.5"
