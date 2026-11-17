@@ -65,6 +65,12 @@ butler sync mybox
 butler  # Navigate to "Skip List"
 ```
 
+## Versioning
+
+- Semantic versioning via git tags `vX.Y.Z` on `main`; see `docs/releases.md`
+- CI image tags: tag push -> `X.Y.Z` + `latest` + sha; main push -> `dev-<sha>` + timestamp + `latest`; PR -> `pr-<n>` + sha
+- Version is embedded via build-arg `APPARATUS_VERSION` (OCI label, `/usr/share/apparatus/image-info.json`, `butler version` via ldflags); local builds use `git describe --tags --always --dirty` (`just show-version`)
+
 ## Code Changes
 
 ### Before Implementing

@@ -42,7 +42,7 @@
 For users familiar with bootc and container-based deployments:
 
 ```bash
-# Pull the latest Apparatus OS image
+# Pull the latest Apparatus OS image (or pin a release tag, e.g. :1.2.0 -- see Releases)
 podman pull ghcr.io/vincentvdk/apparatus-os:latest
 
 # Deploy to disk (replace /dev/sdX with your target disk)
@@ -82,18 +82,22 @@ Apparatus OS uses bootc for atomic updates:
 # Check for updates
 bootc status
 
-# Apply updates (will reboot)
-bootc update
+# Apply updates (queues the update; it applies on reboot)
+sudo bootc upgrade
+systemctl reboot
 ```
 
 ### Manual Update Check
 
 ```bash
-# Check bootc status
+# Check bootc status (shows staged updates)
 bootc status
 
-# Fetch and apply updates
-bootc update
+# Check for updates without downloading (metadata only)
+sudo bootc upgrade --check
+
+# Fetch and stage updates, then reboot to apply
+sudo bootc upgrade
 systemctl reboot
 ```
 

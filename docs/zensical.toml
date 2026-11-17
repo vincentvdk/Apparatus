@@ -71,6 +71,10 @@ name = "Installation"
 url = "/installation/"
 
 [[navigation.items]]
+name = "Releases"
+url = "/releases/"
+
+[[navigation.items]]
 name = "Getting Started"
 url = "/getting-started/"
 

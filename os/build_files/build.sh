@@ -200,7 +200,7 @@ cd /tmp/butler-build/butler
 export GOPATH=/tmp/go
 export GOCACHE=/tmp/go-cache
 PATH=$PATH:/usr/bin go mod download
-PATH=$PATH:/usr/bin go build -o /usr/bin/butler ./cmd/butler
+PATH=$PATH:/usr/bin go build -ldflags "-X main.appVersion=${VERSION}" -o /usr/bin/butler ./cmd/butler
 cd /
 rm -rf /tmp/butler-build /tmp/go /tmp/go-cache
 mkdir -p /etc/distrobox
@@ -213,7 +213,7 @@ cp /delivery/build_files/config/distrobox.ini /usr/share/apparatus/distrobox.ini
 cat > /usr/share/apparatus/image-info.json <<EOF
 {
   "image-name": "apparatus-os",
-  "image-tag": "latest",
+  "image-tag": "${VERSION}",
   "image-ref": "ghcr.io/vincentvdk/apparatus-os"
 }
 EOF

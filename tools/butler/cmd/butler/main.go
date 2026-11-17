@@ -266,6 +266,9 @@ type commandDoneMsg struct {
 	showOutput bool
 }
 
+// appVersion is stamped at build time via -ldflags "-X main.appVersion=..."
+var appVersion = "dev"
+
 // runCommand executes a shell command and returns combined output
 func runCommand(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
@@ -510,7 +513,7 @@ func main() {
 			printUsage()
 			os.Exit(0)
 		case "version", "--version", "-v":
-			fmt.Println("butler v0.1.0")
+			fmt.Printf("butler v%s\n", appVersion)
 			os.Exit(0)
 		default:
 			fmt.Fprintf(os.Stderr, "Unknown mode: %s\n", os.Args[1])
