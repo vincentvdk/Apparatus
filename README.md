@@ -13,33 +13,41 @@ Apparatus is built on the principle of **minimal drift**. By leveraging Fedora's
 - **Single Source of Truth**: All critical component versions (OS, Hyprland, Tooling) are managed via a single `.env` file, facilitating reproducible image builds.
 - **Container-First Workflow**: Development tools, runtimes, and dependencies do not touch the host system; they live in isolated, versioned **Distrobox** containers.
 
-## 🚀 Deployment & Rebase
+## 🚀 Deployment & Updates
 
-To deploy Apparatus on a fresh Fedora Silverblue installation, follow the rebase workflow.
+To deploy Apparatus on a fresh Fedora bootc installation, switch to the image; afterwards, update with `bootc upgrade`.
 
-### Step 1: Initial Rebase (Unverified)
+### Update (same image, newer build)
+
+```shell
+# Check for and stage a newer image, then reboot to apply
+sudo bootc upgrade
+systemctl reboot
+```
+
+### Step 1: Initial Deploy (Unverified)
 For testing and initial deployment, use the unverified registry path:
 
 ```shell
 # Define the image path
 IMAGE_PATH=ghcr.io/vincentvdk/apparatus-os
 
-# Rebase using bootc
-sudo bootc rebase ostree-unverified-registry:$IMAGE_PATH:latest
+# Switch to the image using bootc
+sudo bootc switch ostree-unverified-registry:$IMAGE_PATH:latest
 
 # Reboot to apply changes
 systemctl reboot
 ```
 
-### Step 2: Production Rebase (Signed)
+### Step 2: Production (Signed)
 Once you have validated the image, switch to the trusted, signed production image:
 
 ```shell
 # Define the image path
 IMAGE_PATH=ghcr.io/vincentvdk/apparatus-os
 
-# Rebase using bootc
-sudo bootc rebase ostree-image-signed:docker://$IMAGE_PATH:latest
+# Switch to the signed image using bootc
+sudo bootc switch ostree-image-signed:docker://$IMAGE_PATH:latest
 
 # Reboot to complete the transition
 systemctl reboot
