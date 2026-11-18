@@ -57,24 +57,30 @@ This guide covers common issues you might encounter with Apparatus OS and how to
 
 **Solutions**:
 
-1. **Check Hyprland logs**:
+1. **Verify the wayland session desktop file**:
+   ```bash
+   cat /usr/share/wayland-sessions/hyprland.desktop
+   ```
+   Ensure the `Exec=` line points to a valid command (should be `Exec=Hyprland`).
+
+2. **Check Hyprland logs**:
    ```bash
    journalctl -u hyprland-service -b
    ```
 
-2. **Test Hyprland manually**:
+3. **Test Hyprland manually**:
    ```bash
    Hyprland
    ```
    Check the output for errors.
 
-3. **Check configuration syntax**:
+4. **Check configuration syntax**:
    ```bash
    hyprctl config
    ```
    Look for syntax errors.
 
-4. **Reset configuration**:
+5. **Reset configuration**:
    ```bash
    mv ~/.config/hypr ~/.config/hypr.bak
    cp -r /usr/share/apparatus/hypr ~/.config/
