@@ -253,6 +253,17 @@ chmod 644 /etc/profile.d/distrobox-safe.sh
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
 
+## -- Create start-hyprland wrapper (Hyprland 0.56+ refuses to start without it)
+cat > /usr/bin/start-hyprland << 'EOF'
+#!/usr/bin/env bash
+# Wrapper script required by Hyprland 0.56+ - sets session env and execs Hyprland
+export XDG_SESSION_TYPE=wayland
+export XDG_SESSION_DESKTOP=Hyprland
+export XDG_CURRENT_DESKTOP=Hyprland
+exec /usr/bin/Hyprland "$@"
+EOF
+chmod 755 /usr/bin/start-hyprland
+
 ## -- UWSM environment config (populated from dotfiles repo below)
 
 ## -- greetd configuration (gtkgreet greeter running under cage)
