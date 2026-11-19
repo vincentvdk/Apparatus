@@ -57,11 +57,12 @@ This guide covers common issues you might encounter with Apparatus OS and how to
 
 **Solutions**:
 
-1. **Verify the wayland session desktop file**:
+1. **Verify start-hyprland wrapper exists** (Hyprland 0.56+ requires it):
    ```bash
-   cat /usr/share/wayland-sessions/hyprland.desktop
+   ls -la /usr/bin/start-hyprland
+   cat /usr/share/wayland-sessions/hyprland.desktop | grep Exec
    ```
-   Ensure the `Exec=` line points to a valid command (should be `Exec=Hyprland`).
+   Should show `Exec=start-hyprland` and the wrapper script must exist.
 
 2. **Check Hyprland logs**:
    ```bash
