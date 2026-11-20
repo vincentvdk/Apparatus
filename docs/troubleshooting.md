@@ -57,12 +57,13 @@ This guide covers common issues you might encounter with Apparatus OS and how to
 
 **Solutions**:
 
-1. **Verify start-hyprland wrapper exists** (Hyprland 0.56+ requires it):
+1. **Verify the stock start-hyprland watchdog exists** (shipped by the hyprland package since 0.53+ — do NOT overwrite it with a custom wrapper, or Hyprland shows a "started without start-hyprland" notification on every login):
    ```bash
    ls -la /usr/bin/start-hyprland
+   file /usr/bin/start-hyprland   # should be an ELF binary, not a shell script
    cat /usr/share/wayland-sessions/hyprland.desktop | grep Exec
    ```
-   Should show `Exec=start-hyprland` and the wrapper script must exist.
+   Should show `Exec=start-hyprland` and the binary must be the package's watchdog.
 
 2. **Check Hyprland logs**:
    ```bash

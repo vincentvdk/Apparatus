@@ -258,16 +258,12 @@ chmod 644 /etc/profile.d/distrobox-safe.sh
 ## -- Fix hyprland desktop files (upstream has invalid DesktopNames key)
 cp /delivery/build_files/config/wayland-sessions/*.desktop /usr/share/wayland-sessions/
 
-## -- Create start-hyprland wrapper (Hyprland 0.56+ refuses to start without it)
-cat > /usr/bin/start-hyprland << 'EOF'
-#!/usr/bin/env bash
-# Wrapper script required by Hyprland 0.56+ - sets session env and execs Hyprland
-export XDG_SESSION_TYPE=wayland
-export XDG_SESSION_DESKTOP=Hyprland
-export XDG_CURRENT_DESKTOP=Hyprland
-exec /usr/bin/Hyprland "$@"
-EOF
-chmod 755 /usr/bin/start-hyprland
+## -- start-hyprland: use the watchdog binary shipped by the hyprland package.
+## Hyprland 0.53+ ships its own /usr/bin/start-hyprland which passes
+## --watchdog-fd to Hyprland; overwriting it with a plain exec wrapper makes
+## Hyprland show a "started without start-hyprland" notification on every boot.
+## Session env vars are already set via uwsm (/etc/uwsm/env), so no wrapper
+## is needed here.
 
 ## -- UWSM environment config (populated from dotfiles repo below)
 
