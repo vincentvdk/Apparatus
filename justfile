@@ -12,6 +12,17 @@ version := `git describe --tags --always --dirty 2>/dev/null || echo "dev"`
 show-version:
     @echo {{version}}
 
+# === Go tools ===
+
+# Build, vet and test all Go tools (run from each module dir, like CI does)
+test-tools:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for mod in tools/butler tools/soundctl; do
+        echo "==> $mod"
+        (cd "$mod" && go build ./... && go vet ./... && go test ./...)
+    done
+
 # Build the container image
 build-container:
     @SILVERBLUE_VERSION=$(grep 'SILVERBLUE_VERSION=' apparatus.env | cut -d'=' -f2) && \
