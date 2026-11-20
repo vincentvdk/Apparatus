@@ -77,7 +77,8 @@ echo "Downloading pre-built binaries in parallel..."
 
 # satty
 curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
-  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz" &
+  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz" || \
+  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-x86_64-unknown-linux-gnu.tar.gz" &
 
 # hyprdynamicmonitors
 curl -L -o /tmp/hyprdynamicmonitors.tar.gz \
