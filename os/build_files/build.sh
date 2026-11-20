@@ -390,6 +390,16 @@ cat > /usr/lib/bootc/kargs.d/50-apparatus.toml <<EOF
 kargs = ["quiet", "splash", "plymouth.enable=1", "rd.plymouth=1", "amd_pstate=active", "amdgpu.dcdebugmask=0x10", "amdgpu.abmlevel=0", "amdgpu.sg_display=0"]
 EOF
 
+# GUARD: never ship "iommu=off" in any kargs source. The MediaTek MT7925 Wi-Fi
+# (RZ717) has a 32-bit DMA mask and the AMD NPU (amdxdna) requires the IOMMU;
+# with iommu=off both fail to initialize (mt7925e: "DMA addr ... overflow
+# (mask ffffffff)" -> "Failed to get patch semaphore" -> "hardware init
+# failed", no wlan interface). See docs/troubleshooting.md.
+if grep -rqs 'iommu=off' /usr/lib/bootc/kargs.d/; then
+    echo "ERROR: iommu=off must not be present in /usr/lib/bootc/kargs.d/ (breaks MT7925 Wi-Fi and amdxdna)" >&2
+    exit 1
+fi
+
 # Enable swayosd services (for on-screen display)
 systemctl enable swayosd-libinput-backend.service
 systemctl enable swayosd-server.service

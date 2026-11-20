@@ -209,6 +209,40 @@ This guide covers common issues you might encounter with Apparatus OS and how to
    nslookup google.com
    ```
 
+6. **Wi-Fi interface missing after a bootc update (MediaTek MT7925 / `iommu=off`)**
+
+   **Symptom**: `lspci` still shows the Wi-Fi card (`c0:00.0 Network controller: MEDIATEK Corp. MT7925 (RZ717) [14c3:0717]`), but no `wlp192s0` interface exists, and the kernel log shows:
+   ```
+   mt7925e 0000:c0:00.0: DMA addr 0x...+68 overflow (mask ffffffff, bus limit 0).
+   mt7925e 0000:c0:00.0: Failed to get patch semaphore
+   mt7925e 0000:c0:00.0: hardware init failed
+   ```
+
+   **Cause**: the MT7925 has a **32-bit DMA mask**. If the kernel command line contains `iommu=off` (check with `tr ' ' '\n' < /proc/cmdline | grep iommu`), there is no IOMMU to translate DMA addresses, so the kernel hands the driver buffers above 4 GiB that the card physically cannot address — its firmware never starts. The AMD NPU (`amdxdna`) fails for the same reason ("Running without IOMMU not supported"). The driver and firmware are fine; this is purely a kernel-argument problem.
+
+   **Fix** (bootc-native, no `rpm-ostree` needed) — remove `iommu=off` from the default bootloader (BLS) entry:
+   ```bash
+   # One-off test first: at the systemd-boot menu press "e" and delete "iommu=off"
+
+   # Permanent fix on the host:
+   sudo unshare -m /bin/bash -c 'mount -o remount,rw /boot; bash'
+   sudo sed -i 's/\biommu=off\b//g; /^x-options-source-admin/d' /boot/loader/entries/ostree-*.conf
+   grep -Hn -E '^options' /boot/loader/entries/ostree-*.conf   # verify iommu=off is gone
+   sudo reboot
+   ```
+   If you ever set kargs via `bootc loader-entries set-options-for-source`, clear that source too (note: it stages a new deployment, effective on next reboot):
+   ```bash
+   sudo bootc loader-entries set-options-for-source --source admin --options ""
+   ```
+
+   **Verify after reboot**:
+   ```bash
+   tr ' ' '\n' < /proc/cmdline | grep iommu   # should print nothing
+   ip link show wlp192s0                       # MT7925 interface should exist
+   sudo dmesg | grep mt7925e                   # no more "hardware init failed"
+   ```
+   The fix persists across `bootc upgrade` because new deployments inherit the kernel arguments of the booted deployment.
+
 ## Display and Graphics
 
 ### Multiple Monitors Not Working
