@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-// TestThemeIsDarkFallback verifies the name-based fallback when colors.json
-// is not readable (e.g. in a test environment without the themes dir).
+// TestThemeIsDarkFallback verifies the name-based fallback used when
+// colors.json is not readable (e.g. in CI without the themes dir installed).
 func TestThemeIsDarkFallback(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -24,7 +24,7 @@ func TestThemeIsDarkFallback(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := themeIsDark(tt.theme)
+			got := themeIsDarkFallback(tt.theme)
 			if got != tt.expected {
 				t.Errorf("themeIsDark(%q) = %v, want %v", tt.theme, got, tt.expected)
 			}

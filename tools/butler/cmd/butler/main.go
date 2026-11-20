@@ -102,9 +102,21 @@ func themeIsDark(themeName string) bool {
 			}
 		}
 	}
-	return strings.Contains(themeName, "mocha") || strings.Contains(themeName, "night") ||
-		strings.Contains(themeName, "storm") || strings.Contains(themeName, "moon") ||
-		strings.Contains(themeName, "dark")
+	return themeIsDarkFallback(themeName)
+}
+
+// themeIsDarkFallback is the name-based guess used when colors.json is
+// missing or invalid. Light indicators win over dark ones: "tokyonight-day"
+// contains "night" but is a light theme, so check for light markers first.
+func themeIsDarkFallback(themeName string) bool {
+	lower := strings.ToLower(themeName)
+	if strings.Contains(lower, "day") || strings.Contains(lower, "latte") ||
+		strings.Contains(lower, "light") {
+		return false
+	}
+	return strings.Contains(lower, "mocha") || strings.Contains(lower, "night") ||
+		strings.Contains(lower, "storm") || strings.Contains(lower, "moon") ||
+		strings.Contains(lower, "dark")
 }
 
 // currentFontName reads the font name butler last wrote via applyFont(), for
