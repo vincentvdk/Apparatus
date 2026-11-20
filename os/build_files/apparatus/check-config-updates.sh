@@ -37,7 +37,7 @@ if [ -f "$HASH_FILE" ]; then
     LOCAL_HASH=$(cat "$HASH_FILE")
     if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
         notify-send -a "Apparatus" "Config Updates Available" \
-            "New configuration updates are available.\nRun butler to apply, then 'butler sync' to update distroboxes." \
+            "New configuration updates are available.\nRun 'butler update' to apply to the host, then 'butler sync' to update distroboxes." \
             -i dialog-information
     fi
 fi

@@ -88,6 +88,7 @@ func makeMainList() list.Model {
 		osItem{title: "🔤 Font", description: "Switch system font", action: "font"},
 		osItem{title: "🔄 Sync Configs", description: "Sync configs from host to all distroboxes", action: "sync-configs"},
 		osItem{title: "⬆ Push Configs", description: "Push config changes from distroboxes back to host (chezmoi)", action: "push-configs"},
+		osItem{title: "⬇ Update Configs", description: "Apply latest apparatus-dotfiles to host ~/.config", action: "update-configs"},
 		osItem{title: "🚫 Skip List", description: "Manage distrobox skip list for config sync", action: "skip-list"},
 		osItem{title: "⌨️  Help", description: "Keyboard shortcuts and keybindings", action: "help"},
 	}

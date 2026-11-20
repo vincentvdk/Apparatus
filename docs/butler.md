@@ -109,6 +109,9 @@ butler sync mybox
 # Push config changes made inside a distrobox back to the host (chezmoi)
 butler push mybox
 
+# Apply the latest apparatus-dotfiles to the host ~/.config
+butler update
+
 # Expected output
 Synced mybox
 Synced dev
@@ -199,6 +202,17 @@ chezmoi diff                       # review what changed
 git -C ~/.local/share/chezmoi add -A && git -C ~/.local/share/chezmoi commit -m "..." && git -C ~/.local/share/chezmoi push
 butler sync                        # distribute to all boxes
 ```
+
+### Updating the Host Config (Downstream)
+
+When the `apparatus-dotfiles` repo has new changes (the config-check timer notifies you), apply them to the host's `~/.config`:
+
+```bash
+butler update
+# Or via TUI: "⬇ Update Configs"
+```
+
+This fast-forwards the cached clone in `~/.local/state/apparatus/dotfiles` and rsyncs `home/dot_config/` into `~/.config` (no `--delete`: local-only files, user customizations, and the butler-owned theme symlinks such as `~/.config/hypr/theme.conf` are preserved). Afterwards reload apps (`hyprctl reload`) and run `butler sync` to distribute to all distroboxes.
 
 ### Managing the Skip List
 

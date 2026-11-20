@@ -88,6 +88,29 @@ This guide covers common issues you might encounter with Apparatus OS and how to
    hyprctl reload
    ```
 
+### No Wallpaper After Login / Config Update
+
+**Symptom**: Wallpaper (hyprpaper) only appears when started manually; `hyprctl reload` does not bring it back.
+
+**Cause**: Autostart runs via the `hyprland.start` event in `~/.config/hypr/hyprland.lua`, which fires **once at session start** — `hyprctl reload` re-reads the config but does not re-fire it. Also note the autostart block must use the dispatcher API `hl.dsp.exec_cmd(...)` (not `hl.exec_cmd(...)`); the wrong form silently does nothing.
+
+**Solutions**:
+
+1. **Get the current config and re-login**:
+   ```bash
+   butler update        # applies latest apparatus-dotfiles to ~/.config
+   # then log out and back in (reload alone is not enough)
+   ```
+2. **Manual fix for the current session**:
+   ```bash
+   hyprpaper &          # or: hyprctl dispatch 'hl.dsp.exec_cmd("hyprpaper")'
+   ```
+3. **Check hyprpaper itself**:
+   ```bash
+   hyprpaper &          # watch stderr for config errors
+   cat ~/.config/hypr/hyprpaper.conf
+   ```
+
 ### Keyboard/Input Not Working
 
 **Symptom**: Keyboard or mouse not responding.

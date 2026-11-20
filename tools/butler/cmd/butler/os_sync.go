@@ -572,3 +572,94 @@ func pushConfigsFromAllDistroboxes() (string, error) {
 
 // stagedSwap is a config target whose replacement has been written to a
 // sibling ".new" path, ready to be committed with a single atomic rename.
+
+// updateHostConfigs applies the latest apparatus-dotfiles to the host's
+// ~/.config. The repo is cloned once into the state dir and fast-forwarded
+// on each run; configs are rsynced without --delete so local-only files and
+// the butler-owned theme symlinks survive. The stored update hash is
+// refreshed afterwards so the config-check notification clears.
+func updateHostConfigs() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get home dir: %v", err)
+	}
+
+	// Repo URL: user override file, else the Apparatus default
+	repo := "https://github.com/vincentvdk/apparatus-dotfiles.git"
+	repoFile := filepath.Join(homeDir, ".config", "apparatus", "chezmoi-dotfiles")
+	if b, err := os.ReadFile(repoFile); err == nil {
+		if r := strings.TrimSpace(string(b)); r != "" {
+			repo = r
+			if !strings.HasPrefix(repo, "http") {
+				repo = "https://github.com/" + repo + ".git"
+			}
+		}
+	}
+
+	stateDir := filepath.Join(homeDir, ".local", "state", "apparatus")
+	cloneDir := filepath.Join(stateDir, "dotfiles")
+	if err := os.MkdirAll(stateDir, 0755); err != nil {
+		return "", err
+	}
+
+	if _, err := os.Stat(filepath.Join(cloneDir, ".git")); err == nil {
+		if out, err := runCommand("git", "-C", cloneDir, "pull", "--ff-only"); err != nil {
+			return out, fmt.Errorf("failed to update dotfiles clone: %v: %s", err, out)
+		}
+	} else if out, err := runCommand("git", "clone", "--depth=1", repo, cloneDir); err != nil {
+		return out, fmt.Errorf("failed to clone %s: %v: %s", repo, err, out)
+	}
+
+	src := filepath.Join(cloneDir, "home", "dot_config")
+	if _, err := os.Stat(src); err != nil {
+		return "", fmt.Errorf("dotfiles repo has no home/dot_config (unexpected layout)")
+	}
+	dst := filepath.Join(homeDir, ".config")
+
+	// Never overwrite butler-owned theme links; no --delete, so local-only
+	// files and user customizations survive the update.
+	args := []string{"-a", "--itemize-changes"}
+	for dir, files := range pushExcludes {
+		for _, f := range files {
+			args = append(args, "--exclude", filepath.Join(dir, f))
+		}
+	}
+	args = append(args, src+"/", dst)
+	out, err := runCommand("rsync", args...)
+	if err != nil {
+		return out, fmt.Errorf("rsync to ~/.config failed: %v", err)
+	}
+
+	var output strings.Builder
+	if strings.TrimSpace(out) == "" {
+		output.WriteString("Host ~/.config already up to date.\n")
+	} else {
+		output.WriteString(out)
+	}
+
+	// Refresh the stored hash so the config-check notification clears
+	if head, err := runCommand("git", "-C", cloneDir, "rev-parse", "HEAD"); err == nil {
+		os.WriteFile(filepath.Join(stateDir, "config-update-hash"), []byte(strings.TrimSpace(head)), 0644)
+	}
+
+	output.WriteString("\nHost ~/.config updated from " + repo + "\n")
+	output.WriteString("Reload apps (hyprctl reload) and run 'butler sync' to update distroboxes.\n")
+	return output.String(), nil
+}
+
+// updateHostConfigsAction initiates updating the host ~/.config from the
+// apparatus-dotfiles repo
+func (m *osModel) updateHostConfigsAction() tea.Cmd {
+	return m.startCommand("Updating host configs...", m.executeUpdateHostConfigs())
+}
+
+func (m *osModel) executeUpdateHostConfigs() tea.Cmd {
+	return func() tea.Msg {
+		output, err := updateHostConfigs()
+		return commandDoneMsg{
+			output:     output,
+			err:        err,
+			showOutput: true,
+		}
+	}
+}

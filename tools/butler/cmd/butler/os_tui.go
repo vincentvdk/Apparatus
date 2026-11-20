@@ -196,6 +196,8 @@ func (m *osModel) handleMainAction(item osItem) tea.Cmd {
 		return m.syncDistroboxConfigs()
 	case "push-configs":
 		return m.pushDistroboxConfigs()
+	case "update-configs":
+		return m.updateHostConfigsAction()
 	case "skip-list":
 		m.showSkipList()
 	case "help":

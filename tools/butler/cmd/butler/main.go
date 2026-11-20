@@ -430,6 +430,7 @@ func printUsage() {
 	fmt.Println("  font <name>   Apply font (ioskeley-mono, jetbrains-mono, hack-nerd-font)")
 	fmt.Println("  sync [name]    Sync configs from host to all distroboxes (or specific one)")
 	fmt.Println("  push [name]    Push config changes from distroboxes back to host (chezmoi)")
+	fmt.Println("  update         Apply latest apparatus-dotfiles to host ~/.config")
 	fmt.Println()
 	fmt.Println("If no mode is specified, butler auto-detects the environment.")
 	fmt.Println("Override with APPARATUS_MODE=os or APPARATUS_MODE=box.")
@@ -441,6 +442,7 @@ func printUsage() {
 	fmt.Println("  butler sync     # Sync configs to all distroboxes")
 	fmt.Println("  butler sync mybox  # Sync configs to specific distrobox")
 	fmt.Println("  butler push mybox  # Push config changes from mybox back to host")
+	fmt.Println("  butler update      # Update host ~/.config from apparatus-dotfiles")
 	fmt.Println("  APPARATUS_MODE=box butler  # Override via env var")
 }
 
@@ -508,6 +510,14 @@ func main() {
 				}
 				fmt.Println(output)
 			}
+			os.Exit(0)
+		case "update":
+			output, err := updateHostConfigs()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n%s\n", err, output)
+				os.Exit(1)
+			}
+			fmt.Println(output)
 			os.Exit(0)
 		case "help", "--help", "-h":
 			printUsage()

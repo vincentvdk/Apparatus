@@ -98,9 +98,12 @@ butler sync mybox
 
 # Push config changes made inside a distrobox back to the host (chezmoi)
 butler push mybox
+
+# Apply the latest apparatus-dotfiles to the host ~/.config
+butler update
 ```
 
-Sync sources each config dir from your live host config (`~/.config/<dir>`, chezmoi-managed) when present, falling back to the system default `/usr/share/apparatus/<dir>`. To make a change upstream: edit in a distrobox → `butler push <name>` → review with `chezmoi diff` → commit/push the `apparatus-dotfiles` repo → `butler sync` to distribute to all boxes.
+Sync sources each config dir from your live host config (`~/.config/<dir>`, chezmoi-managed) when present, falling back to the system default `/usr/share/apparatus/<dir>`. To make a change upstream: edit in a distrobox → `butler push <name>` → review with `chezmoi diff` → commit/push the `apparatus-dotfiles` repo → `butler sync` to distribute to all boxes. To pull upstream changes onto the host itself, run `butler update` (applies the dotfiles repo to `~/.config`, preserving theme symlinks and local customizations).
 
 ## Manual Configuration
 
