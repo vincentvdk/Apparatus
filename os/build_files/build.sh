@@ -210,6 +210,8 @@ cp /delivery/build_files/config/distrobox.conf /etc/distrobox/distrobox.conf
 mkdir -p /usr/share/apparatus
 # distrobox-assemble manifest, seeded to ~/.config/distrobox/ on first boot
 cp /delivery/build_files/config/distrobox.ini /usr/share/apparatus/distrobox.ini
+# flatpak app list, consumed by first-login.sh
+cp /delivery/build_files/config/flatpaks.conf /usr/share/apparatus/flatpaks.conf
 cat > /usr/share/apparatus/image-info.json <<EOF
 {
   "image-name": "apparatus-os",

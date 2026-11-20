@@ -162,7 +162,6 @@ Butler syncs these configurations from the host to distroboxes:
 | walker/ | Walker application launcher configuration |
 | uwsm/ | UWSM window management configuration |
 | satty/ | Satty screenshot tool configuration |
-| rio/ | Rio terminal configuration |
 | atuin/ | Atuin shell history configuration |
 | nvim/ | Neovim editor configuration |
 | zsh/ | Zsh shell configuration |
@@ -174,7 +173,7 @@ Butler syncs these configurations from the host to distroboxes:
 
 1. **Source**: Per config dir, the effective host config `~/.config/<dir>` (chezmoi-managed) when present, otherwise the system default `/usr/share/apparatus/<dir>` baked in at OS build
 2. **Destination**: Synced with `rsync -a --delete` to `~/.config/apparatus-box/` for shared-home boxes, or `<box home>/.config/` for custom-home boxes
-3. **Themes**: Every themed tool in the box (kitty, waybar, mako, satty, nvim, rio) is symlinked to the host's active theme via `/run/host/usr/share/apparatus/themes/<theme>/` (the host root mounted inside the box); `<config>/apparatus/themes` itself is a symlink to `/run/host/usr/share/apparatus/themes` — themes are never copied
+3. **Themes**: Every themed tool in the box (kitty, waybar, mako, satty, nvim) is symlinked to the host's active theme via `/run/host/usr/share/apparatus/themes/<theme>/` (the host root mounted inside the box); `<config>/apparatus/themes` itself is a symlink to `/run/host/usr/share/apparatus/themes` — themes are never copied
 4. **Skip List**: Distroboxes in the skip list are not synced
 5. **No Overwrite**: Existing files are replaced (full sync, not merge)
 
