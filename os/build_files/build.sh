@@ -76,25 +76,27 @@ dnf5 -y install --nodocs hyprland hyprland-plugins hyprland-guiutils \
 echo "Downloading pre-built binaries in parallel..."
 
 # satty
-curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
-  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz" || \
-  curl -L -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-x86_64-unknown-linux-gnu.tar.gz" &
+# -f: fail on HTTP errors so the || fallbacks actually trigger (a 404 body
+# would otherwise be saved as the tarball and break tar)
+curl -Lf -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-v${SATTY_VERSION}-x86_64.tar.gz" || \
+  curl -Lf -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/${SATTY_VERSION}/satty_${SATTY_VERSION}_linux_x86_64.tar.gz" || \
+  curl -Lf -o /tmp/satty.tar.gz "https://github.com/Satty-org/Satty/releases/download/v${SATTY_VERSION}/satty-x86_64-unknown-linux-gnu.tar.gz" &
 
 # hyprdynamicmonitors
-curl -L -o /tmp/hyprdynamicmonitors.tar.gz \
+curl -Lf -o /tmp/hyprdynamicmonitors.tar.gz \
     "https://github.com/fiffeek/hyprdynamicmonitors/releases/download/v${HYPRDYNAMICMONITORS_VERSION}/hyprdynamicmonitors_Linux_x86_64.tar.gz" &
 
 # walker
-curl -L -o /tmp/walker.tar.gz \
+curl -Lf -o /tmp/walker.tar.gz \
     "https://github.com/abenz1267/walker/releases/download/v${WALKER_VERSION}/walker-v${WALKER_VERSION}-x86_64-unknown-linux-gnu.tar.gz" &
 
 # elephant
 ELEPHANT_BASE="https://github.com/abenz1267/elephant/releases/download/v${ELEPHANT_VERSION}"
-curl -L -o /tmp/elephant.tar.gz "${ELEPHANT_BASE}/elephant-linux-amd64.tar.gz" &
-curl -L -o /tmp/elephant-desktopapplications.tar.gz "${ELEPHANT_BASE}/desktopapplications-linux-amd64.tar.gz" &
+curl -Lf -o /tmp/elephant.tar.gz "${ELEPHANT_BASE}/elephant-linux-amd64.tar.gz" &
+curl -Lf -o /tmp/elephant-desktopapplications.tar.gz "${ELEPHANT_BASE}/desktopapplications-linux-amd64.tar.gz" &
 
 # kitty
-curl -L -o /tmp/kitty.txz \
+curl -Lf -o /tmp/kitty.txz \
     "https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}/kitty-${KITTY_VERSION}-x86_64.txz" &
 
 wait
