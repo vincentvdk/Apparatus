@@ -37,6 +37,7 @@ Apparatus OS is a custom immutable Linux distribution that combines:
 | [Usage](usage.md) | Day-to-day usage patterns |
 | [Butler](butler.md) | Configuration management tool |
 | [Distrobox](distrobox.md) | Container management |
+| [TUIOS](tuios.md) | Terminal multiplexer and distrobox workflow |
 | [Configuration](configuration.md) | Customizing your system |
 | [Themes](themes.md) | Managing color themes |
 | [Keybindings](keybindings.md) | Keyboard shortcuts reference |

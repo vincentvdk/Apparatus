@@ -91,6 +91,10 @@ name = "Distrobox"
 url = "/distrobox/"
 
 [[navigation.items]]
+name = "TUIOS"
+url = "/tuios/"
+
+[[navigation.items]]
 name = "Configuration"
 url = "/configuration/"
 
